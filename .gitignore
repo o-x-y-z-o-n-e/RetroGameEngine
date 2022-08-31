@@ -8,3 +8,5 @@ log/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
+
+**/Makefile

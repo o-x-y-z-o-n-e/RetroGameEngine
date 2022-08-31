@@ -159,7 +159,8 @@ void clear_buffer() {
 //------------------------------------------------------------------------------
 
 
-void draw_sprite(const sprite_t* sprite, float delta) {
+void draw_sprite(void* component, float delta) {
+	sprite_t* sprite = (sprite_t*)component;
 	int32_t ox = 0;
 	int32_t oy = 0;
 

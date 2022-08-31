@@ -58,7 +58,7 @@ int init_textures() {
 size_t get_str_hash(const char* str) {
 	size_t hash = 5381;
 	char c;
-	while(c = *str++)
+	while((c = *str++) != 0)
 		hash = ((hash << 5) + hash) + c;
 	
 	return hash;

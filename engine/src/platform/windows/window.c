@@ -243,4 +243,12 @@ viewport_t* get_viewport() {
 }
 
 
+//------------------------------------------------------------------------------
+
+
+void set_title_window(const char* title) {
+	// TODO
+}
+
+
 #endif

@@ -1,6 +1,7 @@
 #include "engine.h"
 
 #include <math.h>
+#include <stdio.h>
 
 #define TEST_COMP 100
 
@@ -65,6 +66,10 @@ int main() {
 		log_error("Could not initialize core!");
 		return 0;
 	}
+
+	// TEST.
+	getchar();
+	return 0;
 
 	set_on_core_update(on_core_update);
 

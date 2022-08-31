@@ -181,7 +181,7 @@ cmp_ref_t alloc_component(registry_t* registry) {
 		entity_t** new_owners = realloc(registry->owners, sizeof(entity_t*) * registry->components.buffer_size);
 		if(new_owners == NULL) {
 			log_error("Oh no!");
-			crash(1);
+			crash_core(1);
 		}
 
 		for(uint32_t i = registry->owners_size; i < registry->components.buffer_size; i++)
@@ -229,7 +229,7 @@ uint8_t add_component(entity_t* entity, cmp_ref_t cmp_ref) {
 //------------------------------------------------------------------------------
 
 
-uint8_t get_component_index(const entity_t* entity, void* component) {
+uint8_t get_component_index(const entity_t* entity, const void* component) {
 	for(uint8_t i = 0; i < entity->component_count; i++)
 		if(get_component(entity, i) == component)
 			return i;

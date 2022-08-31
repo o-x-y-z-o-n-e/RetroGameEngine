@@ -2,6 +2,7 @@
 #define DATA_BUFFER_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 typedef struct data_buffer_t {
 	void* buffer;

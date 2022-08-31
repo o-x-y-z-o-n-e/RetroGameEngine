@@ -121,7 +121,7 @@ void set_on_core_update(void (*func)(float delta)) {
 //------------------------------------------------------------------------------
 
 
-void crash(int error) {
+void crash_core(int error) {
 	log_error("Critical crash. Error code: [%d]", error);
 	exit(0);
 }

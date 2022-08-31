@@ -51,8 +51,12 @@ project "Engine"
 	
 	
 	filter "system:macosx"
-        buildoptions "-std=c++17"
+        --buildoptions "-std=c++17"
 		defines "SYS_MACOSX"
+
+        files "%{prj.name}/src/**.m"
+        filter "files:**.m"
+            compileas "Objective-C"
 	
 	
 	filter "system:linux"
@@ -72,7 +76,7 @@ project "Engine"
 
 project "Example"
     location "example"
-    language "C++"
+    language "C"
 
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -92,7 +96,7 @@ project "Example"
 	
 	
 	filter "system:windows"
-		cppdialect "C++17"
+		--cppdialect "C++17"
 		staticruntime "On"
 		systemversion "latest"
 
@@ -103,10 +107,15 @@ project "Example"
 	
 	filter "system:macosx"
         buildoptions {
-            "-std=c++17",
+            --"-std=c++17",
+            --"-lobjc",
             "-F /Library/Frameworks"
         }
-        linkoptions {"-F /Library/Frameworks"}
+        linkoptions {
+            "-F /Library/Frameworks",
+            "-framework Cocoa",
+            "-framework Foundation"
+        }
 
         links {
             "Engine"

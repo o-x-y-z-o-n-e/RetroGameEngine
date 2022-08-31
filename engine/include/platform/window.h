@@ -12,4 +12,6 @@ void refresh_window();
 void set_viewport(uint16_t width, uint16_t height);
 viewport_t* get_viewport();
 
+void set_title_window(const char* title);
+
 #endif

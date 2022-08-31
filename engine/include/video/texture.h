@@ -2,6 +2,7 @@
 #define TEXTURE_H
 
 #include "util/types.h"
+#include <stddef.h>
 
 typedef struct pixel_t pixel_t;
 

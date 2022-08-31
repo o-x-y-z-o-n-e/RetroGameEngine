@@ -2,6 +2,7 @@
 #define ENGINE_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 
 // Windows entry point stuff.
@@ -76,6 +77,7 @@ void log_error(const char* format, ...);
 void set_viewport_size(uint16_t width, uint16_t height);
 uint16_t get_view_width();
 uint16_t get_view_height();
+void set_title_window(const char* title);
 
 
 // Rendering functions.
