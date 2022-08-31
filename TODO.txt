@@ -1,0 +1,20 @@
+[GENERAL]
+Change ptr_buffer_t to use free_stack instead of next_check.
+
+Transform inheritance.
+Physics/collision system.
+UI module.
+
+[WINDOWS]
+Input.
+Audio.
+Change window title.
+Change window icon.
+
+[MACOSX]
+Create window.
+Time counter.
+
+[LINUX]
+Create window.
+Time counter.

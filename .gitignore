@@ -1,0 +1,10 @@
+bin/
+tmp/
+log/
+
+# Visual Studio
+.vs/
+.vsconfig
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
