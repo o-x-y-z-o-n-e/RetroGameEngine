@@ -67,9 +67,7 @@ int main() {
 		return 0;
 	}
 
-	// TEST.
-	getchar();
-	return 0;
+	set_title_window("Example App");
 
 	set_on_core_update(on_core_update);
 

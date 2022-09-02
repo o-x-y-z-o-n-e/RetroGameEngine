@@ -29,6 +29,9 @@ int init_core() {
 		return 0;
 	}
 
+	if(!init_system())
+		return 0;
+
 	if(!create_window())
 		return 0;
 

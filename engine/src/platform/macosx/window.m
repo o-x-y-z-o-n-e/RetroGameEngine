@@ -1,22 +1,104 @@
 #ifdef SYS_MACOSX
 #include "platform/window.h"
+#include "platform/system.h" // TEMP
 #include "core/core.h"
 #include "video/renderer.h"
 #include "util/debug.h"
 
-#import <Cocoa/Cocoa.h>
+#include <stdlib.h>
 
-static NSAutoreleasePool* pool;
+#include <Cocoa/Cocoa.h>
+#include <AppKit/AppKit.h>
+
+
+void create_frame_buffer();
+
+static NSApplication* app;
 static NSWindow* window;
+static NSView* view;
 
-static viewport_t viewport;
+static uint16_t window_width = 640;
+static uint16_t window_height = 400;
 
 
 //------------------------------------------------------------------------------
 
 
+@interface AppDelegate : NSObject<NSApplicationDelegate, NSWindowDelegate>
+@end
+
+
+//------------------------------------------------------------------------------
+
+
+@implementation AppDelegate
+
+-(void)windowDidResize:(NSNotification*)notification {
+    NSSize window_size = [[window contentView] frame].size;
+    window_width = (uint16_t)window_size.width;
+    window_height = (uint16_t)window_size.height;
+    create_frame_buffer();
+}
+
+-(void)windowWillClose:(NSNotification*)notification {
+    close_core();
+}
+
+@end
+
+
+//------------------------------------------------------------------------------
+
+
+static AppDelegate* delegate;
+
+struct {
+	viewport_t viewport;
+	uint16_t x_offset;
+	uint16_t y_offset;
+} static frame;
+
+
+//------------------------------------------------------------------------------
+
+
+void create_frame_buffer() {
+    uint16_t w_scale = window_width / frame.viewport.width;
+	uint16_t h_scale = window_height / frame.viewport.height;
+
+	frame.viewport.scale = w_scale;
+	if(h_scale < w_scale)
+		frame.viewport.scale = h_scale;
+
+	if(frame.viewport.scale == 0)
+		frame.viewport.scale = 1;
+
+	uint16_t frame_width = frame.viewport.width * frame.viewport.scale;
+	uint16_t frame_height = frame.viewport.height * frame.viewport.scale;
+
+	frame.x_offset = (window_width - frame_width) / 2;
+	frame.y_offset = (window_height - frame_height) / 2;
+
+    frame.viewport.buffer = realloc(frame.viewport.buffer, frame_width * frame_height * sizeof(pixel_t));
+
+    // TODO: Create NS Bitmap.
+}
+
+
+//------------------------------------------------------------------------------
+
+
+// TEMP: move to system.m
 int init_system() {
-    
+    app = [NSApplication sharedApplication];
+
+    delegate = [[AppDelegate alloc] init];
+    [app setDelegate:delegate];
+
+    [app setActivationPolicy:NSApplicationActivationPolicyRegular];
+
+    [app finishLaunching];
+
     return 1;
 }
 
@@ -25,13 +107,16 @@ int init_system() {
 
 
 int create_window() {
-    pool = [[NSAutoreleasePool alloc] init];
+    NSUInteger windowStyle = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable;
 
-    [NSApplication sharedApplication];
-
-    NSUInteger windowStyle = NSTitledWindowMask | NSClosableWindowMask | NSResizableWindowMask;
-
-    NSRect windowRect = NSMakeRect(100, 100, 640, 400);
+    NSRect screenRect = [[NSScreen mainScreen] frame];
+    NSRect viewRect = NSMakeRect(0, 0, window_width, window_height);
+    NSRect windowRect = NSMakeRect(
+        NSMidX(screenRect) - NSMidX(viewRect),
+        NSMidY(screenRect) - NSMidY(viewRect),
+        viewRect.size.width,
+        viewRect.size.height
+    );
 
     window = [
         [NSWindow alloc]
@@ -41,13 +126,18 @@ int create_window() {
 		defer:NO
     ];
 
-    [window autorelease];
-
-    NSWindowController* windowController = [[NSWindowController alloc] initWithWindow:window]; 
+    NSWindowController* windowController = [[NSWindowController alloc] initWithWindow:window];
 	[windowController autorelease];
 
+    [window setDelegate:delegate];
+
+    [window setAcceptsMouseMovedEvents:YES];
     [window orderFrontRegardless];
-	[NSApp run];
+    [window makeKeyAndOrderFront:nil];
+
+    [view setNeedsDisplay:YES];
+
+    create_frame_buffer();
     
     return 1;
 }
@@ -57,8 +147,8 @@ int create_window() {
 
 
 void close_window() {
-
-    [pool drain];
+    [window close];
+    [window release];
 }
 
 
@@ -66,10 +156,10 @@ void close_window() {
 
 
 void set_viewport(uint16_t width, uint16_t height) {
-    viewport.width = width;
-	viewport.height = height;
+    frame.viewport.width = width;
+	frame.viewport.height = height;
 
-    // TODO: Update window frame.
+    create_frame_buffer();
 }
 
 
@@ -77,7 +167,19 @@ void set_viewport(uint16_t width, uint16_t height) {
 
 
 void poll_window_events() {
-
+    @autoreleasepool {
+        NSEvent* ev;
+        do {
+            ev = [NSApp nextEventMatchingMask: NSEventMaskAny
+                                    untilDate: nil
+                                       inMode: NSDefaultRunLoopMode
+                                      dequeue: YES];
+            if (ev) {
+                // handle events here
+                [NSApp sendEvent: ev];
+            }
+        } while (ev);
+    }
 }
 
 
@@ -85,7 +187,7 @@ void poll_window_events() {
 
 
 void refresh_window() {
-
+    //NSDrawBitmap();
 }
 
 
@@ -93,7 +195,7 @@ void refresh_window() {
 
 
 viewport_t* get_viewport() {
-	return &viewport;
+	return &frame.viewport;
 }
 
 
@@ -101,7 +203,7 @@ viewport_t* get_viewport() {
 
 
 void set_title_window(const char* title) {
-    
+    [window setTitle:@(title)];
 }
 
 #endif
