@@ -8,7 +8,6 @@ UI module.
 [WINDOWS]
 Input.
 Audio.
-Change window title.
 Change window icon.
 
 [MACOSX]

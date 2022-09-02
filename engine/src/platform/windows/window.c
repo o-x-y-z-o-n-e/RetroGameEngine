@@ -247,7 +247,10 @@ viewport_t* get_viewport() {
 
 
 void set_title_window(const char* title) {
-	// TODO
+	wchar_t* wString[512];
+	MultiByteToWideChar(CP_ACP, 0, title, -1, wString, 512);
+
+	SetWindowText(handle, wString);
 }
 
 

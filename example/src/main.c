@@ -41,8 +41,6 @@ void on_update_test(void* cmp, float delta) {
 	transform_t* t = (transform_t*)get_component_of_type(data->owner, TYPE_TRANSFORM);
 
 	(t->location).y = (int32_t)(sinf(data->counter) * 64);
-
-	//log_info("%f", data->counter);
 }
 
 
