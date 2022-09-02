@@ -8,8 +8,7 @@
 #include <stdlib.h>
 
 #include <Cocoa/Cocoa.h>
-#include <AppKit/AppKit.h>
-
+#include <CoreGraphics/CoreGraphics.h>
 
 void create_frame_buffer();
 
@@ -51,6 +50,7 @@ static uint16_t window_height = 400;
 
 
 static AppDelegate* delegate;
+static CGContextRef gc;
 
 struct {
 	viewport_t viewport;
@@ -79,9 +79,14 @@ void create_frame_buffer() {
 	frame.x_offset = (window_width - frame_width) / 2;
 	frame.y_offset = (window_height - frame_height) / 2;
 
-    frame.viewport.buffer = realloc(frame.viewport.buffer, frame_width * frame_height * sizeof(pixel_t));
+    CGContextRelease(gc);
 
-    // TODO: Create NS Bitmap.
+    CGColorSpaceRef rgb = CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
+    gc = CGBitmapContextCreate(NULL, frame_width, frame_height, 8, 0, rgb, kCGImageByteOrder32Big | kCGImageAlphaPremultipliedLast);
+    CGColorSpaceRelease(rgb);
+
+    size_t pitch = CGBitmapContextGetBytesPerRow(gc);
+    frame.viewport.buffer = CGBitmapContextGetData(gc);
 }
 
 
@@ -187,7 +192,10 @@ void poll_window_events() {
 
 
 void refresh_window() {
-    //NSDrawBitmap();
+    CGImageRef image = CGBitmapContextCreateImage(gc);
+    window.contentView.wantsLayer = YES;
+    window.contentView.layer.contents = (__bridge id)image;
+    CGImageRelease(image);
 }
 
 

@@ -12,9 +12,9 @@ Change window title.
 Change window icon.
 
 [MACOSX]
-Create window.
-Time counter.
+Black bar frame (linear viewport scaling).
+Change window icon.
 
 [LINUX]
 Create window.
-Time counter.
+System time counter.

@@ -42,7 +42,7 @@ void on_update_test(void* cmp, float delta) {
 
 	(t->location).y = (int32_t)(sinf(data->counter) * 64);
 
-	log_info("%f", data->counter);
+	//log_info("%f", data->counter);
 }
 
 
