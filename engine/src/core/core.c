@@ -1,4 +1,5 @@
 #include "core/core.h"
+#include "core/input.h"
 #include "platform/system.h"
 #include "platform/window.h"
 #include "video/renderer.h"
@@ -88,6 +89,8 @@ void start_core() {
 
 				draw_all();
 			}
+
+			flush_click_input();
 		}
 	}
 }

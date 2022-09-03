@@ -22,7 +22,7 @@ typedef struct test_t {
 //------------------------------------------------------------------------------
 
 
-void on_add_test(void* cmp, entity_t* entity) {
+static void on_add_test(void* cmp, entity_t* entity) {
 	test_t* data = (test_t*)cmp;
 
 	data->owner = entity;
@@ -33,7 +33,7 @@ void on_add_test(void* cmp, entity_t* entity) {
 //------------------------------------------------------------------------------
 
 
-void on_update_test(void* cmp, float delta) {
+static void on_update_test(void* cmp, float delta) {
 	test_t* data = (test_t*)cmp;
 
 	data->counter += delta;
@@ -47,10 +47,18 @@ void on_update_test(void* cmp, float delta) {
 //------------------------------------------------------------------------------
 
 
-void on_core_update(float delta) {
+static void on_core_update(float delta) {
 	test_counter += delta;
 	uint8_t c = (uint8_t)(((sinf(test_counter) + 1.0F) / 2.0F) * 255);
 	set_clear_color(COLOR_RGB(255 - c, c, 255 - c));
+}
+
+
+//------------------------------------------------------------------------------
+
+
+static void button_pressed(key_t key) {
+	log_info("%d", key);
 }
 
 
@@ -66,7 +74,7 @@ int main() {
 	}
 
 	set_title_window("Example App");
-
+	set_on_button_down(button_pressed);
 	set_on_core_update(on_core_update);
 
 	test_reg = create_registry(TEST_COMP, sizeof(test_t));

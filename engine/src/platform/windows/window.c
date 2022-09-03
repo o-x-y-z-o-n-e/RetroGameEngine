@@ -1,10 +1,13 @@
 #ifdef SYS_WINDOWS
 #include "platform/window.h"
+#include "platform/system.h"
 #include "core/core.h"
+#include "core/input.h"
 #include "video/renderer.h"
 #include "util/debug.h"
 
 #include <windows.h>
+#include <stdbool.h>
 
 #define CLASS_NAME L"CLASS_NAME"
 #define WINDOW_NAME L"Game Title"
@@ -15,6 +18,8 @@ static uint16_t window_height = 400;
 static WNDCLASS config;
 static HWND handle;
 static HDC device_context;
+
+static bool has_focus = false;
 
 struct {
 	BITMAPINFO bitmap_info;
@@ -116,6 +121,29 @@ static LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 			SendMessage(handle, WM_PAINT, 1, 0);
 			break;
 		}
+
+		case WM_KILLFOCUS:
+			has_focus = false;
+			flush_all_input();
+			break;
+
+		case WM_SETFOCUS:
+			has_focus = true;
+			break;
+
+		case WM_KEYUP:
+		case WM_KEYDOWN:
+			if(has_focus) {
+				bool key_is_down, key_was_down;
+				key_is_down = ((lParam & (1 << 31)) == 0);
+				key_was_down = ((lParam & (1 << 30)) != 0);
+
+				if(key_is_down != key_was_down) {
+					uint8_t key = system_key_to_rge_key((uint8_t)wParam);
+					set_key_state(key, key_is_down);
+				}
+			}
+			break;
 			
 		default: {
 			return DefWindowProc(hwnd, msg, wParam, lParam);

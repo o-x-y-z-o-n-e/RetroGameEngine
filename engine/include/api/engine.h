@@ -52,6 +52,7 @@ typedef struct pixel_t {
 		uint32_t p;
 	};
 } pixel_t;
+#include "input_def.h"
 
 // Defines.
 #define TYPE_TRANSFORM 0
@@ -72,6 +73,12 @@ void set_on_core_update(void (*func)(float delta));
 void log_info(const char* format, ...);
 void log_warning(const char* format, ...);
 void log_error(const char* format, ...);
+
+
+// Input functions.
+bool is_button_press(key_t key);
+bool is_button_click(key_t key);
+void set_on_button_down(void(*func)(key_t key));
 
 
 // Window functions.

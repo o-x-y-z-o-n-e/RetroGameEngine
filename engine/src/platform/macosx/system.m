@@ -1,6 +1,7 @@
 #ifdef SYS_MACOSX
 
 #include "platform/system.h"
+#include "core/input.h"
 
 /* DEPRECATED
 #include <CoreServices/CoreServices.h>
@@ -22,6 +23,14 @@ uint64_t get_current_time() {
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time);
 
     return (time.tv_sec * 1000) + (time.tv_nsec / 1000000);
+}
+
+
+//------------------------------------------------------------------------------
+
+
+uint8_t system_key_to_rge_key(uint8_t system_key) {
+
 }
 
 

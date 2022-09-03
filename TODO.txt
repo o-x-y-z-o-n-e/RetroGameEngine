@@ -6,13 +6,14 @@ Physics/collision system.
 UI module.
 
 [WINDOWS]
-Input.
 Audio.
 Change window icon.
 
 [MACOSX]
 Black bar frame (linear viewport scaling).
 Change window icon.
+Input.
+Audio.
 
 [LINUX]
 Create window.
