@@ -23,7 +23,7 @@ struct {
 //------------------------------------------------------------------------------
 
 
-void create_registries() {
+static void create_registries() {
 	create_registry(TYPE_TRANSFORM, sizeof(transform_t));
 }
 
@@ -31,7 +31,7 @@ void create_registries() {
 //------------------------------------------------------------------------------
 
 
-void alloc_scene() {
+static void alloc_scene() {
 	scene.entities = init_ptr_buffer(ENTITY_BUFFER_STEP);
 	scene.registries = init_ptr_buffer(REGISTRY_BUFFER_STEP);
 }
@@ -121,7 +121,7 @@ void update_registry(const registry_t* registry, float delta) {
 //------------------------------------------------------------------------------
 
 
-entity_t* init_entity() {
+static entity_t* init_entity() {
 	entity_t* entity = calloc(1, sizeof(entity_t));
 
 	return entity;
@@ -172,7 +172,7 @@ void free_entity(entity_t* entity) {
 //------------------------------------------------------------------------------
 
 
-cmp_ref_t alloc_component(registry_t* registry) {
+static cmp_ref_t alloc_component(registry_t* registry) {
 	// Allocate component block.
 	uint32_t index = add_data_buffer(&registry->components);
 
@@ -201,7 +201,7 @@ cmp_ref_t alloc_component(registry_t* registry) {
 //------------------------------------------------------------------------------
 
 
-uint8_t add_component(entity_t* entity, cmp_ref_t cmp_ref) {
+static uint8_t add_component(entity_t* entity, cmp_ref_t cmp_ref) {
 	// Resize entity component reference.
 	uint8_t new_count = entity->component_count + 1;
 	cmp_ref_t* new_buffer = realloc(entity->components, sizeof(cmp_ref_t) * new_count);

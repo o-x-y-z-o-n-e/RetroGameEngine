@@ -28,7 +28,7 @@ struct {
 //------------------------------------------------------------------------------
 
 
-void create_frame_buffer() {
+static void create_frame_buffer() {
 	uint16_t w_scale = window_width / frame.viewport.width;
 	uint16_t h_scale = window_height / frame.viewport.height;
 
@@ -62,7 +62,7 @@ void create_frame_buffer() {
 //------------------------------------------------------------------------------
 
 
-LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+static LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	switch(msg) {
 		case WM_CLOSE: {
 			close_core();

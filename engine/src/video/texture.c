@@ -23,7 +23,7 @@ pixel_t sample_texture(texture_t* texture, uint16_t x, uint16_t y) {
 //------------------------------------------------------------------------------
 
 
-uint8_t* rgb_to_rgba(const uint8_t* data, int width, int height) {
+static uint8_t* rgb_to_rgba(const uint8_t* data, int width, int height) {
 	uint8_t* new_data = (uint8_t*)malloc(sizeof(uint8_t) * 4 * width * height);
 	if(new_data == NULL)
 		return NULL;
@@ -55,7 +55,7 @@ int init_textures() {
 //------------------------------------------------------------------------------
 
 
-size_t get_str_hash(const char* str) {
+static size_t get_str_hash(const char* str) {
 	size_t hash = 5381;
 	char c;
 	while((c = *str++) != 0)
@@ -68,7 +68,7 @@ size_t get_str_hash(const char* str) {
 //------------------------------------------------------------------------------
 
 
-texture_t* get_texture_slot(size_t hash) {
+static texture_t* get_texture_slot(size_t hash) {
 	size_t start = hash % TABLE_SIZE;
 	size_t i = 0;
 

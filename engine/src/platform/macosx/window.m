@@ -10,7 +10,7 @@
 #include <Cocoa/Cocoa.h>
 #include <CoreGraphics/CoreGraphics.h>
 
-void create_frame_buffer();
+static void create_frame_buffer();
 
 static NSApplication* app;
 static NSWindow* window;
@@ -62,7 +62,7 @@ struct {
 //------------------------------------------------------------------------------
 
 
-void create_frame_buffer() {
+static void create_frame_buffer() {
     uint16_t w_scale = window_width / frame.viewport.width;
 	uint16_t h_scale = window_height / frame.viewport.height;
 
@@ -141,6 +141,8 @@ int create_window() {
     [window makeKeyAndOrderFront:nil];
 
     [view setNeedsDisplay:YES];
+
+    [NSApp activateIgnoringOtherApps:YES];
 
     create_frame_buffer();
     

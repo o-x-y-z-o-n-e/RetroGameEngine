@@ -35,9 +35,9 @@ uint16_t get_view_width();
 uint16_t get_view_height();
 void set_viewport_size(uint16_t width, uint16_t height);
 void set_camera_location(point_t location);
+point_t get_camera_location();
 
 // Drawing.
-void draw_sprite(void* component, float delta);
 void draw_all();
 void set_clear_color(pixel_t color);
 

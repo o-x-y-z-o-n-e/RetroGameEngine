@@ -7,6 +7,14 @@
 //------------------------------------------------------------------------------
 
 
+static bool is_sprite_offset(const sprite_t* sprite) {
+	return sprite->offset.x != 0 || sprite->offset.y != 0;
+}
+
+
+//------------------------------------------------------------------------------
+
+
 void set_texture(sprite_t* sprite, texture_t* texture) {
 	if(texture == NULL) {
 		sprite->texture = NULL;
@@ -15,7 +23,16 @@ void set_texture(sprite_t* sprite, texture_t* texture) {
 	}
 
 	sprite->texture = texture;
-	sprite->section = (rect_t){ 0, 0, texture->width, texture->height };
+
+	set_sprite_section(
+		sprite,
+		(rect_t) {
+			0,
+			0,
+			texture->width,
+			texture->height
+		}
+	);
 }
 
 
@@ -72,4 +89,20 @@ void set_sprite_section(sprite_t* sprite, rect_t section) {
 		section.height = sprite->texture->height - section.y;
 
 	sprite->section = section;
+
+	// Re-center sprite, if needed.
+	if(is_sprite_offset(sprite))
+		set_sprite_centered(sprite, true);
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void set_sprite_centered(sprite_t* sprite, bool centered) {
+	if(centered) {
+		sprite->offset.x = -sprite->section.width / 2;
+		sprite->offset.y = -sprite->section.height / 2;
+	} else
+		sprite->offset = (point_t){ 0, 0 };
 }

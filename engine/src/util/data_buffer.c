@@ -50,7 +50,7 @@ void free_data_buffer(data_buffer_t* data_buffer) {
 //------------------------------------------------------------------------------
 
 
-void realloc_free_stack(data_buffer_t* data_buffer, uint32_t free_stack_size) {
+static void realloc_free_stack(data_buffer_t* data_buffer, uint32_t free_stack_size) {
 	uint32_t* new_stack = realloc(data_buffer->free_stack, sizeof(uint32_t) * free_stack_size);
 	data_buffer->free_stack = new_stack;
 	data_buffer->free_stack_size = free_stack_size;

@@ -7,7 +7,7 @@
 //------------------------------------------------------------------------------
 
 
-void log_base(const char* prefix, const char* format, va_list args) {
+static void log_base(const char* prefix, const char* format, va_list args) {
 	char buffer[256];
 	#ifdef SYS_WINDOWS
 	vsprintf_s(buffer, 256, format, args);

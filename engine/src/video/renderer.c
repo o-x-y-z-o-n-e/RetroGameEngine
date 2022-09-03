@@ -28,7 +28,7 @@ static registry_t* layers[MAX_LAYERS];
 //------------------------------------------------------------------------------
 
 
-void on_sprite_add(void* cmp, entity_t* entity) {
+static void on_sprite_add(void* cmp, entity_t* entity) {
 	((sprite_t*)(cmp))->owner = entity;
 }
 
@@ -36,7 +36,7 @@ void on_sprite_add(void* cmp, entity_t* entity) {
 //------------------------------------------------------------------------------
 
 
-pixel_t blend(pixel_t base, pixel_t overlap) {
+static pixel_t blend(pixel_t base, pixel_t overlap) {
 	if(overlap.a == 0)
 		return base;
 
@@ -67,7 +67,7 @@ pixel_t blend(pixel_t base, pixel_t overlap) {
 //------------------------------------------------------------------------------
 
 
-pixel_t rgba_to_argb(pixel_t color) {
+static pixel_t rgba_to_argb(pixel_t color) {
 	color.p = (color.a << 24) + (color.r << 16) + (color.g << 8) + (color.b << 0);
 	return color;
 }
@@ -76,54 +76,7 @@ pixel_t rgba_to_argb(pixel_t color) {
 //------------------------------------------------------------------------------
 
 
-int init_renderer() {
-	viewport = get_viewport();
-
-	if(viewport == NULL) {
-		log_error("Failed to initalize renderer");
-		return 0;
-	}
-
-	set_clear_color(DEFAULT_CLEAR_COLOR);
-	set_viewport_size(DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_HEIGHT);
-
-	for(uint16_t i = 0; i < MAX_LAYERS; i++) {
-		layers[i] = init_registry(TYPE_SPRITE, sizeof(sprite_t), START_SPRITES_COUNT, INCREASE_SPRITES_STEP);
-		set_on_add(layers[i], on_sprite_add);
-		set_on_update(layers[i], draw_sprite);
-	}
-
-	return 1;
-}
-
-
-//------------------------------------------------------------------------------
-
-
-char is_sprite_visible(const sprite_t* sprite) {
-	int32_t ox = sprite->location.x + camera_offset.x - camera_location.x;
-	int32_t oy = -sprite->location.y + camera_offset.y + camera_location.y;
-
-    if(ox > viewport->width)
-        return 0;
-    
-    if(ox + sprite->section.width < 0)
-        return 0;
-    
-    if(oy > viewport->height)
-        return 0;
-    
-    if(oy + sprite->section.height < 0)
-        return 0;
-
-    return 1;
-}
-
-
-//------------------------------------------------------------------------------
-
-
-void set_pixel(uint16_t x, uint16_t y, pixel_t color) {
+static void set_pixel(uint16_t x, uint16_t y, pixel_t color) {
 	uint16_t by = y * viewport->scale;
 	uint16_t bx = x * viewport->scale;
 	uint16_t w = viewport->width * viewport->scale;
@@ -149,7 +102,7 @@ void set_pixel(uint16_t x, uint16_t y, pixel_t color) {
 //------------------------------------------------------------------------------
 
 
-void clear_buffer() {
+static void clear_buffer() {
 	size_t n = viewport->width * viewport->height * viewport->scale * viewport->scale;
 	for(size_t i = 0; i < n; i++)
 		viewport->buffer[i] = clear_color;
@@ -159,15 +112,15 @@ void clear_buffer() {
 //------------------------------------------------------------------------------
 
 
-void draw_sprite(void* component, float delta) {
+static void draw_sprite(void* component, float delta) {
 	sprite_t* sprite = (sprite_t*)component;
 	int32_t ox = 0;
 	int32_t oy = 0;
 
 	transform_t* transform = get_component_of_type(sprite->owner, TYPE_TRANSFORM);
 	if(transform != NULL) {
-		ox = transform->location.x + camera_offset.x - camera_location.x;
-		oy = -transform->location.y + camera_offset.y + camera_location.y;
+		ox = transform->location.x + sprite->offset.x + camera_offset.x - camera_location.x;
+		oy = -transform->location.y + sprite->offset.y + camera_offset.y + camera_location.y;
 	}
 
 	uint16_t bx = 0;
@@ -191,8 +144,8 @@ void draw_sprite(void* component, float delta) {
 
 	for(uint16_t sx = bx; sx < wx; sx++) {
 		for(uint16_t sy = by; sy < wy; sy++) {
-			int16_t x = ox + sx;
-			int16_t y = oy + sy;
+			uint16_t x = ox + sx;
+			uint16_t y = oy + sy;
 
 			set_pixel(
 				x,
@@ -205,6 +158,30 @@ void draw_sprite(void* component, float delta) {
 			);
 		}
 	}
+}
+
+
+//------------------------------------------------------------------------------
+
+
+int init_renderer() {
+	viewport = get_viewport();
+
+	if(viewport == NULL) {
+		log_error("Failed to initalize renderer");
+		return 0;
+	}
+
+	set_clear_color(DEFAULT_CLEAR_COLOR);
+	set_viewport_size(DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_HEIGHT);
+
+	for(uint16_t i = 0; i < MAX_LAYERS; i++) {
+		layers[i] = init_registry(TYPE_SPRITE, sizeof(sprite_t), START_SPRITES_COUNT, INCREASE_SPRITES_STEP);
+		set_on_add(layers[i], on_sprite_add);
+		set_on_update(layers[i], draw_sprite);
+	}
+
+	return 1;
 }
 
 
