@@ -8,6 +8,7 @@
 
 // Windows entry point stuff.
 #ifdef _WIN32
+#ifdef WIN_MAIN
 #include <windows.h>
 
 // Forward declaration of the real main() function.
@@ -17,7 +18,7 @@ int main(int argc, char** argv);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nShowCmd) {
 	return main(0, NULL);
 }
-
+#endif
 #endif
 
 
@@ -128,9 +129,11 @@ void set_texture(sprite_t* sprite, texture_t* texture);
 texture_t* get_texture(const sprite_t* sprite);
 void set_sprite_section(sprite_t* sprite, rect_t section);
 void set_sprite_centered(sprite_t* sprite, bool centered);
+void set_sprite_offset(sprite_t* sprite, point_t offset);
 
 
 // Transform functions.
 transform_t* create_transform(entity_t* entity);
+point_t float_to_point(float x, float y);
 
 #endif

@@ -2,13 +2,16 @@
 #include "video/texture.h"
 #include "video/renderer.h"
 #include "util/debug.h"
+#include "util/bit_flags.h"
+
+#define SPRITE_FLAG_CENTERED 0
 
 
 //------------------------------------------------------------------------------
 
 
 static bool is_sprite_offset(const sprite_t* sprite) {
-	return sprite->offset.x != 0 || sprite->offset.y != 0;
+	return get_bit(sprite->flags, SPRITE_FLAG_CENTERED);
 }
 
 
@@ -91,7 +94,7 @@ void set_sprite_section(sprite_t* sprite, rect_t section) {
 	sprite->section = section;
 
 	// Re-center sprite, if needed.
-	if(is_sprite_offset(sprite))
+	if(get_bit(sprite->flags, SPRITE_FLAG_CENTERED))
 		set_sprite_centered(sprite, true);
 }
 
@@ -101,8 +104,20 @@ void set_sprite_section(sprite_t* sprite, rect_t section) {
 
 void set_sprite_centered(sprite_t* sprite, bool centered) {
 	if(centered) {
+		sprite->flags = set_bit(sprite->flags, SPRITE_FLAG_CENTERED);
 		sprite->offset.x = -sprite->section.width / 2;
 		sprite->offset.y = -sprite->section.height / 2;
-	} else
+	} else {
+		sprite->flags = clear_bit(sprite->flags, SPRITE_FLAG_CENTERED);
 		sprite->offset = (point_t){ 0, 0 };
+	}
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void set_sprite_offset(sprite_t* sprite, point_t offset) {
+	sprite->flags = clear_bit(sprite->flags, SPRITE_FLAG_CENTERED);
+	sprite->offset = offset;
 }
