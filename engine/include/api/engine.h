@@ -76,9 +76,9 @@ void log_error(const char* format, ...);
 
 
 // Input functions.
-bool is_button_press(key_t key);
-bool is_button_click(key_t key);
-void set_on_button_down(void(*func)(key_t key));
+bool is_button_press(rge_key_t key);
+bool is_button_click(rge_key_t key);
+void set_on_button_down(void(*func)(rge_key_t key));
 
 
 // Window functions.

@@ -26,7 +26,7 @@ uint64_t get_current_time() {
 //------------------------------------------------------------------------------
 
 
-uint8_t system_key_to_rge_key(uint8_t system_key) {
+uint8_t system_key_to_rge_key(uint16_t system_key) {
 	// If system key is a letter.
 	if(system_key > 0x40 && system_key < 0x5B)
 		return system_key - 0x40;

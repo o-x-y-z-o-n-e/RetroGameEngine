@@ -41,6 +41,7 @@ static void on_update_test(void* cmp, float delta) {
 	transform_t* t = (transform_t*)get_component_of_type(data->owner, TYPE_TRANSFORM);
 	
 	t->location.y = (int32_t)(sinf(data->counter) * 64);
+	t->location.x = (int32_t)(cosf(data->counter) * 64);
 }
 
 
@@ -57,8 +58,10 @@ static void on_core_update(float delta) {
 //------------------------------------------------------------------------------
 
 
-static void button_pressed(key_t key) {
-	log_info("%d", key);
+static void button_pressed(rge_key_t key) {
+	if(key == KEY_A) {
+		log_info("%f", test_counter);
+	}
 }
 
 

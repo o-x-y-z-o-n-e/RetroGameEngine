@@ -58,4 +58,4 @@ typedef enum {
 	KEY_BACKSPACE = 51,
 
 	KEY_ESC = 60
-} key_t;
+} rge_key_t;

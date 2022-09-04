@@ -2,6 +2,7 @@
 #include "platform/window.h"
 #include "platform/system.h" // TEMP
 #include "core/core.h"
+#include "core/input.h"
 #include "video/renderer.h"
 #include "util/debug.h"
 
@@ -41,6 +42,32 @@ static uint16_t window_height = 400;
 
 -(void)windowWillClose:(NSNotification*)notification {
     close_core();
+}  
+
+@end
+
+
+@interface View : NSView
+@end
+
+@implementation View
+
+-(bool)acceptsFirstResponder {
+    return YES;
+}
+
+-(void)keyDown:(NSEvent*)event {
+    if(event.type == NSEventTypeKeyDown) {
+        uint8_t key = system_key_to_rge_key(event.keyCode);
+        set_key_state(key, true);
+    }
+}
+
+-(void)keyUp:(NSEvent*)event {
+    if(event.type == NSEventTypeKeyUp) {
+        uint8_t key = system_key_to_rge_key(event.keyCode);
+        set_key_state(key, false);
+    }
 }
 
 @end
@@ -134,11 +161,16 @@ int create_window() {
     NSWindowController* windowController = [[NSWindowController alloc] initWithWindow:window];
 	[windowController autorelease];
 
+    //view = [[[View alloc] initWithFrame:viewRect] autorelease];
+    view = [[View alloc] initWithFrame:NSMakeRect(0, 0, 100, 200)];
+    //[window setContentView:view];
+    [[window contentView] addSubview:view];
+
     [window setDelegate:delegate];
 
-    [window setAcceptsMouseMovedEvents:YES];
+    //[window setAcceptsMouseMovedEvents:YES];
     [window orderFrontRegardless];
-    [window makeKeyAndOrderFront:nil];
+    //[window makeKeyAndOrderFront:nil];
 
     [view setNeedsDisplay:YES];
 
