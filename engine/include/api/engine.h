@@ -124,7 +124,7 @@ void* get_component(const entity_t* entity, uint8_t i);
 
 
 // Sprite functions.
-sprite_t* create_sprite(entity_t* entity, uint8_t layer);
+sprite_t* create_sprite(entity_t* entity, int16_t layer);
 void set_texture(sprite_t* sprite, texture_t* texture);
 texture_t* get_texture(const sprite_t* sprite);
 void set_sprite_section(sprite_t* sprite, rect_t section);

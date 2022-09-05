@@ -23,7 +23,7 @@ void setup_my_scene() {
 	bkg_0 = create_entity();
 	bkg_0_t = create_transform(bkg_0);
 	bkg_0_s = create_sprite(bkg_0, 0);
-
+	
 	bkg_1 = create_entity();
 	bkg_1_t = create_transform(bkg_1);
 	bkg_1_s = create_sprite(bkg_1, 0);
@@ -39,7 +39,7 @@ void setup_my_scene() {
 	set_texture(bkg_0_s, load_texture("res/background_0.png"));
 	bkg_0_t->location.y = 100;
 	bkg_0_t->location.x = -256;
-
+	
 	set_texture(bkg_1_s, load_texture("res/background_1.png"));
 	bkg_1_t->location.y = 36;
 	bkg_1_t->location.x = -256;
@@ -51,6 +51,7 @@ void setup_my_scene() {
 	set_texture(flr_s, load_texture("res/layer_0.png"));
 	flr_t->location.y = 100;
 	flr_t->location.x = -256;
+	
 }
 
 

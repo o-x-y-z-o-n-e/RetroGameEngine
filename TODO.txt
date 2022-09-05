@@ -12,7 +12,6 @@ Change window icon.
 [MACOSX]
 Black bar frame (linear viewport scaling).
 Change window icon.
-Input.
 Audio.
 
 [LINUX]

@@ -5,6 +5,7 @@
 #include "util/types.h"
 
 typedef struct registry_t registry_t;
+typedef struct layer_t layer_t;
 
 typedef struct pixel_t {
 	union {
@@ -21,6 +22,12 @@ typedef struct viewport_t {
 	uint16_t height;
 	uint16_t scale;
 } viewport_t;
+
+typedef struct layer_t {
+	int16_t level;
+	registry_t* sprites;
+	layer_t* next;
+} layer_t;
 
 typedef struct sprite_t sprite_t;
 
@@ -42,6 +49,6 @@ void draw_all();
 void set_clear_color(pixel_t color);
 
 // Misc.
-registry_t* get_layer(uint8_t layer);
+layer_t* get_layer(int16_t level);
 
 #endif

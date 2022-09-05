@@ -7,7 +7,7 @@
 #include "util/debug.h"
 
 #include <stdlib.h>
-#include <stddef.h>
+#include <stdlib.h>
 
 #define MAX_LAYERS 10
 #define DEFAULT_VIEW_WIDTH 320
@@ -22,7 +22,7 @@ static viewport_t* viewport;
 static point_t camera_offset;
 static point_t camera_location = { 0, 0 };
 
-static registry_t* layers[MAX_LAYERS];
+static layer_t* layers_head;
 
 
 //------------------------------------------------------------------------------
@@ -164,6 +164,78 @@ static void draw_sprite(void* component, float delta) {
 //------------------------------------------------------------------------------
 
 
+static layer_t* init_layer(int16_t level) {
+	layer_t* layer = malloc(sizeof(layer_t));
+	layer->level = level;
+	layer->sprites = init_registry(TYPE_SPRITE, sizeof(sprite_t), START_SPRITES_COUNT, INCREASE_SPRITES_STEP);
+	layer->next = NULL;
+
+	set_on_add(layer->sprites, on_sprite_add);
+	set_on_update(layer->sprites, draw_sprite);
+
+	return layer;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+static layer_t* create_layer(int16_t level) {
+	// Insert at head.
+	if(level < layers_head->level) {
+		layer_t* layer = init_layer(level);
+		layer->next = layers_head;
+		layers_head = layer;
+		return layer;
+	}
+
+	layer_t* previous = NULL;
+	layer_t* current = layers_head;
+	while(current != NULL) {
+		if(level == current->level)
+			return current;
+
+		if(previous == NULL)
+			goto next;
+
+		// Insert in between.
+		if(level > previous->level && level < current->level) {
+			layer_t* layer = init_layer(level);
+			layer->next = previous->next;
+			previous->next = layer;
+			return layer;
+		}
+
+	next:
+		previous = current;
+		current = current->next;
+	}
+
+	// Insert at tail.
+	layer_t* layer = init_layer(level);
+	previous->next = layer;
+	return layer;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+layer_t* get_layer(int16_t level) {
+	layer_t* current = layers_head;
+	while(current != NULL) {
+		if(current->level == level)
+			return current;
+
+		current = current->next;
+	}
+	return create_layer(level);
+}
+
+
+//------------------------------------------------------------------------------
+
+
 int init_renderer() {
 	viewport = get_viewport();
 
@@ -175,11 +247,7 @@ int init_renderer() {
 	set_clear_color(DEFAULT_CLEAR_COLOR);
 	set_viewport_size(DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_HEIGHT);
 
-	for(uint16_t i = 0; i < MAX_LAYERS; i++) {
-		layers[i] = init_registry(TYPE_SPRITE, sizeof(sprite_t), START_SPRITES_COUNT, INCREASE_SPRITES_STEP);
-		set_on_add(layers[i], on_sprite_add);
-		set_on_update(layers[i], draw_sprite);
-	}
+	layers_head = init_layer(0);
 
 	return 1;
 }
@@ -191,8 +259,11 @@ int init_renderer() {
 void draw_all() {
 	clear_buffer();
 
-    for(uint8_t i = 0; i < MAX_LAYERS; i++)
-        update_registry(layers[i], 0);
+	layer_t* current = layers_head;
+	while(current != NULL) {
+		update_registry(current->sprites, 0);
+		current = current->next;
+	}
 
 	refresh_window();
 }
@@ -255,16 +326,3 @@ point_t get_camera_location() {
 
 
 void set_clear_color(pixel_t color) { clear_color = color; }
-
-
-//------------------------------------------------------------------------------
-
-
-registry_t* get_layer(uint8_t layer) {
-	if(layer >= MAX_LAYERS) {
-		log_error("Layer does not exist");
-		return NULL;
-	}
-
-	return layers[layer]; //TODO
-}

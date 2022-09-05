@@ -42,13 +42,13 @@ void set_texture(sprite_t* sprite, texture_t* texture) {
 //------------------------------------------------------------------------------
 
 
-sprite_t* create_sprite(entity_t* entity, uint8_t layer) {
+sprite_t* create_sprite(entity_t* entity, int16_t layer) {
 	if(entity == NULL) {
 		log_error("No entity passed");
 		return NULL;
 	}
 
-	registry_t* registry = get_layer(layer);
+	registry_t* registry = get_layer(layer)->sprites;
 	if(registry == NULL)
 		return NULL;
 
