@@ -8,8 +8,12 @@
 #include "util/debug.h"
 
 #include <stdlib.h>
-
 #include <math.h>
+
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+
 
 const float RENDER_FPS_TARGET = 1.0F / 60;
 
@@ -46,6 +50,24 @@ int init_core() {
 		return 0;
 
 	has_init = 1;
+
+	// TEST
+	lua_State* L = luaL_newstate();
+
+	int r = luaL_dostring(L, "a = 7 + 11");
+
+	if(r == LUA_OK) {
+		lua_getglobal(L, "a");
+		if(lua_isnumber(L, -1)) {
+			int a = (int)lua_tonumber(L, -1);
+			log_info("a = %d", a);
+		} else {
+			log_error("a is not number");
+		}
+	} else {
+		log_error("Lua failed");
+	}
+	// TEST
 
 	return 1;
 }

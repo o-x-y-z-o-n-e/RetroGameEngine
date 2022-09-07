@@ -6,12 +6,6 @@
 
 #define TYPE_TRANSFORM 0
 
-typedef struct entity_t entity_t;
-
-typedef struct transform_t {
-	point_t location;
-} transform_t;
-
 transform_t* create_transform(entity_t* entity);
 point_t float_to_point(float x, float y);
 

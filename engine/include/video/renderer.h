@@ -4,17 +4,7 @@
 #include <stdint.h>
 #include "util/types.h"
 
-typedef struct registry_t registry_t;
 typedef struct layer_t layer_t;
-
-typedef struct pixel_t {
-	union {
-		struct {
-			uint8_t r, g, b, a;
-		};
-		uint32_t p;
-	};
-} pixel_t;
 
 typedef struct viewport_t {
 	pixel_t* buffer;
@@ -28,8 +18,6 @@ typedef struct layer_t {
 	registry_t* sprites;
 	layer_t* next;
 } layer_t;
-
-typedef struct sprite_t sprite_t;
 
 #define COLOR_RGB(R, G, B) (pixel_t){R, G, B, 255}
 #define COLOR_RGBA(R, G, B, A) (pixel_t){R, G, B, A}

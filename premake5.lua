@@ -12,10 +12,12 @@ workspace "Starship"
 
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
-externaldir = {}
+externalsrc = {}
 externalinc = {}
 
 externalinc["stb_image"] = "engine/vendor/stb_image/include"
+externalinc["lua"] = "engine/vendor/lua/include/lua"
+externalsrc["lua"] = "engine/vendor/lua/src"
 
 
 project "Engine"
@@ -23,22 +25,23 @@ project "Engine"
     kind "StaticLib"
     language "C"
 
-
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("tmp/" .. outputdir .. "/%{prj.name}")
 
 
     files {
-		"%{prj.name}/include/**.h",
-        "%{prj.name}/src/**.c"
+		"engine/include/**.h",
+        "engine/src/**.c",
+		externalsrc["lua"] .. "/**.c"
     }
 
 
     includedirs {
-        "%{prj.name}/include",
-        "%{prj.name}/include/**",
+        "engine/include",
+        "engine/include/**",
         
-		externalinc["stb_image"]
+		externalinc["stb_image"],
+		externalinc["lua"]
     }
 	
 	
