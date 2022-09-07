@@ -20,5 +20,5 @@ void* create_component(entity_t* entity, registry_t* registry);
 void remove_component(entity_t* entity, uint8_t index);
 void* get_component(const entity_t* entity, uint8_t index);
 uint8_t get_component_count(const entity_t* entity);
-uint8_t get_component_index(const entity_t* entity, void* component);
+uint8_t get_component_index(const entity_t* entity, const void* component);
 void* get_component_of_type(const entity_t* entity, uint8_t type);
