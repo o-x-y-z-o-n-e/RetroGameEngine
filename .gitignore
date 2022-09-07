@@ -1,6 +1,6 @@
-bin/
-tmp/
-log/
+/bin/
+/tmp/
+/log/
 
 # Visual Studio
 .vs/

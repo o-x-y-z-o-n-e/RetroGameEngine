@@ -1,7 +1,8 @@
 [GENERAL]
 Change ptr_buffer_t to use free_stack instead of next_check.
-
 Transform inheritance.
+Split api to sub-header files.
+
 Physics/collision system.
 UI module.
 
