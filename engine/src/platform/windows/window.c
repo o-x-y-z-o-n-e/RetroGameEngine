@@ -4,7 +4,6 @@
 #include "core/core.h"
 #include "core/input.h"
 #include "video/renderer.h"
-#include "util/debug.h"
 
 #include <windows.h>
 #include <stdbool.h>
@@ -157,7 +156,7 @@ static LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 //------------------------------------------------------------------------------
 
 
-int create_window() {
+int rge_window_create() {
 	if(handle != NULL) {
 		rge_log_error("Window already exists!");
 		return 0;
@@ -252,7 +251,7 @@ void rge_window_refresh() {
 
 void rge_window_set_viewport(uint16_t width, uint16_t height) {
 	if(handle == NULL) {
-		log_error("Window not created yet");
+		rge_log_error("Window not created yet");
 		return;
 	}
 

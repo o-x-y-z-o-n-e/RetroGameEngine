@@ -14,7 +14,7 @@ static int32_t round(float f) {
 	else if(l < -0.5F)
 		i--;
 
-	return i;
+	return (int32_t)i;
 }
 
 
