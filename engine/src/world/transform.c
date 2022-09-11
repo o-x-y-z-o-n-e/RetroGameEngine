@@ -21,16 +21,16 @@ static int32_t round(float f) {
 //------------------------------------------------------------------------------
 
 
-transform_t* create_transform(entity_t* entity) {
-	registry_t* registry = get_registry_of_type(TYPE_TRANSFORM);
-	return (transform_t*)create_component(entity, registry);
+transform_t* rge_transform_create(entity_t* entity) {
+	registry_t* registry = rge_registry_get_from_type(TYPE_TRANSFORM);
+	return (transform_t*)rge_component_create(entity, registry);
 }
 
 
 //------------------------------------------------------------------------------
 
 
-point_t float_to_point(float x, float y) {
+point_t rge_float_to_point(float x, float y) {
 	return (point_t) {
 		round(x),
 		round(y)

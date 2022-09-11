@@ -1,12 +1,13 @@
+#include "api/rge.h"
 #include "video/texture.h"
-#include "video/renderer.h"
-#include "util/debug.h"
-#include <stdlib.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #define TABLE_SIZE 4096
+
+
+//------------------------------------------------------------------------------
 
 
 static texture_t hash_table[TABLE_SIZE];
@@ -15,7 +16,7 @@ static texture_t hash_table[TABLE_SIZE];
 //------------------------------------------------------------------------------
 
 
-pixel_t sample_texture(texture_t* texture, uint16_t x, uint16_t y) {
+pixel_t rge_texture_sample(texture_t* texture, uint16_t x, uint16_t y) {
 	return texture->data[y * texture->width + x];
 }
 
@@ -44,7 +45,7 @@ static uint8_t* rgb_to_rgba(const uint8_t* data, int width, int height) {
 //------------------------------------------------------------------------------
 
 
-int init_textures() {
+int rge_texture_init() {
 	for(size_t i = 0; i < TABLE_SIZE; i++)
 		hash_table[i].hash = 0;
 
@@ -88,7 +89,7 @@ static texture_t* get_texture_slot(size_t hash) {
 //------------------------------------------------------------------------------
 
 
-void free_texture(texture_t* texture) {
+void rge_texture_free(texture_t* texture) {
 	free(texture->data);
 
 	texture->width = 0;
@@ -101,7 +102,7 @@ void free_texture(texture_t* texture) {
 //------------------------------------------------------------------------------
 
 
-texture_t* load_texture(const char* path) {
+texture_t* rge_texture_load(const char* path) {
 	size_t hash = get_str_hash(path);
 
 	texture_t* texture = get_texture_slot(hash);
@@ -111,7 +112,7 @@ texture_t* load_texture(const char* path) {
 	int width, height, channels;
 	uint8_t* data = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
 	if(!data) {
-		log_error("Texture could not be loaded: %s", path);
+		rge_log_error("Texture could not be loaded: %s", path);
 		return NULL;
 	}
 
@@ -132,7 +133,7 @@ texture_t* load_texture(const char* path) {
 //------------------------------------------------------------------------------
 
 
-void get_texture_size(const texture_t* texture, uint16_t* w, uint16_t* h) {
+void rge_texture_get_size(const texture_t* texture, uint16_t* w, uint16_t* h) {
 	*w = texture->width;
 	*h = texture->height;
 }
@@ -141,7 +142,7 @@ void get_texture_size(const texture_t* texture, uint16_t* w, uint16_t* h) {
 //------------------------------------------------------------------------------
 
 
-uint16_t get_texture_width(const texture_t* texture) {
+uint16_t rge_texture_get_width(const texture_t* texture) {
 	return texture->width;
 }
 
@@ -149,6 +150,6 @@ uint16_t get_texture_width(const texture_t* texture) {
 //------------------------------------------------------------------------------
 
 
-uint16_t get_texture_height(const texture_t* texture) {
+uint16_t rge_texture_get_height(const texture_t* texture) {
 	return texture->height;
 }

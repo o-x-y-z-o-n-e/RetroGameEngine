@@ -3,6 +3,7 @@
 /log/
 
 # Visual Studio
+.vscode/
 .vs/
 .vsconfig
 *.vcxproj

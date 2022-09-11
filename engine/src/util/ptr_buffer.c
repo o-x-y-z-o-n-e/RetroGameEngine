@@ -1,12 +1,11 @@
 #include "util/ptr_buffer.h"
-#include "util/debug.h"
 #include <stdlib.h>
 
 
 //------------------------------------------------------------------------------
 
 
-void free_ptr_buffer(ptr_buffer_t* ptr_buffer) {
+void rge_ptr_buffer_free(ptr_buffer_t* ptr_buffer) {
 	free(ptr_buffer->buffer);
 	ptr_buffer->buffer = NULL;
 	ptr_buffer->buffer_size = 0;
@@ -18,7 +17,7 @@ void free_ptr_buffer(ptr_buffer_t* ptr_buffer) {
 //------------------------------------------------------------------------------
 
 
-ptr_buffer_t init_ptr_buffer(uint16_t realloc_step) {
+ptr_buffer_t rge_ptr_buffer_init(uint16_t realloc_step) {
 	ptr_buffer_t ptr_buffer;
 
 	ptr_buffer.buffer = calloc(realloc_step, sizeof(void*));
@@ -33,7 +32,7 @@ ptr_buffer_t init_ptr_buffer(uint16_t realloc_step) {
 //------------------------------------------------------------------------------
 
 
-uint32_t get_ptr_buffer_next(ptr_buffer_t* ptr_buffer) {
+uint32_t rge_ptr_buffer_get_next(ptr_buffer_t* ptr_buffer) {
 	// Find next available pointer.
 	while(ptr_buffer->next_check < ptr_buffer->buffer_size) {
 		if(ptr_buffer->buffer[ptr_buffer->next_check] == NULL)
@@ -48,10 +47,8 @@ uint32_t get_ptr_buffer_next(ptr_buffer_t* ptr_buffer) {
 		// Create new buffer.
 		uint32_t new_size = ptr_buffer->buffer_size + ptr_buffer->buffer_step;
 		void** new_buffer = realloc(ptr_buffer->buffer, sizeof(void*) * new_size);
-		if(new_buffer == NULL) {
-			log_error("Failed to resize pointer buffer");
+		if(new_buffer == NULL)
 			return -1;
-		}
 
 		// Clear the new alloc memory.
 		for(uint32_t i = ptr_buffer->buffer_size; i < new_size; i++)
@@ -69,8 +66,8 @@ uint32_t get_ptr_buffer_next(ptr_buffer_t* ptr_buffer) {
 //------------------------------------------------------------------------------
 
 
-uint32_t add_ptr_buffer(ptr_buffer_t* ptr_buffer, void* item) {
-	uint32_t index = get_ptr_buffer_next(ptr_buffer);
+uint32_t rge_ptr_buffer_add(ptr_buffer_t* ptr_buffer, void* item) {
+	uint32_t index = rge_ptr_buffer_get_next(ptr_buffer);
 	ptr_buffer->buffer[index] = item;
 
 	return index;
@@ -80,12 +77,10 @@ uint32_t add_ptr_buffer(ptr_buffer_t* ptr_buffer, void* item) {
 //------------------------------------------------------------------------------
 
 
-void remove_ptr_buffer(ptr_buffer_t* ptr_buffer, void* item) {
+void rge_ptr_buffer_remove(ptr_buffer_t* ptr_buffer, void* item) {
 	uint32_t index = (uint32_t)(((size_t)ptr_buffer->buffer - (size_t)item) / sizeof(void*));
-	if(index < 0 || index >= ptr_buffer->buffer_size) {
-		log_error("Failed to remove pointer: Index out of bounds");
+	if(index < 0 || index >= ptr_buffer->buffer_size)
 		return;
-	}
 
 	if(index < ptr_buffer->next_check)
 		ptr_buffer->next_check = index;
@@ -97,7 +92,7 @@ void remove_ptr_buffer(ptr_buffer_t* ptr_buffer, void* item) {
 //------------------------------------------------------------------------------
 
 
-void* get_ptr_buffer(ptr_buffer_t* ptr_buffer, uint32_t i) {
+void* rge_ptr_buffer_get(ptr_buffer_t* ptr_buffer, uint32_t i) {
 	return ptr_buffer->buffer[i];
 }
 
@@ -105,7 +100,7 @@ void* get_ptr_buffer(ptr_buffer_t* ptr_buffer, uint32_t i) {
 //------------------------------------------------------------------------------
 
 
-char contains_ptr_buffer(ptr_buffer_t* ptr_buffer, void* item) {
+char rge_ptr_buffer_contains(ptr_buffer_t* ptr_buffer, void* item) {
 	uint32_t index = (uint32_t)(((size_t)ptr_buffer->buffer - (size_t)item) / sizeof(void*));
 	return index >= 0 && index < ptr_buffer->buffer_size;
 }

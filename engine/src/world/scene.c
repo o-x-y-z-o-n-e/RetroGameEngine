@@ -1,11 +1,10 @@
+#include "api/rge.h"
 #include "world/scene.h"
 #include "world/transform.h"
 #include "util/ptr_buffer.h"
-#include "util/debug.h"
 #include "core/core.h"
 
 #include <stdlib.h>
-#include <stdint.h>
 
 #define ENTITY_BUFFER_STEP 25
 #define REGISTRY_BUFFER_STEP 25
@@ -16,15 +15,15 @@ struct {
 	ptr_buffer_t entities;
 } static scene;
 
-#define CHECK_INIT if(!scene.has_init) { log_error("Scene not initialized"); return; }
-#define CHECK_INIT_VAL(R) if(!scene.has_init) { log_error("Scene not initialized"); return R; }
+#define CHECK_INIT if(!scene.has_init) { rge_log_error("Scene not initialized"); return; }
+#define CHECK_INIT_VAL(R) if(!scene.has_init) { rge_log_error("Scene not initialized"); return R; }
 
 
 //------------------------------------------------------------------------------
 
 
 static void create_registries() {
-	create_registry(TYPE_TRANSFORM, sizeof(transform_t));
+	rge_registry_create(TYPE_TRANSFORM, sizeof(transform_t));
 }
 
 
@@ -32,17 +31,17 @@ static void create_registries() {
 
 
 static void alloc_scene() {
-	scene.entities = init_ptr_buffer(ENTITY_BUFFER_STEP);
-	scene.registries = init_ptr_buffer(REGISTRY_BUFFER_STEP);
+	scene.entities = rge_ptr_buffer_init(ENTITY_BUFFER_STEP);
+	scene.registries = rge_ptr_buffer_init(REGISTRY_BUFFER_STEP);
 }
 
 
 //------------------------------------------------------------------------------
 
 
-int init_scene() {
+int rge_scene_init() {
 	if(scene.has_init) {
-		log_error("Scene already initialized");
+		rge_log_error("Scene already initialized");
 		return 0;
 	}
 
@@ -58,26 +57,26 @@ int init_scene() {
 //------------------------------------------------------------------------------
 
 
-void clear_scene() {
+void rge_scene_clear() {
 	CHECK_INIT;
 
 	// Free each entity.
 	for(uint32_t i = 0; i < scene.entities.buffer_size; i++) {
-		entity_t* entity = get_ptr_buffer(&scene.entities, i);
+		entity_t* entity = rge_ptr_buffer_get(&scene.entities, i);
 		if(entity != NULL)
-			free_entity(entity);
+			rge_entity_free(entity);
 	}
 
 	// Free each registry.
 	for(uint32_t i = 0; i < scene.registries.buffer_size; i++) {
-		registry_t* registry = get_ptr_buffer(&scene.registries, i);
+		registry_t* registry = rge_ptr_buffer_get(&scene.registries, i);
 		if(registry != NULL)
-			free_registry(registry);
+			rge_registry_free(registry);
 	}
 
 	// Free old entity & registry lists.
-	free_ptr_buffer(&scene.registries);
-	free_ptr_buffer(&scene.entities);
+	rge_ptr_buffer_free(&scene.registries);
+	rge_ptr_buffer_free(&scene.entities);
 	
 	// Create new scene.
 	alloc_scene();
@@ -88,13 +87,13 @@ void clear_scene() {
 //------------------------------------------------------------------------------
 
 
-void update_scene(float delta) {
+void rge_scene_update(float delta) {
 	CHECK_INIT;
 
 	for(uint32_t i = 0; i < scene.registries.buffer_size; i++) {
 		registry_t* reg = scene.registries.buffer[i];
 		if(reg != NULL)
-			update_registry(reg, delta);
+			rge_registry_update(reg, delta);
 	}
 }
 
@@ -102,7 +101,7 @@ void update_scene(float delta) {
 //------------------------------------------------------------------------------
 
 
-void update_registry(const registry_t* registry, float delta) {
+void rge_registry_update(const registry_t* registry, float delta) {
 	if(registry->on_update == NULL)
 		return;
 
@@ -110,7 +109,7 @@ void update_registry(const registry_t* registry, float delta) {
 		if(registry->owners[j] == NULL)
 			continue;
 
-		void* cmp = get_data_buffer(&registry->components, j);
+		void* cmp = rge_data_buffer_get(&registry->components, j);
 		entity_t* entity = registry->owners[j];
 
 		registry->on_update(cmp, delta);
@@ -131,11 +130,11 @@ static entity_t* init_entity() {
 //------------------------------------------------------------------------------
 
 
-entity_t* create_entity() {
+entity_t* rge_entity_create() {
 	CHECK_INIT_VAL(NULL);
 
 	entity_t* entity = init_entity();
-	add_ptr_buffer(&scene.entities, entity);
+	rge_ptr_buffer_add(&scene.entities, entity);
 
 	return entity;
 }
@@ -144,7 +143,7 @@ entity_t* create_entity() {
 //------------------------------------------------------------------------------
 
 
-void free_entity(entity_t* entity) {
+void rge_entity_free(entity_t* entity) {
 	CHECK_INIT;
 
 	// Free components.
@@ -153,16 +152,16 @@ void free_entity(entity_t* entity) {
 		
 		// Call dispose fucntion for component.
 		if(cmp_ref.registry->on_dispose != NULL)
-			cmp_ref.registry->on_dispose(get_component(entity, i));
+			cmp_ref.registry->on_dispose(rge_component_get(entity, i));
 
 		// Remove component from registry.
-		remove_data_buffer(&cmp_ref.registry->components, cmp_ref.index);
+		rge_data_buffer_remove(&cmp_ref.registry->components, cmp_ref.index);
 		cmp_ref.registry->owners[cmp_ref.index] = NULL;
 	}
 	free(entity->components);
 
 	// Remove from entity list.
-	remove_ptr_buffer(&scene.entities, entity);
+	rge_ptr_buffer_remove(&scene.entities, entity);
 	
 	// Free entity.
 	free(entity);
@@ -174,14 +173,14 @@ void free_entity(entity_t* entity) {
 
 static cmp_ref_t alloc_component(registry_t* registry) {
 	// Allocate component block.
-	uint32_t index = add_data_buffer(&registry->components);
+	uint32_t index = rge_data_buffer_add(&registry->components);
 
 	// Resize registry owners array, if needed.
 	if(registry->owners_size < registry->components.buffer_size) {
 		entity_t** new_owners = realloc(registry->owners, sizeof(entity_t*) * registry->components.buffer_size);
 		if(new_owners == NULL) {
-			log_error("Oh no!");
-			crash_core(1);
+			rge_log_error("Oh no!");
+			rge_core_crash(1);
 		}
 
 		for(uint32_t i = registry->owners_size; i < registry->components.buffer_size; i++)
@@ -220,7 +219,7 @@ static uint8_t add_component(entity_t* entity, cmp_ref_t cmp_ref) {
 
 	// Call component on add function.
 	if(cmp_ref.registry->on_add != NULL)
-		cmp_ref.registry->on_add(get_component(entity, index), entity);
+		cmp_ref.registry->on_add(rge_component_get(entity, index), entity);
 
 	return index;
 }
@@ -229,9 +228,9 @@ static uint8_t add_component(entity_t* entity, cmp_ref_t cmp_ref) {
 //------------------------------------------------------------------------------
 
 
-uint8_t get_component_index(const entity_t* entity, const void* component) {
+uint8_t rge_component_get_index(const entity_t* entity, const void* component) {
 	for(uint8_t i = 0; i < entity->component_count; i++)
-		if(get_component(entity, i) == component)
+		if(rge_component_get(entity, i) == component)
 			return i;
 	
 	return 255;
@@ -241,7 +240,7 @@ uint8_t get_component_index(const entity_t* entity, const void* component) {
 //------------------------------------------------------------------------------
 
 
-void remove_component(entity_t* entity, uint8_t i) {
+void rge_component_remove(entity_t* entity, uint8_t i) {
 	if(i >= entity->component_count)
 		return;
 
@@ -250,10 +249,10 @@ void remove_component(entity_t* entity, uint8_t i) {
 
 	// Call dispose fucntion for component.
 	if(registry->on_dispose != NULL)
-		registry->on_dispose(get_component(entity, i));
+		registry->on_dispose(rge_component_get(entity, i));
 
 	// Remove component from registry.
-	remove_data_buffer(&registry->components, cmp_ref.index);
+	rge_data_buffer_remove(&registry->components, cmp_ref.index);
 	registry->owners[cmp_ref.index] = NULL;
 	
 	// Resize component references on entity.
@@ -280,53 +279,53 @@ void remove_component(entity_t* entity, uint8_t i) {
 //------------------------------------------------------------------------------
 
 
-void* create_component(entity_t* entity, registry_t* registry) {
+void* rge_component_create(entity_t* entity, registry_t* registry) {
 	CHECK_INIT_VAL(NULL);
 
 	if(registry == NULL) {
-		log_error("No component buffer passed");
+		rge_log_error("No component buffer passed");
 		return NULL;
 	}
 
 	if(entity == NULL) {
-		log_error("No entity passed");
+		rge_log_error("No entity passed");
 		return NULL;
 	}
 
 	cmp_ref_t cmp_ref = alloc_component(registry);
 	uint8_t index = add_component(entity, cmp_ref);
 
-	return get_component(entity, index);
+	return rge_component_get(entity, index);
 }
 
 
 //------------------------------------------------------------------------------
 
 
-void* get_component(const entity_t* entity, uint8_t i) {
+void* rge_component_get(const entity_t* entity, uint8_t i) {
 	if(entity == NULL) {
-		log_error("No entity passed");
+		rge_log_error("No entity passed");
 		return NULL;
 	}
 
 	if(i >= entity->component_count) {
-		log_error("Component index out of bounds");
+		rge_log_error("Component index out of bounds");
 		return NULL;
 	}
 
 	cmp_ref_t ref = entity->components[i];
-	return get_data_buffer(&ref.registry->components, ref.index);
+	return rge_data_buffer_get(&ref.registry->components, ref.index);
 }
 
 
 //------------------------------------------------------------------------------
 
 
-registry_t* create_registry(uint8_t type, size_t element_size) {
+registry_t* rge_registry_create(uint8_t type, size_t element_size) {
 	CHECK_INIT_VAL(NULL);
 
-	registry_t* registry = init_registry(type, element_size, 25, 25); // TODO: custom start & increase.
-	add_ptr_buffer(&scene.registries, registry);
+	registry_t* registry = rge_registry_init(type, element_size, 25, 25); // TODO: custom start & increase.
+	rge_ptr_buffer_add(&scene.registries, registry);
 
 	return registry;
 }
@@ -335,15 +334,15 @@ registry_t* create_registry(uint8_t type, size_t element_size) {
 //------------------------------------------------------------------------------
 
 
-registry_t* init_registry(uint8_t type, size_t element_size, uint32_t start_size, uint32_t increase_step) {
+registry_t* rge_registry_init(uint8_t type, size_t element_size, uint32_t start_size, uint32_t increase_step) {
 	registry_t* registry = calloc(1, sizeof(registry_t));
 	if(registry == NULL) {
-		log_error("Failed to create component buffer");
+		rge_log_error("Failed to create component buffer");
 		return NULL;
 	}
 
 	registry->type = type;
-	registry->components = init_data_buffer(element_size, start_size, increase_step);
+	registry->components = rge_data_buffer_init(element_size, start_size, increase_step);
 	registry->owners = calloc(start_size, sizeof(entity_t*));
 	registry->owners_size = start_size;
 	registry->on_add = NULL;
@@ -357,12 +356,12 @@ registry_t* init_registry(uint8_t type, size_t element_size, uint32_t start_size
 //------------------------------------------------------------------------------
 
 
-void free_registry(registry_t* registry) {
+void rge_registry_free(registry_t* registry) {
 	// Remove from registry list.
-	remove_ptr_buffer(&scene.registries, registry);
+	rge_ptr_buffer_remove(&scene.registries, registry);
 
 	// Free registry.
-	free_data_buffer(&registry->components);
+	rge_data_buffer_free(&registry->components);
 	free(registry->owners);
 	free(registry);
 }
@@ -371,9 +370,9 @@ void free_registry(registry_t* registry) {
 //------------------------------------------------------------------------------
 
 
-uint8_t get_component_count(const entity_t* entity) {
+uint8_t rge_component_get_count(const entity_t* entity) {
 	if(entity == NULL) {
-		log_error("No entity passed");
+		rge_log_error("No entity passed");
 		return 0;
 	}
 
@@ -384,7 +383,7 @@ uint8_t get_component_count(const entity_t* entity) {
 //------------------------------------------------------------------------------
 
 
-void set_on_add(registry_t* registry, void (*func)(void* cmp, entity_t* entity)) {
+void rge_registry_set_on_add(registry_t* registry, void (*func)(void* cmp, entity_t* entity)) {
 	registry->on_add = func;
 }
 
@@ -392,7 +391,7 @@ void set_on_add(registry_t* registry, void (*func)(void* cmp, entity_t* entity))
 //------------------------------------------------------------------------------
 
 
-void set_on_update(registry_t* registry, void (*func)(void* cmp, float delta)) {
+void rge_registry_set_on_update(registry_t* registry, void (*func)(void* cmp, float delta)) {
 	registry->on_update = func;
 }
 
@@ -400,7 +399,7 @@ void set_on_update(registry_t* registry, void (*func)(void* cmp, float delta)) {
 //------------------------------------------------------------------------------
 
 
-void set_on_dispose(registry_t* registry, void (*func)(void* cmp)) {
+void rge_registry_set_on_dispose(registry_t* registry, void (*func)(void* cmp)) {
 	registry->on_dispose = func;
 }
 
@@ -408,15 +407,15 @@ void set_on_dispose(registry_t* registry, void (*func)(void* cmp)) {
 //------------------------------------------------------------------------------
 
 
-void* get_component_of_type(const entity_t* entity, uint8_t type) {
+void* rge_component_get_from_type(const entity_t* entity, uint8_t type) {
 	if(entity == NULL) {
-		log_error("No entity passed");
+		rge_log_error("No entity passed");
 		return NULL;
 	}
 
 	for(uint8_t i = 0; i < entity->component_count; i++)
 		if(entity->components[i].registry->type == type)
-			return get_component(entity, i);
+			return rge_component_get(entity, i);
 	
 	return NULL;
 }
@@ -425,7 +424,7 @@ void* get_component_of_type(const entity_t* entity, uint8_t type) {
 //------------------------------------------------------------------------------
 
 
-registry_t* get_registry_of_type(uint8_t type) {
+registry_t* rge_registry_get_from_type(uint8_t type) {
 	for(uint32_t i = 0; i < scene.registries.buffer_size; i++)
 		if(scene.registries.buffer[i] != NULL)
 			if(((registry_t*)(scene.registries.buffer[i]))->type == type)

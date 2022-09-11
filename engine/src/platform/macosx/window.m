@@ -1,10 +1,10 @@
 #ifdef SYS_MACOSX
+#include "api/rge.h"
 #include "platform/window.h"
 #include "platform/system.h" // TEMP
 #include "core/core.h"
 #include "core/input.h"
 #include "video/renderer.h"
-#include "util/debug.h"
 
 #include <stdlib.h>
 
@@ -41,7 +41,7 @@ static uint16_t window_height = 400;
 }
 
 -(void)windowWillClose:(NSNotification*)notification {
-    close_core();
+    rge_core_close();
 }  
 
 @end
@@ -58,15 +58,15 @@ static uint16_t window_height = 400;
 
 -(void)keyDown:(NSEvent*)event {
     if(event.type == NSEventTypeKeyDown) {
-        uint8_t key = system_key_to_rge_key(event.keyCode);
-        set_key_state(key, true);
+        uint8_t key = rge_system_parse_key(event.keyCode);
+        rge_input_set_state(key, true);
     }
 }
 
 -(void)keyUp:(NSEvent*)event {
     if(event.type == NSEventTypeKeyUp) {
-        uint8_t key = system_key_to_rge_key(event.keyCode);
-        set_key_state(key, false);
+        uint8_t key = rge_system_parse_key(event.keyCode);
+        rge_input_set_state(key, false);
     }
 }
 
@@ -121,7 +121,7 @@ static void create_frame_buffer() {
 
 
 // TEMP: move to system.m
-int init_system() {
+int rge_system_init() {
     app = [NSApplication sharedApplication];
 
     delegate = [[AppDelegate alloc] init];
@@ -138,7 +138,7 @@ int init_system() {
 //------------------------------------------------------------------------------
 
 
-int create_window() {
+int rge_window_create() {
     NSUInteger windowStyle = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable;
 
     NSRect screenRect = [[NSScreen mainScreen] frame];
@@ -185,7 +185,7 @@ int create_window() {
 //------------------------------------------------------------------------------
 
 
-void close_window() {
+void rge_window_close() {
     [window close];
     [window release];
 }
@@ -194,7 +194,7 @@ void close_window() {
 //------------------------------------------------------------------------------
 
 
-void set_viewport(uint16_t width, uint16_t height) {
+void rge_window_set_viewport(uint16_t width, uint16_t height) {
     frame.viewport.width = width;
 	frame.viewport.height = height;
 
@@ -205,7 +205,7 @@ void set_viewport(uint16_t width, uint16_t height) {
 //------------------------------------------------------------------------------
 
 
-void poll_window_events() {
+void rge_window_poll_events() {
     @autoreleasepool {
         NSEvent* ev;
         do {
@@ -225,7 +225,7 @@ void poll_window_events() {
 //------------------------------------------------------------------------------
 
 
-void refresh_window() {
+void rge_window_refresh() {
     CGImageRef image = CGBitmapContextCreateImage(gc);
     window.contentView.wantsLayer = YES;
     window.contentView.layer.contents = (__bridge id)image;
@@ -236,7 +236,7 @@ void refresh_window() {
 //------------------------------------------------------------------------------
 
 
-viewport_t* get_viewport() {
+viewport_t* rge_window_get_viewport() {
 	return &frame.viewport;
 }
 
@@ -244,7 +244,7 @@ viewport_t* get_viewport() {
 //------------------------------------------------------------------------------
 
 
-void set_title_window(const char* title) {
+void rge_window_set_title(const char* title) {
     [window setTitle:@(title)];
 }
 

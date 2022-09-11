@@ -4,7 +4,7 @@
 #include <windows.h>
 
 
-int init_system() {
+int rge_system_init() {
 	
 	return 1;
 }
@@ -13,7 +13,7 @@ int init_system() {
 //------------------------------------------------------------------------------
 
 
-uint64_t get_current_time() {
+uint64_t rge_system_get_time() {
 	LARGE_INTEGER freq;
 	LARGE_INTEGER counter;
 	QueryPerformanceFrequency(&freq);
@@ -26,7 +26,7 @@ uint64_t get_current_time() {
 //------------------------------------------------------------------------------
 
 
-uint8_t system_key_to_rge_key(uint16_t system_key) {
+uint8_t rge_system_parse_key(uint16_t system_key) {
 	// If system key is a letter.
 	if(system_key > 0x40 && system_key < 0x5B)
 		return system_key - 0x40;

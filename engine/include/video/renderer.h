@@ -2,9 +2,10 @@
 #define RENDERER_H
 
 #include <stdint.h>
-#include "util/types.h"
 
 typedef struct layer_t layer_t;
+typedef struct registry_t registry_t;
+typedef struct pixel_t pixel_t;
 
 typedef struct viewport_t {
 	pixel_t* buffer;
@@ -19,24 +20,8 @@ typedef struct layer_t {
 	layer_t* next;
 } layer_t;
 
-#define COLOR_RGB(R, G, B) (pixel_t){R, G, B, 255}
-#define COLOR_RGBA(R, G, B, A) (pixel_t){R, G, B, A}
-
-// Init.
-int init_renderer();
-
-// Viewpoint.
-uint16_t get_view_width();
-uint16_t get_view_height();
-void set_viewport_size(uint16_t width, uint16_t height);
-void set_camera_location(point_t location);
-point_t get_camera_location();
-
-// Drawing.
-void draw_all();
-void set_clear_color(pixel_t color);
-
-// Misc.
-layer_t* get_layer(int16_t level);
+int rge_renderer_init();
+void rge_renderer_draw_all();
+layer_t* rge_renderer_get_layer(int16_t level);
 
 #endif

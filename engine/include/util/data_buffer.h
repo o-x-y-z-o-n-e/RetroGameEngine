@@ -15,10 +15,10 @@ typedef struct data_buffer_t {
 	uint32_t free_stack_size;
 } data_buffer_t;
 
-data_buffer_t init_data_buffer(size_t element_size, uint32_t start_size, uint32_t buffer_step);
-void free_data_buffer(data_buffer_t* data_buffer);
-uint32_t add_data_buffer(data_buffer_t* data_buffer);
-void remove_data_buffer(data_buffer_t* data_buffer, uint32_t index);
-void* get_data_buffer(const data_buffer_t* data_buffer, uint32_t index);
+data_buffer_t rge_data_buffer_init(size_t element_size, uint32_t start_size, uint32_t buffer_step);
+void rge_data_buffer_free(data_buffer_t* data_buffer);
+uint32_t rge_data_buffer_add(data_buffer_t* data_buffer);
+void rge_data_buffer_remove(data_buffer_t* data_buffer, uint32_t index);
+void* rge_data_buffer_get(const data_buffer_t* data_buffer, uint32_t index);
 
 #endif

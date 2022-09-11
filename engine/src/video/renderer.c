@@ -1,12 +1,11 @@
+#include "api/rge.h"
 #include "video/renderer.h"
 #include "video/sprite.h"
 #include "video/texture.h"
 #include "platform/window.h"
 #include "world/scene.h"
 #include "world/transform.h"
-#include "util/debug.h"
 
-#include <stdlib.h>
 #include <stdlib.h>
 
 #define MAX_LAYERS 10
@@ -117,7 +116,7 @@ static void draw_sprite(void* component, float delta) {
 	int32_t ox = 0;
 	int32_t oy = 0;
 
-	transform_t* transform = get_component_of_type(sprite->owner, TYPE_TRANSFORM);
+	transform_t* transform = rge_component_get_from_type(sprite->owner, TYPE_TRANSFORM);
 	if(transform != NULL) {
 		ox = transform->location.x + sprite->offset.x + camera_offset.x - camera_location.x;
 		oy = -transform->location.y + sprite->offset.y + camera_offset.y + camera_location.y;
@@ -150,7 +149,7 @@ static void draw_sprite(void* component, float delta) {
 			set_pixel(
 				x,
 				y,
-				sample_texture(
+				rge_texture_sample(
 					sprite->texture,
 					sprite->section.x + sx,
 					sprite->section.y + sy
@@ -167,11 +166,11 @@ static void draw_sprite(void* component, float delta) {
 static layer_t* init_layer(int16_t level) {
 	layer_t* layer = malloc(sizeof(layer_t));
 	layer->level = level;
-	layer->sprites = init_registry(TYPE_SPRITE, sizeof(sprite_t), START_SPRITES_COUNT, INCREASE_SPRITES_STEP);
+	layer->sprites = rge_registry_init(TYPE_SPRITE, sizeof(sprite_t), START_SPRITES_COUNT, INCREASE_SPRITES_STEP);
 	layer->next = NULL;
 
-	set_on_add(layer->sprites, on_sprite_add);
-	set_on_update(layer->sprites, draw_sprite);
+	rge_registry_set_on_add(layer->sprites, on_sprite_add);
+	rge_registry_set_on_update(layer->sprites, draw_sprite);
 
 	return layer;
 }
@@ -221,7 +220,7 @@ static layer_t* create_layer(int16_t level) {
 //------------------------------------------------------------------------------
 
 
-layer_t* get_layer(int16_t level) {
+layer_t* rge_renderer_get_layer(int16_t level) {
 	layer_t* current = layers_head;
 	while(current != NULL) {
 		if(current->level == level)
@@ -236,16 +235,16 @@ layer_t* get_layer(int16_t level) {
 //------------------------------------------------------------------------------
 
 
-int init_renderer() {
-	viewport = get_viewport();
+int rge_renderer_init() {
+	viewport = rge_window_get_viewport();
 
 	if(viewport == NULL) {
-		log_error("Failed to initalize renderer");
+		rge_log_error("Failed to initalize renderer");
 		return 0;
 	}
 
-	set_clear_color(DEFAULT_CLEAR_COLOR);
-	set_viewport_size(DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_HEIGHT);
+	rge_view_set_background(DEFAULT_CLEAR_COLOR);
+	rge_view_set_size(DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_HEIGHT);
 
 	layers_head = init_layer(0);
 
@@ -256,25 +255,25 @@ int init_renderer() {
 //------------------------------------------------------------------------------
 
 
-void draw_all() {
+void rge_renderer_draw_all() {
 	clear_buffer();
 
 	layer_t* current = layers_head;
 	while(current != NULL) {
-		update_registry(current->sprites, 0);
+		rge_registry_update(current->sprites, 0);
 		current = current->next;
 	}
 
-	refresh_window();
+	rge_window_refresh();
 }
 
 
 //------------------------------------------------------------------------------
 
 
-uint16_t get_view_width() {
+uint16_t rge_view_get_width() {
 	if(viewport == NULL) {
-		log_error("Renderer not initialized yet");
+		rge_log_error("Renderer not initialized yet");
 		return 0;
 	}
 
@@ -285,9 +284,9 @@ uint16_t get_view_width() {
 //------------------------------------------------------------------------------
 
 
-uint16_t get_view_height() {
+uint16_t rge_view_get_height() {
 	if(viewport == NULL) {
-		log_error("Renderer not initialized yet");
+		rge_log_error("Renderer not initialized yet");
 		return 0;
 	}
 
@@ -298,8 +297,8 @@ uint16_t get_view_height() {
 //------------------------------------------------------------------------------
 
 
-void set_viewport_size(uint16_t width, uint16_t height) {
-	set_viewport(width, height);
+void rge_view_set_size(uint16_t width, uint16_t height) {
+	rge_window_set_viewport(width, height);
 
 	camera_offset.x = width / 2;
 	camera_offset.y = height / 2;
@@ -309,7 +308,7 @@ void set_viewport_size(uint16_t width, uint16_t height) {
 //------------------------------------------------------------------------------
 
 
-void set_camera_location(point_t location) {
+void rge_camera_set_location(point_t location) {
 	camera_location = location;
 }
 
@@ -317,7 +316,7 @@ void set_camera_location(point_t location) {
 //------------------------------------------------------------------------------
 
 
-point_t get_camera_location() {
+point_t rge_camera_get_location() {
 	return camera_location;
 }
 
@@ -325,4 +324,4 @@ point_t get_camera_location() {
 //------------------------------------------------------------------------------
 
 
-void set_clear_color(pixel_t color) { clear_color = color; }
+void rge_view_set_background(pixel_t color) { clear_color = color; }

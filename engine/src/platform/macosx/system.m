@@ -1,7 +1,7 @@
 #ifdef SYS_MACOSX
 
+#include "api/rge.h"
 #include "platform/system.h"
-#include "core/input.h"
 #include <time.h>
 
 enum {
@@ -137,7 +137,7 @@ uint64_t get_current_time() {
 }
 */
 
-uint64_t get_current_time() {
+uint64_t rge_system_get_time() {
     struct timespec time;
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time);
 
@@ -148,7 +148,7 @@ uint64_t get_current_time() {
 //------------------------------------------------------------------------------
 
 
-uint8_t system_key_to_rge_key(uint16_t system_key) {
+uint8_t rge_system_parse_key(uint16_t system_key) {
     switch(system_key) {
         case kVK_ANSI_A: return KEY_A;
         case kVK_ANSI_B: return KEY_B;

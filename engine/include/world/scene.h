@@ -1,12 +1,8 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include "api/rge.h"
 #include "util/data_buffer.h"
-
-typedef struct entity_t entity_t;
 
 typedef struct registry_t {
 	uint8_t type;
@@ -32,22 +28,12 @@ typedef struct entity_t {
 	uint8_t component_count;
 } entity_t;
 
+int rge_scene_init();
+void rge_scene_clear();
+void rge_scene_update(float delta);
 
-#include "api/entity_def.h"
-
-
-int init_scene();
-void clear_scene();
-void update_scene(float delta);
-
-registry_t* init_registry(uint8_t type, size_t element_size, uint32_t start_size, uint32_t increase_step);
-registry_t* create_registry(uint8_t type, size_t element_size);
-void update_registry(const registry_t* registry, float delta);
-registry_t* get_registry_of_type(uint8_t type);
-void free_registry(registry_t* registry);
-
-void set_on_add(registry_t* registry, void (*func)(void* cmp, entity_t* entity));
-void set_on_update(registry_t* registry, void (*func)(void* cmp, float delta));
-void set_on_dispose(registry_t* registry, void (*func)(void* cmp));
+registry_t* rge_registry_init(uint8_t type, size_t element_size, uint32_t start_size, uint32_t increase_step);
+void rge_registry_update(const registry_t* registry, float delta);
+void rge_registry_free(registry_t* registry);
 
 #endif

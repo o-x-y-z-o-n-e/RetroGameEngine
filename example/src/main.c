@@ -1,5 +1,5 @@
 #define WIN_MAIN
-#include "engine.h"
+#include "rge.h"
 #include "scene.h"
 
 const float CAM_SPEED = 50;
@@ -12,19 +12,19 @@ static float cam_pos_y = 0;
 
 
 static void on_core_update(float delta) {
-	if(is_button_press(KEY_LEFT)) {
+	if(rge_input_is_press(KEY_LEFT)) {
 		cam_pos_x -= CAM_SPEED * delta;
 	}
 
-	if(is_button_press(KEY_RIGHT)) {
+	if(rge_input_is_press(KEY_RIGHT)) {
 		cam_pos_x += CAM_SPEED * delta;
 	}
 
-	if(is_button_press(KEY_UP)) {
+	if(rge_input_is_press(KEY_UP)) {
 		cam_pos_y += CAM_SPEED * delta;
 	}
 
-	if(is_button_press(KEY_DOWN)) {
+	if(rge_input_is_press(KEY_DOWN)) {
 		cam_pos_y -= CAM_SPEED * delta;
 	}
 
@@ -38,20 +38,20 @@ static void on_core_update(float delta) {
 
 
 int main() {
-	log_info("Example Starting...");
+	rge_log_info("Example Starting...");
 
-	if(!init_core()) {
-		log_error("Could not initialize core!");
+	if(!rge_core_init()) {
+		rge_log_error("Could not initialize core!");
 		return 0;
 	}
 
-	set_title_window("Example App");
-	set_on_core_update(on_core_update);
-	set_clear_color(COLOR_RGB(255, 255, 255));
+	rge_window_set_title("Example App");
+	rge_core_set_on_update(on_core_update);
+	rge_view_set_background(COLOR_RGB(255, 255, 255));
 
 	setup_my_scene();
 
-	start_core();
+	rge_core_start();
 
 	return 0;
 }

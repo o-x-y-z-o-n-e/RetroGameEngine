@@ -1,6 +1,6 @@
 #include "util/data_buffer.h"
-#include "util/debug.h"
 #include <stdlib.h>
+#include <stdint.h>
 
 #define FREE_STACK_STEP 10
 
@@ -8,7 +8,7 @@
 //------------------------------------------------------------------------------
 
 
-data_buffer_t init_data_buffer(size_t element_size, uint32_t start_size, uint32_t buffer_step) {
+data_buffer_t rge_data_buffer_init(size_t element_size, uint32_t start_size, uint32_t buffer_step) {
 	data_buffer_t data_buffer;
 
 	// Alloc the data buffer.
@@ -33,7 +33,7 @@ data_buffer_t init_data_buffer(size_t element_size, uint32_t start_size, uint32_
 //------------------------------------------------------------------------------
 
 
-void free_data_buffer(data_buffer_t* data_buffer) {
+void rge_data_buffer_free(data_buffer_t* data_buffer) {
 	free(data_buffer->buffer);
 	free(data_buffer->free_stack);
 
@@ -60,10 +60,10 @@ static void realloc_free_stack(data_buffer_t* data_buffer, uint32_t free_stack_s
 //------------------------------------------------------------------------------
 
 
-uint32_t add_data_buffer(data_buffer_t* data_buffer) {
+uint32_t rge_data_buffer_add(data_buffer_t* data_buffer) {
 	// Alloc new data.
 	uint32_t index = data_buffer->free_stack[data_buffer->free_stack_ptr];
-	uint8_t* data = get_data_buffer(data_buffer, index);
+	uint8_t* data = rge_data_buffer_get(data_buffer, index);
 	data_buffer->free_stack_ptr--;
 
 	// Clear new data.
@@ -99,11 +99,9 @@ uint32_t add_data_buffer(data_buffer_t* data_buffer) {
 //------------------------------------------------------------------------------
 
 
-void remove_data_buffer(data_buffer_t* data_buffer, uint32_t index) {
-	if(index < 0 || index >= data_buffer->buffer_size) {
-		log_error("Failed to remove data from buffer: Index out of bounds");
+void rge_data_buffer_remove(data_buffer_t* data_buffer, uint32_t index) {
+	if(index < 0 || index >= data_buffer->buffer_size)
 		return;
-	}
 
 	data_buffer->free_stack_ptr++;
 
@@ -127,11 +125,9 @@ void remove_data_buffer(data_buffer_t* data_buffer, uint32_t index) {
 //------------------------------------------------------------------------------
 
 
-void* get_data_buffer(const data_buffer_t* data_buffer, uint32_t index) {
-	if(index < 0 || index >= data_buffer->buffer_size) {
-		log_error("Failed to get data from buffer: Index out of bounds");
+void* rge_data_buffer_get(const data_buffer_t* data_buffer, uint32_t index) {
+	if(index < 0 || index >= data_buffer->buffer_size)
 		return NULL;
-	}
 
 	uint8_t* ptr = data_buffer->buffer;
 	ptr += index * data_buffer->element_size;

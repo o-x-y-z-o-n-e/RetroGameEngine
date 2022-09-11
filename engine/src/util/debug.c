@@ -21,7 +21,7 @@ static void log_base(const char* prefix, const char* format, va_list args) {
 //------------------------------------------------------------------------------
 
 
-void log_info(const char* format, ...) {
+void rge_log_info(const char* format, ...) {
 	va_list args;
 	va_start(args, format);
 	log_base("INFO", format, args);
@@ -32,7 +32,7 @@ void log_info(const char* format, ...) {
 //------------------------------------------------------------------------------
 
 
-void log_warning(const char* format, ...) {
+void rge_log_warning(const char* format, ...) {
 	va_list args;
 	va_start(args, format);
 	log_base("WARNING", format, args);
@@ -43,7 +43,7 @@ void log_warning(const char* format, ...) {
 //------------------------------------------------------------------------------
 
 
-void log_error(const char* format, ...) {
+void rge_log_error(const char* format, ...) {
 	va_list args;
 	va_start(args, format);
 	log_base("ERROR", format, args);
@@ -52,8 +52,8 @@ void log_error(const char* format, ...) {
 
 #else
 
-void log_info(const char* format, ...) {}
-void log_warning(const char* format, ...) {}
-void log_error(const char* format, ...) {}
+void rge_log_info(const char* format, ...) {}
+void rge_log_warning(const char* format, ...) {}
+void rge_log_error(const char* format, ...) {}
 
 #endif

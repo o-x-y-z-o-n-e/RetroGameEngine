@@ -70,7 +70,7 @@ static void create_frame_buffer() {
 static LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	switch(msg) {
 		case WM_CLOSE: {
-			close_core();
+			rge_core_close();
 			break;
 		}
 
@@ -114,7 +114,7 @@ static LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 			window_width = LOWORD(lParam);
 			window_height = HIWORD(lParam);
 
-			log_info("New window dimensions [%u, %u]", window_width, window_height);
+			rge_log_info("New window dimensions [%u, %u]", window_width, window_height);
 			create_frame_buffer();
 
 			InvalidateRect(handle, NULL, FALSE);
@@ -124,7 +124,7 @@ static LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 
 		case WM_KILLFOCUS:
 			has_focus = false;
-			flush_all_input();
+			rge_input_flush_all();
 			break;
 
 		case WM_SETFOCUS:
@@ -139,8 +139,8 @@ static LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 				key_was_down = ((lParam & (1 << 30)) != 0);
 
 				if(key_is_down != key_was_down) {
-					uint8_t key = system_key_to_rge_key((uint8_t)wParam);
-					set_key_state(key, key_is_down);
+					uint8_t key = rge_system_parse_key((uint8_t)wParam);
+					rge_input_set_state(key, key_is_down);
 				}
 			}
 			break;
@@ -159,7 +159,7 @@ static LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 
 int create_window() {
 	if(handle != NULL) {
-		log_error("Window already exists!");
+		rge_log_error("Window already exists!");
 		return 0;
 	}
 
@@ -176,7 +176,7 @@ int create_window() {
 	
 
 	if(!RegisterClass(&config)) {
-		log_error("Window registration failed!");
+		rge_log_error("Window registration failed!");
 		return 0;
 	}
 
@@ -205,7 +205,7 @@ int create_window() {
 	);
 
 	if(handle == NULL) {
-		log_error("Window creation failed!");
+		rge_log_error("Window creation failed!");
 		return 0;
 	}
 
@@ -218,7 +218,7 @@ int create_window() {
 //------------------------------------------------------------------------------
 
 
-void poll_window_events() {
+void rge_window_poll_events() {
 	MSG msg;
 
 	while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -231,7 +231,7 @@ void poll_window_events() {
 //------------------------------------------------------------------------------
 
 
-void close_window() {
+void rge_window_close() {
 	if(handle != NULL) {
 		DestroyWindow(handle);
 	}
@@ -241,7 +241,7 @@ void close_window() {
 //------------------------------------------------------------------------------
 
 
-void refresh_window() {
+void rge_window_refresh() {
 	InvalidateRect(handle, NULL, FALSE);
 	UpdateWindow(handle);
 }
@@ -250,7 +250,7 @@ void refresh_window() {
 //------------------------------------------------------------------------------
 
 
-void set_viewport(uint16_t width, uint16_t height) {
+void rge_window_set_viewport(uint16_t width, uint16_t height) {
 	if(handle == NULL) {
 		log_error("Window not created yet");
 		return;
@@ -266,7 +266,7 @@ void set_viewport(uint16_t width, uint16_t height) {
 //------------------------------------------------------------------------------
 
 
-viewport_t* get_viewport() {
+viewport_t* rge_window_get_viewport() {
 	return &frame.viewport;
 }
 
@@ -274,7 +274,7 @@ viewport_t* get_viewport() {
 //------------------------------------------------------------------------------
 
 
-void set_title_window(const char* title) {
+void rge_window_set_title(const char* title) {
 	wchar_t* wString[512];
 	MultiByteToWideChar(CP_ACP, 0, title, -1, wString, 512);
 

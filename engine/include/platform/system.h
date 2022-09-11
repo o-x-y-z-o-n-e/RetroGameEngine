@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-int init_system();
-uint64_t get_current_time();
-uint8_t system_key_to_rge_key(uint16_t system_key);
+int rge_system_init();
+uint64_t rge_system_get_time();
+uint8_t rge_system_parse_key(uint16_t system_key);
 
 #endif

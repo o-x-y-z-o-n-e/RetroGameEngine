@@ -1,10 +1,8 @@
 #ifndef CORE_H
 #define CORE_H
 
-int init_core();
-void start_core();
-void close_core();
-void set_on_core_update(void (*func)(float delta));
-void crash_core(int error);
+#include "api/rge.h"
+
+void rge_core_crash(int error);
 
 #endif

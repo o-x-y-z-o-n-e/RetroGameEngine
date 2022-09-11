@@ -5,13 +5,11 @@
 
 typedef struct viewport_t viewport_t;
 
-int create_window();
-void close_window();
-void poll_window_events();
-void refresh_window();
-void set_viewport(uint16_t width, uint16_t height);
-viewport_t* get_viewport();
-
-void set_title_window(const char* title);
+int rge_window_create();
+void rge_window_close();
+void rge_window_poll_events();
+void rge_window_refresh();
+void rge_window_set_viewport(uint16_t width, uint16_t height);
+viewport_t* rge_window_get_viewport();
 
 #endif

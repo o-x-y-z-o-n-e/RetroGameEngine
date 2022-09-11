@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-uint8_t set_bit(uint8_t flags, int bit);
-uint8_t clear_bit(uint8_t flags, int bit);
-bool get_bit(uint8_t flags, int bit);
+uint8_t rge_bit_set(uint8_t flags, int bit);
+uint8_t rge_bit_clear(uint8_t flags, int bit);
+bool rge_bit_get(uint8_t flags, int bit);
 
 #endif

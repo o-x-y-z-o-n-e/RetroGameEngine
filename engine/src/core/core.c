@@ -1,3 +1,4 @@
+#include "api/rge.h"
 #include "core/core.h"
 #include "core/input.h"
 #include "platform/system.h"
@@ -5,10 +6,8 @@
 #include "video/renderer.h"
 #include "video/texture.h"
 #include "world/scene.h"
-#include "util/debug.h"
 
 #include <stdlib.h>
-#include <math.h>
 
 #include "lua.h"
 #include "lauxlib.h"
@@ -28,25 +27,25 @@ static void (*on_core_update)(float delta);
 //------------------------------------------------------------------------------
 
 
-int init_core() {
+int rge_core_init() {
 	if(has_init) {
-		log_error("Core has already been initialized");
+		rge_log_error("Core has already been initialized");
 		return 0;
 	}
 
-	if(!init_system())
+	if(!rge_system_init())
 		return 0;
 
-	if(!create_window())
+	if(!rge_window_create())
 		return 0;
 
-	if(!init_renderer())
+	if(!rge_renderer_init())
 		return 0;
 
-	if(!init_textures())
+	if(!rge_texture_init())
 		return 0;
 
-	if(!init_scene())
+	if(!rge_scene_init())
 		return 0;
 
 	has_init = 1;
@@ -60,12 +59,12 @@ int init_core() {
 		lua_getglobal(L, "a");
 		if(lua_isnumber(L, -1)) {
 			int a = (int)lua_tonumber(L, -1);
-			log_info("a = %d", a);
+			rge_log_info("a = %d", a);
 		} else {
-			log_error("a is not number");
+			rge_log_error("a is not number");
 		}
 	} else {
-		log_error("Lua failed");
+		rge_log_error("Lua failed");
 	}
 	// TEST
 
@@ -76,24 +75,24 @@ int init_core() {
 //------------------------------------------------------------------------------
 
 
-void start_core() {
+void rge_core_start() {
 	if(!has_init) {
-		log_error("Core has not been initialized");
+		rge_log_error("Core has not been initialized");
 		return;
 	}
 
 	if(is_running) {
-		log_error("Core is already running");
+		rge_log_error("Core is already running");
 		return;
 	}
 
 	is_running = 1;
 
-	last_time = get_current_time();
+	last_time = rge_system_get_time();
 	while(is_running) {
-		poll_window_events();
+		rge_window_poll_events();
 
-		uint64_t current_time = get_current_time();
+		uint64_t current_time = rge_system_get_time();
 		uint64_t delta_time = current_time - last_time;
 
 		if(delta_time > 0) {
@@ -103,16 +102,16 @@ void start_core() {
 			if(on_core_update != NULL)
 				on_core_update(delta);
 
-			update_scene(delta);
+			rge_scene_update(delta);
 
 			render_counter += delta;
 			if(render_counter > RENDER_FPS_TARGET) {
 				render_counter -= RENDER_FPS_TARGET;
 
-				draw_all();
+				rge_renderer_draw_all();
 			}
 
-			flush_click_input();
+			rge_input_flush_click();
 		}
 	}
 }
@@ -121,14 +120,14 @@ void start_core() {
 //------------------------------------------------------------------------------
 
 
-void close_core() {
+void rge_core_close() {
 	if(!has_init) {
-		log_error("Core has not been initialized");
+		rge_log_error("Core has not been initialized");
 		return;
 	}
 
 	if(!is_running) {
-		log_error("Core is no running");
+		rge_log_error("Core is no running");
 		return;
 	}
 
@@ -141,7 +140,7 @@ void close_core() {
 //------------------------------------------------------------------------------
 
 
-void set_on_core_update(void (*func)(float delta)) {
+void rge_core_set_on_update(void (*func)(float delta)) {
 	on_core_update = func;
 }
 
@@ -149,7 +148,7 @@ void set_on_core_update(void (*func)(float delta)) {
 //------------------------------------------------------------------------------
 
 
-void crash_core(int error) {
-	log_error("Critical crash. Error code: [%d]", error);
+void rge_core_crash(int error) {
+	rge_log_error("Critical crash. Error code: [%d]", error);
 	exit(0);
 }

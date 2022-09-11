@@ -1,7 +1,7 @@
+#include "api/rge.h"
 #include "video/sprite.h"
 #include "video/texture.h"
 #include "video/renderer.h"
-#include "util/debug.h"
 #include "util/bit_flags.h"
 
 #define SPRITE_FLAG_CENTERED 0
@@ -11,14 +11,14 @@
 
 
 static bool is_sprite_offset(const sprite_t* sprite) {
-	return get_bit(sprite->flags, SPRITE_FLAG_CENTERED);
+	return rge_bit_get(sprite->flags, SPRITE_FLAG_CENTERED);
 }
 
 
 //------------------------------------------------------------------------------
 
 
-void set_texture(sprite_t* sprite, texture_t* texture) {
+void rge_sprite_set_texture(sprite_t* sprite, texture_t* texture) {
 	if(texture == NULL) {
 		sprite->texture = NULL;
 		sprite->section = (rect_t){ 0, 0, 0, 0 };
@@ -27,7 +27,7 @@ void set_texture(sprite_t* sprite, texture_t* texture) {
 
 	sprite->texture = texture;
 
-	set_sprite_section(
+	rge_sprite_set_section(
 		sprite,
 		(rect_t) {
 			0,
@@ -42,24 +42,24 @@ void set_texture(sprite_t* sprite, texture_t* texture) {
 //------------------------------------------------------------------------------
 
 
-sprite_t* create_sprite(entity_t* entity, int16_t layer) {
+sprite_t* rge_sprite_create(entity_t* entity, int16_t layer) {
 	if(entity == NULL) {
-		log_error("No entity passed");
+		rge_log_error("No entity passed");
 		return NULL;
 	}
 
-	registry_t* registry = get_layer(layer)->sprites;
+	registry_t* registry = rge_renderer_get_layer(layer)->sprites;
 	if(registry == NULL)
 		return NULL;
 
-	return (sprite_t*)create_component(entity, registry);
+	return (sprite_t*)rge_component_create(entity, registry);
 }
 
 
 //------------------------------------------------------------------------------
 
 
-texture_t* get_texture(const sprite_t* sprite) {
+texture_t* rge_sprite_get_texture(const sprite_t* sprite) {
 	if(sprite == NULL)
 		return NULL;
 
@@ -70,7 +70,7 @@ texture_t* get_texture(const sprite_t* sprite) {
 //------------------------------------------------------------------------------
 
 
-void set_sprite_section(sprite_t* sprite, rect_t section) {
+void rge_sprite_set_section(sprite_t* sprite, rect_t section) {
 	if(sprite == NULL)
 		return;
 
@@ -94,21 +94,21 @@ void set_sprite_section(sprite_t* sprite, rect_t section) {
 	sprite->section = section;
 
 	// Re-center sprite, if needed.
-	if(get_bit(sprite->flags, SPRITE_FLAG_CENTERED))
-		set_sprite_centered(sprite, true);
+	if(rge_bit_get(sprite->flags, SPRITE_FLAG_CENTERED))
+		rge_sprite_set_centered(sprite, true);
 }
 
 
 //------------------------------------------------------------------------------
 
 
-void set_sprite_centered(sprite_t* sprite, bool centered) {
+void rge_sprite_set_centered(sprite_t* sprite, bool centered) {
 	if(centered) {
-		sprite->flags = set_bit(sprite->flags, SPRITE_FLAG_CENTERED);
+		sprite->flags = rge_bit_set(sprite->flags, SPRITE_FLAG_CENTERED);
 		sprite->offset.x = -sprite->section.width / 2;
 		sprite->offset.y = -sprite->section.height / 2;
 	} else {
-		sprite->flags = clear_bit(sprite->flags, SPRITE_FLAG_CENTERED);
+		sprite->flags = rge_bit_clear(sprite->flags, SPRITE_FLAG_CENTERED);
 		sprite->offset = (point_t){ 0, 0 };
 	}
 }
@@ -117,7 +117,7 @@ void set_sprite_centered(sprite_t* sprite, bool centered) {
 //------------------------------------------------------------------------------
 
 
-void set_sprite_offset(sprite_t* sprite, point_t offset) {
-	sprite->flags = clear_bit(sprite->flags, SPRITE_FLAG_CENTERED);
+void rge_sprite_set_offset(sprite_t* sprite, point_t offset) {
+	sprite->flags = rge_bit_clear(sprite->flags, SPRITE_FLAG_CENTERED);
 	sprite->offset = offset;
 }
