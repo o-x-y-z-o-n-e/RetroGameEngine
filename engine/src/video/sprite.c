@@ -10,14 +10,6 @@
 //------------------------------------------------------------------------------
 
 
-static bool is_sprite_offset(const sprite_t* sprite) {
-	return rge_bit_get(sprite->flags, SPRITE_FLAG_CENTERED);
-}
-
-
-//------------------------------------------------------------------------------
-
-
 void rge_sprite_set_texture(sprite_t* sprite, texture_t* texture) {
 	if(texture == NULL) {
 		sprite->texture = NULL;
@@ -120,4 +112,28 @@ void rge_sprite_set_centered(sprite_t* sprite, bool centered) {
 void rge_sprite_set_offset(sprite_t* sprite, point_t offset) {
 	sprite->flags = rge_bit_clear(sprite->flags, SPRITE_FLAG_CENTERED);
 	sprite->offset = offset;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+rect_t rge_sprite_get_section(const sprite_t* sprite) {
+	return sprite->section;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+bool rge_sprite_is_centered(const sprite_t* sprite) {
+	return rge_bit_get(sprite->flags, SPRITE_FLAG_CENTERED);
+}
+
+
+//------------------------------------------------------------------------------
+
+
+point_t rge_sprite_get_offset(const sprite_t* sprite) {
+	return sprite->offset;
 }

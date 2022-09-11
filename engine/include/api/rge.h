@@ -33,6 +33,7 @@ typedef struct registry_t registry_t;
 typedef struct entity_t entity_t;
 typedef struct sprite_t sprite_t;
 typedef struct texture_t texture_t;
+typedef struct audio_t audio_t;
 
 
 // ===Data Types===
@@ -196,9 +197,18 @@ void* rge_component_get_from_type(const entity_t* entity, uint8_t type);
 
 // ===Texture===
 texture_t* rge_texture_load(const char* path);
+/* TODO: IMPLEMENT */ void rge_texture_free(texture_t* texture);
 void rge_texture_get_size(const texture_t* texture, uint16_t* w, uint16_t* h);
 uint16_t rge_texture_get_width(const texture_t* texture);
 uint16_t rge_texture_get_height(const texture_t* texture);
+
+
+// ===Audio===
+audio_t* rge_audio_load(const char* path);
+void rge_audio_free(audio_t* clip);
+float rge_audio_get_length(const audio_t* clip);
+void rge_audio_play(const audio_t* clip);
+void rge_audio_stop_all();
 
 
 // ===Registry===
