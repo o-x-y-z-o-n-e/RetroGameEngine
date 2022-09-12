@@ -1,5 +1,5 @@
-#ifndef DATA_BUFFER_H
-#define DATA_BUFFER_H
+#ifndef RGE_DATA_BUFFER_H
+#define RGE_DATA_BUFFER_H
 
 #include <stdint.h>
 #include <stddef.h>

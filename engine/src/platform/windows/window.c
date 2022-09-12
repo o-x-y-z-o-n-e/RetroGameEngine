@@ -3,7 +3,7 @@
 #include "platform/system.h"
 #include "core/core.h"
 #include "core/input.h"
-#include "video/renderer.h"
+#include "core/renderer.h"
 
 #include <windows.h>
 #include <stdbool.h>

@@ -1,5 +1,5 @@
-#ifndef BIT_FLAGS_H
-#define BIT_FLAGS_H
+#ifndef RGE_BIT_FLAGS_H
+#define RGE_BIT_FLAGS_H
 
 #include <stdint.h>
 #include <stdbool.h>

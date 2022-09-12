@@ -1,8 +1,8 @@
 #include "api/rge.h"
-#include "world/scene.h"
-#include "world/transform.h"
-#include "util/ptr_buffer.h"
+#include "core/scene.h"
 #include "core/core.h"
+#include "components/transform.h"
+#include "util/ptr_buffer.h"
 
 #include <stdlib.h>
 

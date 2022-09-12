@@ -1,17 +1,18 @@
 #include "api/rge.h"
 #include "core/core.h"
 #include "core/input.h"
+#include "core/scene.h"
+#include "core/renderer.h"
+#include "core/audio_player.h"
+#include "core/asset_manager.h"
+#include "core/script_manager.h"
 #include "platform/system.h"
 #include "platform/window.h"
-#include "video/renderer.h"
-#include "video/texture.h"
-#include "world/scene.h"
 
 #include <stdlib.h>
 
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
+
+//------------------------------------------------------------------------------
 
 
 const float RENDER_FPS_TARGET = 1.0F / 60;
@@ -42,31 +43,19 @@ int rge_core_init() {
 	if(!rge_renderer_init())
 		return 0;
 
-	if(!rge_texture_init())
+	if(!rge_audio_init())
+		return 0;
+
+	if(!rge_assets_init())
 		return 0;
 
 	if(!rge_scene_init())
 		return 0;
 
+	if(!rge_script_init())
+		return 0;
+
 	has_init = 1;
-
-	// TEST
-	lua_State* L = luaL_newstate();
-
-	int r = luaL_dostring(L, "a = 7 + 11");
-
-	if(r == LUA_OK) {
-		lua_getglobal(L, "a");
-		if(lua_isnumber(L, -1)) {
-			int a = (int)lua_tonumber(L, -1);
-			rge_log_info("a = %d", a);
-		} else {
-			rge_log_error("a is not number");
-		}
-	} else {
-		rge_log_error("Lua failed");
-	}
-	// TEST
 
 	return 1;
 }

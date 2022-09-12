@@ -1,5 +1,8 @@
+// MOVE TO: assets_manager.c
+
 #include "api/rge.h"
-#include "video/texture.h"
+#include "assets/texture.h"
+#include "core/asset_manager.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -11,14 +14,6 @@
 
 
 static texture_t hash_table[TABLE_SIZE];
-
-
-//------------------------------------------------------------------------------
-
-
-pixel_t rge_texture_sample(texture_t* texture, uint16_t x, uint16_t y) {
-	return texture->data[y * texture->width + x];
-}
 
 
 //------------------------------------------------------------------------------
@@ -39,30 +34,6 @@ static uint8_t* rgb_to_rgba(const uint8_t* data, int width, int height) {
 	}
 
 	return new_data;
-}
-
-
-//------------------------------------------------------------------------------
-
-
-int rge_texture_init() {
-	for(size_t i = 0; i < TABLE_SIZE; i++)
-		hash_table[i].hash = 0;
-
-	return 1;
-}
-
-
-//------------------------------------------------------------------------------
-
-
-static size_t get_str_hash(const char* str) {
-	size_t hash = 5381;
-	char c;
-	while((c = *str++) != 0)
-		hash = ((hash << 5) + hash) + c;
-	
-	return hash;
 }
 
 
@@ -103,7 +74,7 @@ void rge_texture_free(texture_t* texture) {
 
 
 texture_t* rge_texture_load(const char* path) {
-	size_t hash = get_str_hash(path);
+	size_t hash = rge_get_str_hash(path);
 
 	texture_t* texture = get_texture_slot(hash);
 	if(texture->data)

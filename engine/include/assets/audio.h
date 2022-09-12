@@ -1,5 +1,5 @@
-#ifndef AUDIO_CLIP_H
-#define AUDIO_CLIP_H
+#ifndef RGE_AUDIO_H
+#define RGE_AUDIO_H
 
 typedef struct audio_t {
 	void* data;

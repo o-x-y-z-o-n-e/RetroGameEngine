@@ -1,5 +1,5 @@
-#ifndef PTR_BUFFER_H
-#define PTR_BUFFER_H
+#ifndef RGE_PTR_BUFFER_H
+#define RGE_PTR_BUFFER_H
 
 #include <stdint.h>
 

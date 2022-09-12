@@ -1,5 +1,5 @@
-#ifndef RENDERER_H
-#define RENDERER_H
+#ifndef RGE_RENDERER_H
+#define RGE_RENDERER_H
 
 #include <stdint.h>
 

@@ -1,5 +1,5 @@
-#ifndef WINDOW_H
-#define WINDOW_H
+#ifndef RGE_WINDOW_H
+#define RGE_WINDOW_H
 
 #include <stdint.h>
 

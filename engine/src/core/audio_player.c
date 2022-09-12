@@ -1,11 +1,11 @@
 #include "api/rge.h"
-#include "audio/audio_clip.h"
+#include "assets/audio.h"
 
 
 //------------------------------------------------------------------------------
 
 
-audio_t* rge_audio_load(const char* path) {
+void rge_audio_play(const audio_t* clip) {
 
 }
 
@@ -13,7 +13,7 @@ audio_t* rge_audio_load(const char* path) {
 //------------------------------------------------------------------------------
 
 
-void rge_audio_free(audio_t* clip) {
+void rge_audio_stop_all() {
 
 }
 
@@ -21,6 +21,7 @@ void rge_audio_free(audio_t* clip) {
 //------------------------------------------------------------------------------
 
 
-float rge_audio_get_length(const audio_t* clip) {
+int rge_audio_init() {
 
+	return 1;
 }

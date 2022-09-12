@@ -1,10 +1,13 @@
 [GENERAL]
-Change ptr_buffer_t to use free_stack instead of next_check.
-Transform inheritance.
-Rename static functions.
-Implement sprite get functions.
+Asset manager.
+Entity inheritance.
+Entity names/pathing.
 
+Change ptr_buffer_t to use free_stack instead of next_check.
 Physics/collision system.
+Scripting.
+
+Later:
 UI module.
 
 [WINDOWS]

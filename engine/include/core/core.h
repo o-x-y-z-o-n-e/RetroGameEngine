@@ -1,5 +1,5 @@
-#ifndef CORE_H
-#define CORE_H
+#ifndef RGE_CORE_H
+#define RGE_CORE_H
 
 #include "api/rge.h"
 

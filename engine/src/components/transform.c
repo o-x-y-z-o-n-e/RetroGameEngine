@@ -1,5 +1,5 @@
-#include "world/transform.h"
-#include "world/scene.h"
+#include "components/transform.h"
+#include "core/scene.h"
 
 
 //------------------------------------------------------------------------------

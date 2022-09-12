@@ -1,5 +1,5 @@
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#ifndef RGE_SYSTEM_H
+#define RGE_SYSTEM_H
 
 #include <stdint.h>
 

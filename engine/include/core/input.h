@@ -1,5 +1,5 @@
-#ifndef INPUT_H
-#define INPUT_H
+#ifndef RGE_INPUT_H
+#define RGE_INPUT_H
 
 #include "api/rge.h"
 

@@ -1,7 +1,7 @@
 #include "api/rge.h"
-#include "video/sprite.h"
-#include "video/texture.h"
-#include "video/renderer.h"
+#include "components/sprite.h"
+#include "assets/texture.h"
+#include "core/renderer.h"
 #include "util/bit_flags.h"
 
 #define SPRITE_FLAG_CENTERED 0

@@ -1,5 +1,5 @@
-#ifndef SCENE_H
-#define SCENE_H
+#ifndef RGE_SCENE_H
+#define RGE_SCENE_H
 
 #include "api/rge.h"
 #include "util/data_buffer.h"

@@ -15,7 +15,8 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 externalsrc = {}
 externalinc = {}
 
-externalinc["stb_image"] = "engine/vendor/stb_image/include"
+externalinc["stb"] = "engine/vendor/stb/include"
+externalsrc["stb"] = "engine/vendor/stb/src"
 externalinc["lua"] = "engine/vendor/lua/include/lua"
 externalsrc["lua"] = "engine/vendor/lua/src"
 
@@ -32,6 +33,7 @@ project "Engine"
     files {
 		"engine/include/**.h",
         "engine/src/**.c",
+		externalsrc["stb"] .. "/**.c",
 		externalsrc["lua"] .. "/**.c"
     }
 
@@ -40,7 +42,7 @@ project "Engine"
         "engine/include",
         "engine/include/**",
         
-		externalinc["stb_image"],
+		externalinc["stb"],
 		externalinc["lua"]
     }
 	
@@ -88,8 +90,7 @@ project "Example"
 
     files {
         "%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.c",
-        "%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.c"
     }
 
 

@@ -4,7 +4,7 @@
 #include "platform/system.h" // TEMP
 #include "core/core.h"
 #include "core/input.h"
-#include "video/renderer.h"
+#include "core/renderer.h"
 
 #include <stdlib.h>
 

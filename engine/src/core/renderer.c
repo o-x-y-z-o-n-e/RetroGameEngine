@@ -1,10 +1,10 @@
 #include "api/rge.h"
-#include "video/renderer.h"
-#include "video/sprite.h"
-#include "video/texture.h"
+#include "core/renderer.h"
+#include "core/scene.h"
+#include "components/sprite.h"
+#include "components/transform.h"
+#include "assets/texture.h"
 #include "platform/window.h"
-#include "world/scene.h"
-#include "world/transform.h"
 
 #include <stdlib.h>
 
@@ -291,6 +291,22 @@ uint16_t rge_view_get_height() {
 	}
 
 	return viewport->height;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void rge_view_get_size(uint16_t* w, uint16_t* h) {
+	if(viewport == NULL) {
+		rge_log_error("Renderer not initialized yet");
+		*w = 0;
+		*h = 0;
+		return;
+	}
+
+	*w = viewport->width;
+	*h = viewport->height;
 }
 
 
