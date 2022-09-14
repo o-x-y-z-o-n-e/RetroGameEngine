@@ -1,3 +1,4 @@
+#include "api/rge.h"
 #include "core/script_manager.h"
 
 #include "lua.h"
