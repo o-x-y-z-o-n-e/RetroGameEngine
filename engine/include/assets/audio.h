@@ -5,4 +5,6 @@ typedef struct audio_t {
 	void* data;
 } audio_t;
 
+audio_t rge_audio_read(const char* path);
+
 #endif

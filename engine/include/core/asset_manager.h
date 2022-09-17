@@ -6,6 +6,4 @@
 int rge_assets_init();
 
 
-size_t rge_get_str_hash(const char* str);
-
 #endif
