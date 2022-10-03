@@ -3,4 +3,6 @@
 
 int rge_audio_init();
 
+void* rge_audio_get_engine();
+
 #endif
