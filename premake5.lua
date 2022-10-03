@@ -9,6 +9,9 @@ workspace "Starship"
 	
 	filter "system:macosx"
 		architecture "arm64"
+		
+
+------------------------------------------------------------------
 
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
@@ -19,6 +22,9 @@ externalinc["miniaudio"] = "engine/vendor/miniaudio/include"
 externalinc["stb"] = "engine/vendor/stb/include"
 externalinc["lua"] = "engine/vendor/lua/include/lua"
 externalsrc["lua"] = "engine/vendor/lua/src"
+
+
+------------------------------------------------------------------
 
 
 project "Engine"
@@ -76,7 +82,8 @@ project "Engine"
         defines "EXC_RELEASE"
         optimize "On"
 	
-	
+
+------------------------------------------------------------------
 
 
 project "Example"
@@ -85,6 +92,70 @@ project "Example"
 
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+    objdir ("tmp/" .. outputdir .. "/%{prj.name}")
+
+
+    files {
+        "%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.c"
+    }
+
+
+    includedirs {
+        "engine/include/api"
+    }
+	
+	
+	filter "system:windows"
+		--cppdialect "C++17"
+		staticruntime "On"
+		systemversion "latest"
+
+        links {
+            "Engine"
+        }
+	
+	
+	filter "system:macosx"
+        buildoptions {
+            --"-std=c++17",
+            --"-lobjc",
+            "-F /Library/Frameworks"
+        }
+        linkoptions {
+            "-F /Library/Frameworks",
+            "-framework Cocoa",
+            "-framework Foundation"
+        }
+
+        links {
+            "Engine"
+        }
+	
+	
+	filter "system:linux"
+		links {
+            "Engine"
+        }
+	
+
+    filter "configurations:debug"
+		kind "ConsoleApp"
+        symbols "On"
+    
+    filter "configurations:release"
+		kind "WindowedApp"
+        optimize "On"
+
+
+------------------------------------------------------------------
+
+
+project "MyGameBoy"
+	location "mygameboy"
+	language "C"
+	
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("tmp/" .. outputdir .. "/%{prj.name}")
 
 
