@@ -12,3 +12,6 @@
 *.vcxproj.user
 
 **/Makefile
+
+mygameboy/roms/
+mygameboy/docs/

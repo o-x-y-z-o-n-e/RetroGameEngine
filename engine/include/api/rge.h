@@ -144,6 +144,7 @@ int rge_core_init();
 void rge_core_start();
 void rge_core_close();
 void rge_core_set_on_update(void (*func)(float delta));
+void rge_core_set_on_tick(void (*func)(int delta));
 
 
 // ===Camera===
@@ -153,6 +154,7 @@ point_t rge_camera_get_location();
 
 // ===Window===
 void rge_window_set_title(const char* title);
+void rge_window_refresh();
 
 
 // ===View===
@@ -161,6 +163,13 @@ uint16_t rge_view_get_width();
 uint16_t rge_view_get_height();
 void rge_view_set_size(uint16_t w, uint16_t h);
 void rge_view_set_background(pixel_t color);
+
+
+// ===Renderer===
+bool rge_renderer_auto_get();
+void rge_renderer_auto_set(bool auto_render);
+void rge_renderer_clear();
+void rge_renderer_set_pixel(uint16_t x, uint16_t y, pixel_t color);
 
 
 // ===Log===

@@ -22,6 +22,7 @@ static char is_running = 0;
 static uint64_t last_time = 0;
 static float render_counter = 0;
 
+static void (*on_core_tick)(int delta);
 static void (*on_core_update)(float delta);
 
 
@@ -84,6 +85,9 @@ void rge_core_start() {
 		uint64_t current_time = rge_system_get_time();
 		uint64_t delta_time = current_time - last_time;
 
+		if(on_core_tick != NULL)
+			on_core_tick(delta_time);
+
 		if(delta_time > 0) {
 			last_time = current_time;
 			float delta = ((float)delta_time) * 0.001F;
@@ -93,11 +97,14 @@ void rge_core_start() {
 
 			rge_scene_update(delta);
 
+			// TODO: Add late update.
+
 			render_counter += delta;
 			if(render_counter > RENDER_FPS_TARGET) {
 				render_counter -= RENDER_FPS_TARGET;
 
-				rge_renderer_draw_all();
+				if(rge_renderer_auto_get())
+					rge_renderer_draw_all();
 			}
 
 			rge_input_flush_click();
@@ -131,6 +138,14 @@ void rge_core_close() {
 
 void rge_core_set_on_update(void (*func)(float delta)) {
 	on_core_update = func;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void rge_core_set_on_tick(void (*func)(int delta)) {
+	on_core_tick = func;
 }
 
 

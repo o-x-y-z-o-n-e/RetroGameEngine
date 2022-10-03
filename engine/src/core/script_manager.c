@@ -12,6 +12,7 @@
 int rge_script_init() {
 
 	// TEST
+	/*
 	lua_State* L = luaL_newstate();
 
 	int r = luaL_dostring(L, "a = 7 + 11");
@@ -27,6 +28,7 @@ int rge_script_init() {
 	} else {
 		rge_log_error("Lua failed");
 	}
+	*/
 	// TEST
 
 	return 1;

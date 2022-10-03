@@ -96,12 +96,13 @@ project "Example"
 
 
     files {
-        "%{prj.name}/src/**.h",
+        "%{prj.name}/include/**.h",
 		"%{prj.name}/src/**.c"
     }
 
 
     includedirs {
+		"%{prj.name}/include/",
         "engine/include/api"
     }
 	
@@ -160,12 +161,13 @@ project "MyGameBoy"
 
 
     files {
-        "%{prj.name}/src/**.h",
+        "%{prj.name}/include/**.h",
 		"%{prj.name}/src/**.c"
     }
 
 
     includedirs {
+		"%{prj.name}/include/",
         "engine/include/api"
     }
 	

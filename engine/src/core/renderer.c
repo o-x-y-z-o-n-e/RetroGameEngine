@@ -16,6 +16,7 @@
 #define START_SPRITES_COUNT 100
 #define INCREASE_SPRITES_STEP 100
 
+static bool do_render = true;
 static pixel_t clear_color;
 static viewport_t* viewport;
 static point_t camera_offset;
@@ -75,7 +76,7 @@ static pixel_t rgba_to_argb(pixel_t color) {
 //------------------------------------------------------------------------------
 
 
-static void set_pixel(uint16_t x, uint16_t y, pixel_t color) {
+void rge_renderer_set_pixel(uint16_t x, uint16_t y, pixel_t color) {
 	uint16_t by = y * viewport->scale;
 	uint16_t bx = x * viewport->scale;
 	uint16_t w = viewport->width * viewport->scale;
@@ -101,7 +102,7 @@ static void set_pixel(uint16_t x, uint16_t y, pixel_t color) {
 //------------------------------------------------------------------------------
 
 
-static void clear_buffer() {
+void rge_renderer_clear() {
 	size_t n = viewport->width * viewport->height * viewport->scale * viewport->scale;
 	for(size_t i = 0; i < n; i++)
 		viewport->buffer[i] = clear_color;
@@ -146,7 +147,7 @@ static void draw_sprite(void* component, float delta) {
 			uint16_t x = ox + sx;
 			uint16_t y = oy + sy;
 
-			set_pixel(
+			rge_renderer_set_pixel(
 				x,
 				y,
 				rge_texture_sample(
@@ -256,7 +257,7 @@ int rge_renderer_init() {
 
 
 void rge_renderer_draw_all() {
-	clear_buffer();
+	rge_renderer_clear();
 
 	layer_t* current = layers_head;
 	while(current != NULL) {
@@ -341,3 +342,17 @@ point_t rge_camera_get_location() {
 
 
 void rge_view_set_background(pixel_t color) { clear_color = color; }
+
+
+//------------------------------------------------------------------------------
+
+
+void rge_renderer_auto_set(bool auto_render) {
+	do_render = auto_render;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+bool rge_renderer_auto_get() { return do_render; }
