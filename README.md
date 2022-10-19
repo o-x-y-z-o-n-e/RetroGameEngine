@@ -1,4 +1,4 @@
-# Starship
+# Retro Game Engine (RGE)
 A simple 2D pixel software renderer.
 
 A game framework for making retro aesthetic games.
