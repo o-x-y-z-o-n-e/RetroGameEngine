@@ -1,4 +1,4 @@
-workspace "Starship"
+workspace "RetroGameEngine"
     configurations {
         "debug",
         "release"
@@ -54,7 +54,6 @@ project "Engine"
 	
 	
 	filter "system:windows"
-		--cppdialect "C++17"
 		staticruntime "On"
 		systemversion "latest"
 		
@@ -62,7 +61,6 @@ project "Engine"
 	
 	
 	filter "system:macosx"
-        --buildoptions "-std=c++17"
 		defines "SYS_MACOSX"
 
         files "%{prj.name}/src/**.m"
@@ -86,8 +84,8 @@ project "Engine"
 ------------------------------------------------------------------
 
 
-project "Example"
-    location "example"
+project "Scenic"
+    location "examples/scenic"
     language "C"
 
 
@@ -96,19 +94,18 @@ project "Example"
 
 
     files {
-        "%{prj.name}/include/**.h",
-		"%{prj.name}/src/**.c"
+        "%{prj.location}/include/**.h",
+		"%{prj.location}/src/**.c"
     }
 
 
     includedirs {
-		"%{prj.name}/include/",
+		"%{prj.location}/include/",
         "engine/include/api"
     }
 	
 	
 	filter "system:windows"
-		--cppdialect "C++17"
 		staticruntime "On"
 		systemversion "latest"
 
@@ -119,8 +116,6 @@ project "Example"
 	
 	filter "system:macosx"
         buildoptions {
-            --"-std=c++17",
-            --"-lobjc",
             "-F /Library/Frameworks"
         }
         linkoptions {
@@ -152,8 +147,8 @@ project "Example"
 ------------------------------------------------------------------
 
 
-project "MyGameBoy"
-	location "mygameboy"
+project "Starship"
+	location "examples/starship"
 	language "C"
 	
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -161,19 +156,18 @@ project "MyGameBoy"
 
 
     files {
-        "%{prj.name}/include/**.h",
-		"%{prj.name}/src/**.c"
+        "%{prj.location}/include/**.h",
+		"%{prj.location}/src/**.c"
     }
 
 
     includedirs {
-		"%{prj.name}/include/",
+		"%{prj.location}/include/",
         "engine/include/api"
     }
 	
 	
 	filter "system:windows"
-		--cppdialect "C++17"
 		staticruntime "On"
 		systemversion "latest"
 
@@ -184,8 +178,6 @@ project "MyGameBoy"
 	
 	filter "system:macosx"
         buildoptions {
-            --"-std=c++17",
-            --"-lobjc",
             "-F /Library/Frameworks"
         }
         linkoptions {

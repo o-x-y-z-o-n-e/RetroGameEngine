@@ -1,4 +1,6 @@
 [GENERAL]
+Reorganize scripts. Add environment runtime settings for VS projects.
+
 Asset manager.
 Entity inheritance.
 Entity names/pathing.

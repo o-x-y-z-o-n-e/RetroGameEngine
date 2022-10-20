@@ -32,7 +32,7 @@ int rge_assets_init() {
 
 
 static size_t get_data_index(int table, void* data) {
-	return ((uint8_t*)data - tables[table]->data) / tables[table]->element_size;
+	return ((uint8_t*)data - (uint8_t*)tables[table]->data) / tables[table]->element_size;
 }
 
 
