@@ -12,19 +12,19 @@ static float cam_pos_y = 0;
 
 
 static void on_core_update(float delta) {
-	if(rge_input_is_press(KEY_LEFT)) {
+	if(rge_input_is_press(RGE_KEY_LEFT)) {
 		cam_pos_x -= CAM_SPEED * delta;
 	}
 
-	if(rge_input_is_press(KEY_RIGHT)) {
+	if(rge_input_is_press(RGE_KEY_RIGHT)) {
 		cam_pos_x += CAM_SPEED * delta;
 	}
 
-	if(rge_input_is_press(KEY_UP)) {
+	if(rge_input_is_press(RGE_KEY_UP)) {
 		cam_pos_y += CAM_SPEED * delta;
 	}
 
-	if(rge_input_is_press(KEY_DOWN)) {
+	if(rge_input_is_press(RGE_KEY_DOWN)) {
 		cam_pos_y -= CAM_SPEED * delta;
 	}
 

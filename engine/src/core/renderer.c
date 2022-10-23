@@ -77,6 +77,9 @@ static pixel_t rgba_to_argb(pixel_t color) {
 
 
 void rge_renderer_set_pixel(uint16_t x, uint16_t y, pixel_t color) {
+	if(x >= viewport->width || y >= viewport->height)
+		return;
+
 	uint16_t by = y * viewport->scale;
 	uint16_t bx = x * viewport->scale;
 	uint16_t w = viewport->width * viewport->scale;
@@ -128,6 +131,9 @@ static void draw_sprite(void* component, float delta) {
 	uint16_t by = 0;
 	uint16_t wy = sprite->section.height;
 
+	if(ox >= viewport->width || oy >= viewport->height || ox + wx < 0 || oy + wy < 0)
+		return;
+
 	int32_t lx = (ox + wx) - viewport->width;
 	if(lx > 0)
 		wx -= lx;
@@ -166,6 +172,9 @@ static void draw_sprite(void* component, float delta) {
 
 static layer_t* init_layer(int16_t level) {
 	layer_t* layer = malloc(sizeof(layer_t));
+	if(layer == NULL)
+		return NULL;
+
 	layer->level = level;
 	layer->sprites = rge_registry_init(TYPE_SPRITE, sizeof(sprite_t), START_SPRITES_COUNT, INCREASE_SPRITES_STEP);
 	layer->next = NULL;

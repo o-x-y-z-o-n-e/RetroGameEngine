@@ -58,6 +58,9 @@ texture_t rge_texture_read(const char* path) {
 
 
 pixel_t rge_texture_sample(texture_t* texture, uint16_t x, uint16_t y) {
+	if(x >= texture->width || y >= texture->height)
+		return COLOR_RGB(0, 0, 0);
+
 	return texture->data[y * texture->width + x];
 }
 

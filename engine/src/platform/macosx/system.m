@@ -150,60 +150,60 @@ uint64_t rge_system_get_time() {
 
 uint8_t rge_system_parse_key(uint16_t system_key) {
     switch(system_key) {
-        case kVK_ANSI_A: return KEY_A;
-        case kVK_ANSI_B: return KEY_B;
-        case kVK_ANSI_C: return KEY_C;
-        case kVK_ANSI_D: return KEY_D;
-        case kVK_ANSI_E: return KEY_E;
-        case kVK_ANSI_F: return KEY_F;
-        case kVK_ANSI_G: return KEY_G;
-        case kVK_ANSI_H: return KEY_H;
-        case kVK_ANSI_I: return KEY_I;
-        case kVK_ANSI_J: return KEY_J;
-        case kVK_ANSI_K: return KEY_K;
-        case kVK_ANSI_L: return KEY_L;
-        case kVK_ANSI_M: return KEY_M;
-        case kVK_ANSI_N: return KEY_N;
-        case kVK_ANSI_O: return KEY_0;
-        case kVK_ANSI_P: return KEY_P;
-        case kVK_ANSI_Q: return KEY_Q;
-        case kVK_ANSI_R: return KEY_R;
-        case kVK_ANSI_S: return KEY_S;
-        case kVK_ANSI_T: return KEY_T;
-        case kVK_ANSI_U: return KEY_U;
-        case kVK_ANSI_V: return KEY_V;
-        case kVK_ANSI_W: return KEY_W;
-        case kVK_ANSI_X: return KEY_X;
-        case kVK_ANSI_Y: return KEY_Y;
-        case kVK_ANSI_Z: return KEY_Z;
+        case kVK_ANSI_A: return RGE_KEY_A;
+        case kVK_ANSI_B: return RGE_KEY_B;
+        case kVK_ANSI_C: return RGE_KEY_C;
+        case kVK_ANSI_D: return RGE_KEY_D;
+        case kVK_ANSI_E: return RGE_KEY_E;
+        case kVK_ANSI_F: return RGE_KEY_F;
+        case kVK_ANSI_G: return RGE_KEY_G;
+        case kVK_ANSI_H: return RGE_KEY_H;
+        case kVK_ANSI_I: return RGE_KEY_I;
+        case kVK_ANSI_J: return RGE_KEY_J;
+        case kVK_ANSI_K: return RGE_KEY_K;
+        case kVK_ANSI_L: return RGE_KEY_L;
+        case kVK_ANSI_M: return RGE_KEY_M;
+        case kVK_ANSI_N: return RGE_KEY_N;
+        case kVK_ANSI_O: return RGE_KEY_0;
+        case kVK_ANSI_P: return RGE_KEY_P;
+        case kVK_ANSI_Q: return RGE_KEY_Q;
+        case kVK_ANSI_R: return RGE_KEY_R;
+        case kVK_ANSI_S: return RGE_KEY_S;
+        case kVK_ANSI_T: return RGE_KEY_T;
+        case kVK_ANSI_U: return RGE_KEY_U;
+        case kVK_ANSI_V: return RGE_KEY_V;
+        case kVK_ANSI_W: return RGE_KEY_W;
+        case kVK_ANSI_X: return RGE_KEY_X;
+        case kVK_ANSI_Y: return RGE_KEY_Y;
+        case kVK_ANSI_Z: return RGE_KEY_Z;
+		
+        case kVK_ANSI_0: return RGE_KEY_0;
+        case kVK_ANSI_1: return RGE_KEY_1;
+        case kVK_ANSI_2: return RGE_KEY_2;
+        case kVK_ANSI_3: return RGE_KEY_3;
+        case kVK_ANSI_4: return RGE_KEY_4;
+        case kVK_ANSI_5: return RGE_KEY_5;
+        case kVK_ANSI_6: return RGE_KEY_6;
+        case kVK_ANSI_7: return RGE_KEY_7;
+        case kVK_ANSI_8: return RGE_KEY_8;
+        case kVK_ANSI_9: return RGE_KEY_9;
 
-        case kVK_ANSI_0: return KEY_0;
-        case kVK_ANSI_1: return KEY_1;
-        case kVK_ANSI_2: return KEY_2;
-        case kVK_ANSI_3: return KEY_3;
-        case kVK_ANSI_4: return KEY_4;
-        case kVK_ANSI_5: return KEY_5;
-        case kVK_ANSI_6: return KEY_6;
-        case kVK_ANSI_7: return KEY_7;
-        case kVK_ANSI_8: return KEY_8;
-        case kVK_ANSI_9: return KEY_9;
+        case kVK_Space: return RGE_KEY_SPACE;
+        case kVK_CapsLock: return RGE_KEY_CAPS;
+        case kVK_Return: return RGE_KEY_RETURN;
+        case kVK_LeftArrow: return RGE_KEY_LEFT;
+        case kVK_UpArrow: return RGE_KEY_UP;
+        case kVK_RightArrow: return RGE_KEY_RIGHT;
+        case kVK_DownArrow: return RGE_KEY_DOWN;
+        case kVK_Shift: return RGE_KEY_LSHIFT;
+        case kVK_Control: return RGE_KEY_LCTRL;
+        case kVK_Command: return RGE_KEY_LALT;
 
-        case kVK_Space: return KEY_SPACE;
-        case kVK_CapsLock: return KEY_CAPS;
-        case kVK_Return: return KEY_RETURN;
-        case kVK_LeftArrow: return KEY_LEFT;
-        case kVK_UpArrow: return KEY_UP;
-        case kVK_RightArrow: return KEY_RIGHT;
-        case kVK_DownArrow: return KEY_DOWN;
-        case kVK_Shift: return KEY_LSHIFT;
-        case kVK_Control: return KEY_LCTRL;
-        case kVK_Command: return KEY_LALT;
-
-        case kVK_RightShift: return KEY_RSHIFT;
-        case kVK_RightControl: return KEY_RCTRL;
-        case kVK_Tab: return KEY_TAB;
-        case kVK_Delete: return KEY_BACKSPACE;
-        case kVK_Escape: return KEY_ESC;
+        case kVK_RightShift: return RGE_KEY_RSHIFT;
+        case kVK_RightControl: return RGE_KEY_RCTRL;
+        case kVK_Tab: return RGE_KEY_TAB;
+        case kVK_Delete: return RGE_KEY_BACKSPACE;
+        case kVK_Escape: return RGE_KEY_ESC;
 
     }
 

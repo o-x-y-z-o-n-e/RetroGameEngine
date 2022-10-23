@@ -72,65 +72,65 @@ typedef struct pixel_t {
 } pixel_t;
 
 typedef enum {
-	KEY_A = 1,
-	KEY_B = 2,
-	KEY_C = 3,
-	KEY_D = 4,
-	KEY_E = 5,
-	KEY_F = 6,
-	KEY_G = 7,
-	KEY_H = 8,
-	KEY_I = 9,
-	KEY_J = 10,
-	KEY_K = 11,
-	KEY_L = 12,
-	KEY_M = 13,
-	KEY_N = 14,
-	KEY_O = 15,
-	KEY_P = 16,
-	KEY_Q = 17,
-	KEY_R = 18,
-	KEY_S = 19,
-	KEY_T = 20,
-	KEY_U = 21,
-	KEY_V = 22,
-	KEY_W = 23,
-	KEY_X = 24,
-	KEY_Y = 25,
-	KEY_Z = 26,
-
-	KEY_SPACE = 27,
-	KEY_CAPS = 28,
-	KEY_RETURN = 29,
+	RGE_KEY_A = 1,
+	RGE_KEY_B = 2,
+	RGE_KEY_C = 3,
+	RGE_KEY_D = 4,
+	RGE_KEY_E = 5,
+	RGE_KEY_F = 6,
+	RGE_KEY_G = 7,
+	RGE_KEY_H = 8,
+	RGE_KEY_I = 9,
+	RGE_KEY_J = 10,
+	RGE_KEY_K = 11,
+	RGE_KEY_L = 12,
+	RGE_KEY_M = 13,
+	RGE_KEY_N = 14,
+	RGE_KEY_O = 15,
+	RGE_KEY_P = 16,
+	RGE_KEY_Q = 17,
+	RGE_KEY_R = 18,
+	RGE_KEY_S = 19,
+	RGE_KEY_T = 20,
+	RGE_KEY_U = 21,
+	RGE_KEY_V = 22,
+	RGE_KEY_W = 23,
+	RGE_KEY_X = 24,
+	RGE_KEY_Y = 25,
+	RGE_KEY_Z = 26,
 	
-	KEY_0 = 30,
-	KEY_1 = 31,
-	KEY_2 = 32,
-	KEY_3 = 33,
-	KEY_4 = 34,
-	KEY_5 = 35,
-	KEY_6 = 36,
-	KEY_7 = 37,
-	KEY_8 = 38,
-	KEY_9 = 39,
-
-	KEY_LEFT = 40,
-	KEY_UP = 41,
-	KEY_RIGHT = 42,
-	KEY_DOWN = 43,
-
-	KEY_LSHIFT = 44,
-	KEY_LCTRL = 45,
-	KEY_LALT = 46,
-
-	KEY_RSHIFT = 47,
-	KEY_RCTRL = 48,
-	KEY_RALT = 49,
-
-	KEY_TAB = 50,
-	KEY_BACKSPACE = 51,
-
-	KEY_ESC = 60
+	RGE_KEY_SPACE = 27,
+	RGE_KEY_CAPS = 28,
+	RGE_KEY_RETURN = 29,
+	
+	RGE_KEY_0 = 30,
+	RGE_KEY_1 = 31,
+	RGE_KEY_2 = 32,
+	RGE_KEY_3 = 33,
+	RGE_KEY_4 = 34,
+	RGE_KEY_5 = 35,
+	RGE_KEY_6 = 36,
+	RGE_KEY_7 = 37,
+	RGE_KEY_8 = 38,
+	RGE_KEY_9 = 39,
+	
+	RGE_KEY_LEFT = 40,
+	RGE_KEY_UP = 41,
+	RGE_KEY_RIGHT = 42,
+	RGE_KEY_DOWN = 43,
+	
+	RGE_KEY_LSHIFT = 44,
+	RGE_KEY_LCTRL = 45,
+	RGE_KEY_LALT = 46,
+	
+	RGE_KEY_RSHIFT = 47,
+	RGE_KEY_RCTRL = 48,
+	RGE_KEY_RALT = 49,
+	
+	RGE_KEY_TAB = 50,
+	RGE_KEY_BACKSPACE = 51,
+	
+	RGE_KEY_ESC = 60
 } rge_key_t;
 
 
@@ -182,6 +182,10 @@ void rge_log_error(char* format, ...);
 bool rge_input_is_press(rge_key_t key);
 bool rge_input_is_click(rge_key_t key);
 void rge_input_set_on_down(void(*func)(rge_key_t key));
+
+
+// ===Scene===
+void rge_scene_clear();
 
 
 // ===Entity===

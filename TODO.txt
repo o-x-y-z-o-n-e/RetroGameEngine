@@ -1,16 +1,14 @@
 [GENERAL]
-Reorganize scripts. Add environment runtime settings for VS projects.
-
 Asset manager.
 Entity inheritance.
 Entity names/pathing.
 
 Change ptr_buffer_t to use free_stack instead of next_check.
 Physics/collision system.
-Scripting.
 
 Later:
 UI module.
+Scripting.
 
 [WINDOWS]
 Audio.

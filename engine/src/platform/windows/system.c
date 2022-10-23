@@ -41,19 +41,19 @@ uint8_t rge_system_parse_key(uint16_t system_key) {
 
 	// Otherwise,
 	switch(system_key) {
-		case VK_SPACE: return KEY_SPACE;
-		case VK_CAPITAL: return KEY_CAPS;
-		case VK_RETURN: return KEY_RETURN;
-		case VK_LEFT: return KEY_LEFT;
-		case VK_UP: return KEY_UP;
-		case VK_RIGHT: return KEY_RIGHT;
-		case VK_DOWN: return KEY_DOWN;
-		case VK_LSHIFT: return KEY_LSHIFT;
-		case VK_CONTROL: return KEY_LCTRL;
-		case VK_RSHIFT: return KEY_RSHIFT;
-		case VK_TAB: return KEY_TAB;
-		case VK_BACK: return KEY_BACKSPACE;
-		case VK_ESCAPE: return KEY_ESC;
+		case VK_SPACE: return RGE_KEY_SPACE;
+		case VK_CAPITAL: return RGE_KEY_CAPS;
+		case VK_RETURN: return RGE_KEY_RETURN;
+		case VK_LEFT: return RGE_KEY_LEFT;
+		case VK_UP: return RGE_KEY_UP;
+		case VK_RIGHT: return RGE_KEY_RIGHT;
+		case VK_DOWN: return RGE_KEY_DOWN;
+		case VK_LSHIFT: return RGE_KEY_LSHIFT;
+		case VK_CONTROL: return RGE_KEY_LCTRL;
+		case VK_RSHIFT: return RGE_KEY_RSHIFT;
+		case VK_TAB: return RGE_KEY_TAB;
+		case VK_BACK: return RGE_KEY_BACKSPACE;
+		case VK_ESCAPE: return RGE_KEY_ESC;
 	}
 
 	return 255;
