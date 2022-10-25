@@ -1,4 +1,8 @@
 [GENERAL]
+Write API descriptions.
+Controller keystrokes.
+Multi-Controller support.
+
 Asset manager.
 Entity inheritance.
 Entity names/pathing.
@@ -7,17 +11,17 @@ Change ptr_buffer_t to use free_stack instead of next_check.
 Physics/collision system.
 
 Later:
+Audio.
 UI module.
 Scripting.
 
+
 [WINDOWS]
-Audio.
 Change window icon.
 
 [MACOSX]
 Black bar frame (linear viewport scaling).
 Change window icon.
-Audio.
 
 [LINUX]
 Create window.

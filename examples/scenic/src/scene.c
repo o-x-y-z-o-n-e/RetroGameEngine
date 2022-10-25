@@ -58,11 +58,11 @@ void setup_my_scene() {
 void update_my_scene(float delta) {
 	point_t cam_pos = rge_camera_get_location();
 
-	if(rge_input_is_press(KEY_LEFT)) {
+	if(rge_input_is_press(RGE_KEY_LEFT)) {
 		hor -= delta*1.5F;
 	}
 
-	if(rge_input_is_press(KEY_RIGHT)) {
+	if(rge_input_is_press(RGE_KEY_RIGHT)) {
 		hor += delta*1.5F;
 	}
 

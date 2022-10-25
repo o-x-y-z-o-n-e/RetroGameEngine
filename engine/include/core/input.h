@@ -5,6 +5,6 @@
 
 void rge_input_flush_click();
 void rge_input_flush_all();
-void rge_input_set_state(rge_key_t key, bool down);
+void rge_input_set_state(rge_input_t binding, bool down);
 
 #endif

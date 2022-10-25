@@ -14,7 +14,7 @@ int main() {
 		return 0;
 	}
 
-	rge_window_set_title("Example App");
+	rge_window_set_title("Starship");
 	rge_view_set_size(WINDOW_WIDTH, WINDOW_HEIGHT);
 	rge_view_set_background(COLOR_RGB(16, 16, 16));
 

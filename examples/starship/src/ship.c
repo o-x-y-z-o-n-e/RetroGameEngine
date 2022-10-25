@@ -47,6 +47,18 @@ static void ship_move() {
 	if(rge_input_is_press(RGE_KEY_DOWN))
 		position.y -= 1;
 
+	if(rge_input_get_axis(RGE_PAD_LS_AXIS_X) > 0.5F)
+		position.x += 1;
+
+	if(rge_input_get_axis(RGE_PAD_LS_AXIS_X) < -0.5F)
+		position.x -= 1;
+
+	if(rge_input_get_axis(RGE_PAD_LS_AXIS_Y) > 0.5F)
+		position.y += 1;
+
+	if(rge_input_get_axis(RGE_PAD_LS_AXIS_Y) < -0.5F)
+		position.y -= 1;
+
 	if(position.x - 8 < -WINDOW_WIDTH / 2)
 		position.x = -WINDOW_WIDTH / 2 + 8;
 	else if(position.x + 8 > WINDOW_WIDTH / 2)

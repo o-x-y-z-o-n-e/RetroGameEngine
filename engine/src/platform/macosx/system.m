@@ -211,4 +211,12 @@ uint8_t rge_system_parse_key(uint16_t system_key) {
 }
 
 
+//------------------------------------------------------------------------------
+
+
+float rge_system_poll_axis(uint8_t binding) {
+	return 0;
+}
+
+
 #endif

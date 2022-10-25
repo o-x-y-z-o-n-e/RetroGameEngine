@@ -41,8 +41,8 @@ project "Engine"
         "engine/src/**.c",
 		externalsrc["lua"] .. "/**.c"
     }
-
-
+	
+	
     includedirs {
         "engine/include",
         "engine/include/**",
@@ -58,7 +58,7 @@ project "Engine"
 		systemversion "latest"
 		
 		defines "SYS_WINDOWS"
-	
+		links "XInput"
 	
 	filter "system:macosx"
 		defines "SYS_MACOSX"
