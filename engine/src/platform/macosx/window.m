@@ -59,14 +59,14 @@ static uint16_t window_height = 400;
 -(void)keyDown:(NSEvent*)event {
     if(event.type == NSEventTypeKeyDown) {
         uint8_t key = rge_system_parse_key(event.keyCode);
-        rge_input_set_state(key, true);
+        rge_input_key_set_state(key, true);
     }
 }
 
 -(void)keyUp:(NSEvent*)event {
     if(event.type == NSEventTypeKeyUp) {
         uint8_t key = rge_system_parse_key(event.keyCode);
-        rge_input_set_state(key, false);
+        rge_input_key_set_state(key, false);
     }
 }
 

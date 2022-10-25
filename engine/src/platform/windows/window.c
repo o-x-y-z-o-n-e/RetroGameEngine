@@ -139,7 +139,7 @@ static LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 
 				if(key_is_down != key_was_down) {
 					uint8_t key = rge_system_parse_key((uint8_t)wParam);
-					rge_input_set_state(key, key_is_down);
+					rge_input_key_set_state(key, key_is_down);
 				}
 			}
 			break;

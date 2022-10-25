@@ -1,7 +1,5 @@
 [GENERAL]
 Write API descriptions.
-Controller keystrokes.
-Multi-Controller support.
 
 Asset manager.
 Entity inheritance.
@@ -14,7 +12,6 @@ Later:
 Audio.
 UI module.
 Scripting.
-
 
 [WINDOWS]
 Change window icon.

@@ -83,4 +83,7 @@ void ship_update(float delta) {
 		ship->move_counter -= MOVE_INTERVAL;
 		ship_move();
 	}
+
+	if(rge_input_is_click(RGE_PAD_SOUTH))
+		rge_log_info("shoot");
 }

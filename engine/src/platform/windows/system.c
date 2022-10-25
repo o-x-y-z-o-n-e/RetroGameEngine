@@ -97,4 +97,63 @@ float rge_system_poll_axis(uint8_t binding) {
 	return 0.0F;
 }
 
+
+//------------------------------------------------------------------------------
+
+
+void rge_system_poll_gamepad() {
+	for(int i = 0; i < 4; i++) {
+		XINPUT_STATE state;
+		XInputGetState(i, &state);
+
+		float lt = (float)state.Gamepad.bLeftTrigger / 255;
+		float rt = (float)state.Gamepad.bRightTrigger / 255;
+
+		float lx = fmaxf(-1, (float)state.Gamepad.sThumbLX / 32767);
+		float ly = fmaxf(-1, (float)state.Gamepad.sThumbLY / 32767);
+		float rx = fmaxf(-1, (float)state.Gamepad.sThumbRX / 32767);
+		float ry = fmaxf(-1, (float)state.Gamepad.sThumbRY / 32767);
+
+		rge_input_gamepad_set_axis(i, RGE_PAD_LT, lt);
+		rge_input_gamepad_set_axis(i, RGE_PAD_RT, rt);
+
+		rge_input_gamepad_set_axis(i, RGE_PAD_LS_AXIS_X, lx);
+		rge_input_gamepad_set_axis(i, RGE_PAD_LS_AXIS_Y, ly);
+		rge_input_gamepad_set_axis(i, RGE_PAD_RS_AXIS_X, rx);
+		rge_input_gamepad_set_axis(i, RGE_PAD_RS_AXIS_Y, ry);
+
+		rge_input_gamepad_set_state(i, RGE_PAD_D_LEFT, state.Gamepad.wButtons & 0x0004);
+		rge_input_gamepad_set_state(i, RGE_PAD_D_UP, state.Gamepad.wButtons & 0x0001);
+		rge_input_gamepad_set_state(i, RGE_PAD_D_RIGHT, state.Gamepad.wButtons & 0x0008);
+		rge_input_gamepad_set_state(i, RGE_PAD_D_DOWN, state.Gamepad.wButtons & 0x0002);
+
+		rge_input_gamepad_set_state(i, RGE_PAD_WEST, state.Gamepad.wButtons & 0x4000);
+		rge_input_gamepad_set_state(i, RGE_PAD_NORTH, state.Gamepad.wButtons & 0x8000);
+		rge_input_gamepad_set_state(i, RGE_PAD_EAST, state.Gamepad.wButtons & 0x2000);
+		rge_input_gamepad_set_state(i, RGE_PAD_SOUTH, state.Gamepad.wButtons & 0x1000);
+
+		rge_input_gamepad_set_state(i, RGE_PAD_LS_LEFT, lx < 0.5F);
+		rge_input_gamepad_set_state(i, RGE_PAD_LS_UP, ly > 0.5F);
+		rge_input_gamepad_set_state(i, RGE_PAD_LS_RIGHT, lx > 0.5F);
+		rge_input_gamepad_set_state(i, RGE_PAD_LS_DOWN, ly < 0.5F);
+
+		rge_input_gamepad_set_state(i, RGE_PAD_RS_LEFT, rx < 0.5F);
+		rge_input_gamepad_set_state(i, RGE_PAD_RS_UP, ry > 0.5F);
+		rge_input_gamepad_set_state(i, RGE_PAD_RS_RIGHT, rx > 0.5F);
+		rge_input_gamepad_set_state(i, RGE_PAD_RS_DOWN, ry < 0.5F);
+
+		rge_input_gamepad_set_state(i, RGE_PAD_LB, state.Gamepad.wButtons & 0x0100);
+		rge_input_gamepad_set_state(i, RGE_PAD_RB, state.Gamepad.wButtons & 0x0200);
+
+		rge_input_gamepad_set_state(i, RGE_PAD_LT, lt > 0.5F);
+		rge_input_gamepad_set_state(i, RGE_PAD_RT, rt > 0.5F);
+
+		rge_input_gamepad_set_state(i, RGE_PAD_L3, state.Gamepad.wButtons & 0x0040);
+		rge_input_gamepad_set_state(i, RGE_PAD_R3, state.Gamepad.wButtons & 0x0080);
+
+		rge_input_gamepad_set_state(i, RGE_PAD_OPTIONS, state.Gamepad.wButtons & 0x0020);
+		rge_input_gamepad_set_state(i, RGE_PAD_START, state.Gamepad.wButtons & 0x0010);
+	}
+}
+
 #endif

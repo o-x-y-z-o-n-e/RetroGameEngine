@@ -219,4 +219,9 @@ float rge_system_poll_axis(uint8_t binding) {
 }
 
 
+void rge_system_poll_gamepad() {
+
+}
+
+
 #endif

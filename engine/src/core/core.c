@@ -81,6 +81,7 @@ void rge_core_start() {
 	last_time = rge_system_get_time();
 	while(is_running) {
 		rge_window_poll_events();
+		rge_system_poll_gamepad();
 
 		uint64_t current_time = rge_system_get_time();
 		uint64_t delta_time = current_time - last_time;

@@ -244,6 +244,12 @@ bool rge_input_is_click(rge_input_t binding);
 /* TODO: Write Description. */
 float rge_input_get_axis(rge_input_t binding);
 /* TODO: Write Description. */
+bool rge_input_gamepad_is_press(int gamepad, rge_input_t binding);
+/* TODO: Write Description. */
+bool rge_input_gamepad_is_click(int gamepad, rge_input_t binding);
+/* TODO: Write Description. */
+float rge_input_gamepad_get_axis(int gamepad, rge_input_t binding);
+/* TODO: Write Description. */
 void rge_input_set_on_down(void(*func)(rge_input_t binding));
 
 
