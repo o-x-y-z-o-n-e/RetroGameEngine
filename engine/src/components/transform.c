@@ -36,3 +36,41 @@ point_t rge_float_to_point(float x, float y) {
 		round(y)
 	};
 }
+
+
+//------------------------------------------------------------------------------
+
+
+point_t rge_transform_get_global(const entity_t* entity) {
+	point_t offset = { 0, 0 };
+
+	transform_t* t = rge_component_get_from_type(entity, TYPE_TRANSFORM);
+	if(t == NULL)
+		return offset;
+
+	if(entity->parent != NULL)
+		offset = rge_transform_get_global(entity->parent);
+
+	offset.x += t->location.x;
+	offset.y += t->location.y;
+
+	return offset;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void rge_transform_set_global(entity_t* entity, point_t location) {
+	transform_t* t = rge_component_get_from_type(entity, TYPE_TRANSFORM);
+	if(t == NULL)
+		return;
+
+	point_t offset = { 0, 0 };
+
+	if(entity->parent != NULL)
+		offset = rge_transform_get_global(entity->parent);
+	
+	t->location.x = location.x - offset.x;
+	t->location.y = location.y - offset.y;
+}

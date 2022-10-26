@@ -1,15 +1,10 @@
 [GENERAL]
 Write API descriptions.
 
-Asset manager.
-Entity inheritance.
-Entity names/pathing.
-
-Change ptr_buffer_t to use free_stack instead of next_check.
 Physics/collision system.
 
 Later:
-Audio.
+Audio (load/free & playback).
 UI module.
 Scripting.
 

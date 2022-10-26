@@ -26,6 +26,16 @@ void ship_init() {
 
 	rge_sprite_set_texture(ship->sprite, rge_texture_load("res/ship.png"));
 	rge_sprite_set_centered(ship->sprite, true);
+
+	entity_t* sub_e = rge_entity_create();
+	transform_t* sub_t = rge_transform_create(sub_e);
+	sprite_t* sub_s = rge_sprite_create(sub_e, 12);
+
+	rge_sprite_set_texture(sub_s, rge_texture_load("res/ship.png"));
+	rge_sprite_set_centered(sub_s, true);
+	sub_t->location.x = 64;
+
+	rge_entity_set_parent(sub_e, entity);
 }
 
 

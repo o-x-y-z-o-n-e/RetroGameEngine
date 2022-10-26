@@ -26,6 +26,10 @@ typedef struct cmp_ref_t {
 typedef struct entity_t {
 	cmp_ref_t* components;
 	uint8_t component_count;
+
+	entity_t* parent;
+	entity_t** children;
+	uint32_t child_count;
 } entity_t;
 
 int rge_scene_init();

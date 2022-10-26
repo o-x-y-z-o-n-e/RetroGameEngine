@@ -262,18 +262,16 @@ void rge_scene_clear();
 /* TODO: Write Description. */
 entity_t* rge_entity_create();
 /* TODO: Write Description. */
-void rge_entity_free(entity_t* entity);
-/* TODO: Implement & Write Description. */
+void rge_entity_destroy(entity_t* entity);
+/* TODO: Write Description. */
 entity_t* rge_entity_get_child(const entity_t* entity, uint32_t index);
-/* TODO: Implement & Write Description. */
+/* TODO: Write Description. */
 uint32_t rge_entity_get_child_count(const entity_t* entity);
-/* TODO: Implement & Write Description. */
+/* TODO: Write Description. */
 uint32_t rge_entity_get_child_index(const entity_t* entity, const entity_t* child);
-/* TODO: Implement & Write Description. */
-bool rge_entity_add_child(entity_t* entity, entity_t* child);
-/* TODO: Implement & Write Description. */
-bool rge_entity_remove_child(entity_t* entity, entity_t* child);
-/* TODO: Implement & Write Description. */
+/* TODO: Write Description. */
+bool rge_entity_contains_child(const entity_t* entity, const entity_t* child);
+/* TODO: Write Description. */
 bool rge_entity_set_parent(entity_t* entity, entity_t* parent);
 
 
@@ -295,7 +293,7 @@ void* rge_component_get_from_type(const entity_t* entity, uint8_t type);
 // ===Texture===
 /* TODO: Write Description. */
 texture_t* rge_texture_load(const char* path);
-/* TODO: Implement & Write Description. */
+/* TODO: Write Description. */
 void rge_texture_free(texture_t* texture);
 /* TODO: Write Description. */
 void rge_texture_get_size(const texture_t* texture, uint16_t* w, uint16_t* h);
@@ -355,6 +353,10 @@ point_t rge_sprite_get_offset(const sprite_t* sprite);
 // ===Transform===
 /* Creates a transform component & associates it with the given entity. */
 transform_t* rge_transform_create(entity_t* entity);
+/* TODO: Write Description. */
+point_t rge_transform_get_global(const entity_t* entity);
+/* TODO: Write Description. */
+void rge_transform_set_global(entity_t* entity, point_t location);
 
 
 // ===Misc===

@@ -117,14 +117,10 @@ void rge_renderer_clear() {
 
 static void draw_sprite(void* component, float delta) {
 	sprite_t* sprite = (sprite_t*)component;
-	int32_t ox = 0;
-	int32_t oy = 0;
 
-	transform_t* transform = rge_component_get_from_type(sprite->owner, TYPE_TRANSFORM);
-	if(transform != NULL) {
-		ox = transform->location.x + sprite->offset.x + camera_offset.x - camera_location.x;
-		oy = -transform->location.y + sprite->offset.y + camera_offset.y + camera_location.y;
-	}
+	point_t location = rge_transform_get_global(sprite->owner);
+	int32_t ox = location.x + sprite->offset.x + camera_offset.x - camera_location.x;
+	int32_t oy = -location.y + sprite->offset.y + camera_offset.y + camera_location.y;
 
 	uint16_t bx = 0;
 	uint16_t wx = sprite->section.width;
