@@ -3,6 +3,12 @@ Write API descriptions.
 
 Physics/collision system.
 
+Redo rge_audio_t to rge_wave_t
+
+Rename asset_manager.c to assets.c
+Rename audio_player.c to audio.c
+Rename script_manager.c to scripting.c
+
 Later:
 Audio (load/free & playback).
 UI module.
