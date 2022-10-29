@@ -28,11 +28,11 @@ static uint8_t* rgb_to_rgba(const uint8_t* data, int width, int height) {
 //------------------------------------------------------------------------------
 
 
-texture_t rge_texture_read(const char* path) {
+texture_t rge_texture_parse(void* buffer, int size) {
 	int width, height, channels;
-	uint8_t* data = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
+	uint8_t* data = stbi_load_from_memory(buffer, size, &width, &height, &channels, STBI_rgb_alpha);
 	if(!data) {
-		rge_log_error("Texture could not be loaded: %s", path);
+		rge_log_error("Texture could not be loaded");
 		return (texture_t) {
 			0,
 			0,

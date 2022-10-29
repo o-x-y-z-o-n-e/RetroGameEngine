@@ -1,5 +1,5 @@
-#ifndef RGE_AUDIO_PLAYER_H
-#define RGE_AUDIO_PLAYER_H
+#ifndef RGE_AUDIO_H
+#define RGE_AUDIO_H
 
 int rge_audio_init();
 

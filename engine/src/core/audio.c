@@ -1,5 +1,5 @@
 #include "api/rge.h"
-#include "assets/audio.h"
+#include "assets/sound.h"
 
 #define STB_VORBIS_HEADER_ONLY
 #include "stb_vorbis.c"    /* Enables Vorbis decoding. */
@@ -21,7 +21,7 @@ static ma_engine engine;
 //------------------------------------------------------------------------------
 
 
-void rge_audio_play(const audio_t* clip) {
+void rge_audio_play(const sound_t* clip) {
 
 }
 

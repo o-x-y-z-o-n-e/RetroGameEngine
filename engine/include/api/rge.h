@@ -33,7 +33,7 @@ typedef struct registry_t registry_t;
 typedef struct entity_t entity_t;
 typedef struct sprite_t sprite_t;
 typedef struct texture_t texture_t;
-typedef struct audio_t audio_t;
+typedef struct sound_t sound_t;
 
 
 // ===Data Types===
@@ -171,9 +171,12 @@ typedef enum {
 } rge_input_t;
 
 
-// ===Component Type ID===
+// ===Component & Asset Type ID===
 #define TYPE_TRANSFORM 0
 #define TYPE_SPRITE 1
+
+#define TYPE_TEXTURE 100
+#define TYPE_AUDIO 101
 
 
 // ===Core===
@@ -294,8 +297,6 @@ void* rge_component_get_from_type(const entity_t* entity, uint8_t type);
 /* TODO: Write Description. */
 texture_t* rge_texture_load(const char* path);
 /* TODO: Write Description. */
-void rge_texture_free(texture_t* texture);
-/* TODO: Write Description. */
 void rge_texture_get_size(const texture_t* texture, uint16_t* w, uint16_t* h);
 /* TODO: Write Description. */
 uint16_t rge_texture_get_width(const texture_t* texture);
@@ -305,13 +306,11 @@ uint16_t rge_texture_get_height(const texture_t* texture);
 
 // ===Audio===
 /* TODO: Write Description. */
-audio_t* rge_audio_load(const char* path);
+sound_t* rge_sound_load(const char* path);
 /* TODO: Write Description. */
-void rge_audio_free(audio_t* clip);
+float rge_sound_get_length(const sound_t* clip);
 /* TODO: Write Description. */
-float rge_audio_get_length(const audio_t* clip);
-/* TODO: Write Description. */
-void rge_audio_play(const audio_t* clip);
+void rge_audio_play(const sound_t* clip);
 /* TODO: Write Description. */
 void rge_audio_stop_all();
 

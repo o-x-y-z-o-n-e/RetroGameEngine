@@ -1,5 +1,5 @@
-#include "assets/audio.h"
-#include "core/audio_player.h"
+#include "assets/sound.h"
+#include "core/audio.h"
 #include <stddef.h>
 
 #include "miniaudio.h"
@@ -8,7 +8,7 @@
 //------------------------------------------------------------------------------
 
 
-float rge_audio_get_length(const audio_t* clip) {
+float rge_sound_get_length(const sound_t* clip) {
 	// TODO
     return 0;
 }
@@ -17,18 +17,29 @@ float rge_audio_get_length(const audio_t* clip) {
 //------------------------------------------------------------------------------
 
 
-audio_t rge_audio_read(const char* path) {
+// TODO: Delete
+sound_t rge_sound_read(const char* path) {
 	ma_sound sound;
 	ma_result result = ma_sound_init_from_file(rge_audio_get_engine(), path, 0, NULL, NULL, &sound);
 	if(result != MA_SUCCESS) {
-		return (audio_t) {
+		return (sound_t) {
 			NULL
 		};
 	}
 
 	// TODO
 
-	return (audio_t) {
+	return (sound_t) {
+		NULL
+	};
+}
+
+
+//------------------------------------------------------------------------------
+
+
+sound_t rge_sound_parse(void* buffer, int size) {
+	return (sound_t) {
 		NULL
 	};
 }

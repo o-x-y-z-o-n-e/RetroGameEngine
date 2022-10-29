@@ -1,5 +1,5 @@
 #include "api/rge.h"
-#include "core/script_manager.h"
+#include "core/scripting.h"
 
 #include "lua.h"
 #include "lauxlib.h"

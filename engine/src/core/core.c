@@ -3,9 +3,9 @@
 #include "core/input.h"
 #include "core/scene.h"
 #include "core/renderer.h"
-#include "core/audio_player.h"
-#include "core/asset_manager.h"
-#include "core/script_manager.h"
+#include "core/audio.h"
+#include "core/assets.h"
+#include "core/scripting.h"
 #include "platform/system.h"
 #include "platform/window.h"
 

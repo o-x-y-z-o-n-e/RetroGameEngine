@@ -8,7 +8,7 @@ typedef struct texture_t {
     pixel_t* data;
 } texture_t;
 
-texture_t rge_texture_read(const char* path);
+texture_t rge_texture_parse(void* buffer, int size);
 pixel_t rge_texture_sample(texture_t* texture, uint16_t x, uint16_t y);
 
 #endif
