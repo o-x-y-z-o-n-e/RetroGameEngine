@@ -1,5 +1,5 @@
 #include "api/rge.h"
-#include "components/sprite.h"
+#include "ecs/sprite.h"
 #include "assets/texture.h"
 #include "core/renderer.h"
 #include "util/bit_flags.h"

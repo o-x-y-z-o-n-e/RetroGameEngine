@@ -1,7 +1,7 @@
 #include "api/rge.h"
-#include "core/scene.h"
 #include "core/core.h"
-#include "components/transform.h"
+#include "ecs/scene.h"
+#include "ecs/transform.h"
 #include "util/ptr_buffer.h"
 
 #include <stdlib.h>

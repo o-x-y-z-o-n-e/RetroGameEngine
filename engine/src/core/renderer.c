@@ -1,8 +1,8 @@
 #include "api/rge.h"
 #include "core/renderer.h"
-#include "core/scene.h"
-#include "components/sprite.h"
-#include "components/transform.h"
+#include "ecs/scene.h"
+#include "ecs/sprite.h"
+#include "ecs/transform.h"
 #include "assets/texture.h"
 #include "platform/window.h"
 

@@ -1,4 +1,4 @@
-#include "core/assets.h"
+#include "assets/assets.h"
 #include "util/hash_table.h"
 #include "assets/texture.h"
 #include "assets/sound.h"

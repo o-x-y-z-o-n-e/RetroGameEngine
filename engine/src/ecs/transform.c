@@ -1,5 +1,5 @@
-#include "components/transform.h"
-#include "core/scene.h"
+#include "ecs/transform.h"
+#include "ecs/scene.h"
 
 
 //------------------------------------------------------------------------------
