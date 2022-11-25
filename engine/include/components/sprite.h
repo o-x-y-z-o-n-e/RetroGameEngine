@@ -1,5 +1,5 @@
-#ifndef SPRITE_H
-#define SPRITE_H
+#ifndef RGE_SPRITE_H
+#define RGE_SPRITE_H
 
 #include "api/rge.h"
 

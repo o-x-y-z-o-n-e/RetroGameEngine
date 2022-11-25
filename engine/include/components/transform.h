@@ -1,4 +1,4 @@
-#ifndef TRANSFORM_T
-#define TRANSFORM_T
+#ifndef RGE_TRANSFORM_T
+#define RGE_TRANSFORM_T
 
 #endif
