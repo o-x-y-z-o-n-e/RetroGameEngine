@@ -1,7 +1,7 @@
 #ifdef SYS_WINDOWS
+#include "api/rge.h"
 #include "platform/window.h"
 #include "platform/system.h"
-#include "core/core.h"
 #include "core/input.h"
 #include "core/renderer.h"
 
@@ -69,7 +69,7 @@ static void create_frame_buffer() {
 static LRESULT CALLBACK on_window_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	switch(msg) {
 		case WM_CLOSE: {
-			rge_core_close();
+			rge_close();
 			break;
 		}
 

@@ -11,4 +11,7 @@ typedef struct sprite_t {
 	uint8_t flags;
 } sprite_t;
 
+int rge_sprite_init();
+void rge_sprite_draw_all();
+
 #endif

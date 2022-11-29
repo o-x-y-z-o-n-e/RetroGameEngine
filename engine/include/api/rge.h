@@ -179,17 +179,21 @@ typedef enum {
 #define TYPE_AUDIO 101
 
 
-// ===Core===
+// ===Main===
 /* Initializes RetroGameEngine. This needs to be called before any other api function. */
-int rge_core_init();
+int rge_init();
 /* Starts the main game loop. This is a blocking function and will only return once the game loop stops. */
-void rge_core_start();
+void rge_start();
 /* Stops the game loop and uninitializes RetroGameEngine. */
-void rge_core_close();
+void rge_close();
 /* Set a callback function that is called every game frame. */
-void rge_core_set_on_update(void (*func)(float delta));
+void rge_set_on_update(void (*func)(float delta));
 /* Set a callback function that is called every program loop iteration. (Normally runs more often than on_update). */
-void rge_core_set_on_tick(void (*func)(int delta));
+void rge_set_on_tick(void (*func)(int delta));
+/* TODO: Write Description. */
+void rge_set_on_render(void (*func)());
+/* TODO: Write Description. */
+void rge_crash(int error);
 
 
 // ===Camera===
@@ -221,13 +225,14 @@ void rge_view_set_background(pixel_t color);
 
 // ===Renderer===
 /* TODO: Write Description. */
-bool rge_renderer_auto_get();
-/* TODO: Write Description. */
-void rge_renderer_auto_set(bool auto_render);
 /* TODO: Write Description. */
 void rge_renderer_clear();
 /* TODO: Write Description. */
 void rge_renderer_set_pixel(uint16_t x, uint16_t y, pixel_t color);
+/* TODO: Write Description. */
+void rge_renderer_draw_texture(texture_t* texture, int32_t x, int32_t y);
+/* TODO: Write Description. */
+void rge_renderer_draw_atlas(texture_t* texture, int32_t x, int32_t y, rect_t bounds);
 
 
 // ===Log===
@@ -254,6 +259,33 @@ bool rge_input_gamepad_is_click(int gamepad, rge_input_t binding);
 float rge_input_gamepad_get_axis(int gamepad, rge_input_t binding);
 /* TODO: Write Description. */
 void rge_input_set_on_down(void(*func)(rge_input_t binding));
+
+
+// ===Texture===
+/* TODO: Write Description. */
+texture_t* rge_texture_load(const char* path);
+/* TODO: Write Description. */
+void rge_texture_get_size(const texture_t* texture, uint16_t* w, uint16_t* h);
+/* TODO: Write Description. */
+uint16_t rge_texture_get_width(const texture_t* texture);
+/* TODO: Write Description. */
+uint16_t rge_texture_get_height(const texture_t* texture);
+
+
+// ===Audio===
+/* TODO: Write Description. */
+sound_t* rge_sound_load(const char* path);
+/* TODO: Write Description. */
+float rge_sound_get_length(const sound_t* clip);
+/* TODO: Write Description. */
+void rge_audio_play(const sound_t* clip);
+/* TODO: Write Description. */
+void rge_audio_stop_all();
+
+
+// ===Misc===
+/* Quantizes & converts the x, y coordinates to a point_t struct. */
+point_t rge_float_to_point(float x, float y);
 
 
 // ===Scene===
@@ -291,28 +323,6 @@ uint8_t rge_component_get_count(const entity_t* entity);
 uint8_t rge_component_get_index(const entity_t* entity, const void* component);
 /* TODO: Write Description. */
 void* rge_component_get_from_type(const entity_t* entity, uint8_t type);
-
-
-// ===Texture===
-/* TODO: Write Description. */
-texture_t* rge_texture_load(const char* path);
-/* TODO: Write Description. */
-void rge_texture_get_size(const texture_t* texture, uint16_t* w, uint16_t* h);
-/* TODO: Write Description. */
-uint16_t rge_texture_get_width(const texture_t* texture);
-/* TODO: Write Description. */
-uint16_t rge_texture_get_height(const texture_t* texture);
-
-
-// ===Audio===
-/* TODO: Write Description. */
-sound_t* rge_sound_load(const char* path);
-/* TODO: Write Description. */
-float rge_sound_get_length(const sound_t* clip);
-/* TODO: Write Description. */
-void rge_audio_play(const sound_t* clip);
-/* TODO: Write Description. */
-void rge_audio_stop_all();
 
 
 // ===Registry===
@@ -357,9 +367,5 @@ point_t rge_transform_get_global(const entity_t* entity);
 /* TODO: Write Description. */
 void rge_transform_set_global(entity_t* entity, point_t location);
 
-
-// ===Misc===
-/* Quantizes & converts the x, y coordinates to a point_t struct. */
-point_t rge_float_to_point(float x, float y);
 
 #endif

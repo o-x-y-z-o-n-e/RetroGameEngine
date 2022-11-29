@@ -1,13 +1,18 @@
 #include "api/rge.h"
-#include "core/core.h"
-#include "core/input.h"
-#include "ecs/scene.h"
-#include "core/renderer.h"
-#include "core/audio.h"
-#include "assets/assets.h"
-#include "ecs/scripting.h"
+
 #include "platform/system.h"
 #include "platform/window.h"
+
+#include "assets/assets.h"
+
+#include "core/audio.h"
+#include "core/input.h"
+#include "core/physics.h"
+#include "core/renderer.h"
+
+#include "ecs/scene.h"
+#include "ecs/scripting.h"
+#include "ecs/sprite.h"
 
 #include <stdlib.h>
 
@@ -22,14 +27,27 @@ static char is_running = 0;
 static uint64_t last_time = 0;
 static float render_counter = 0;
 
-static void (*on_core_tick)(int delta);
-static void (*on_core_update)(float delta);
+static void (*on_tick)(int delta);
+static void (*on_update)(float delta);
+static void (*on_render)();
 
 
 //------------------------------------------------------------------------------
 
 
-int rge_core_init() {
+static void default_render_proc() {
+	rge_renderer_clear();
+
+	rge_sprite_draw_all();
+
+	rge_window_refresh();
+}
+
+
+//------------------------------------------------------------------------------
+
+
+int rge_init() {
 	if(has_init) {
 		rge_log_error("Core has already been initialized");
 		return 0;
@@ -41,13 +59,13 @@ int rge_core_init() {
 	if(!rge_window_create())
 		return 0;
 
+	if(!rge_assets_init())
+		return 0;
+
 	if(!rge_renderer_init())
 		return 0;
 
 	if(!rge_audio_init())
-		return 0;
-
-	if(!rge_assets_init())
 		return 0;
 
 	if(!rge_scene_init())
@@ -56,7 +74,12 @@ int rge_core_init() {
 	if(!rge_script_init())
 		return 0;
 
+	if(!rge_sprite_init())
+		return 0;
+
 	has_init = 1;
+
+	on_render = default_render_proc;
 
 	return 1;
 }
@@ -65,7 +88,7 @@ int rge_core_init() {
 //------------------------------------------------------------------------------
 
 
-void rge_core_start() {
+void rge_start() {
 	if(!has_init) {
 		rge_log_error("Core has not been initialized");
 		return;
@@ -86,15 +109,15 @@ void rge_core_start() {
 		uint64_t current_time = rge_system_get_time();
 		uint64_t delta_time = current_time - last_time;
 
-		if(on_core_tick != NULL)
-			on_core_tick(delta_time);
+		if(on_tick)
+			on_tick(delta_time);
 
 		if(delta_time > 0) {
 			last_time = current_time;
 			float delta = ((float)delta_time) * 0.001F;
 
-			if(on_core_update != NULL)
-				on_core_update(delta);
+			if(on_update)
+				on_update(delta);
 
 			rge_scene_update(delta);
 
@@ -104,8 +127,9 @@ void rge_core_start() {
 			if(render_counter > RENDER_FPS_TARGET) {
 				render_counter -= RENDER_FPS_TARGET;
 
-				if(rge_renderer_auto_get())
-					rge_renderer_draw_all();
+				if(on_render) {
+					on_render();
+				}
 			}
 
 			rge_input_flush_click();
@@ -117,7 +141,7 @@ void rge_core_start() {
 //------------------------------------------------------------------------------
 
 
-void rge_core_close() {
+void rge_close() {
 	if(!has_init) {
 		rge_log_error("Core has not been initialized");
 		return;
@@ -137,23 +161,31 @@ void rge_core_close() {
 //------------------------------------------------------------------------------
 
 
-void rge_core_set_on_update(void (*func)(float delta)) {
-	on_core_update = func;
+void rge_set_on_update(void (*func)(float delta)) {
+	on_update = func;
 }
 
 
 //------------------------------------------------------------------------------
 
 
-void rge_core_set_on_tick(void (*func)(int delta)) {
-	on_core_tick = func;
+void rge_set_on_tick(void (*func)(int delta)) {
+	on_tick = func;
 }
 
 
 //------------------------------------------------------------------------------
 
 
-void rge_core_crash(int error) {
+void rge_set_on_render(void (*func)()) {
+	on_render = func;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void rge_crash(int error) {
 	rge_log_error("Critical crash. Error code: [%d]", error);
 	exit(0);
 }

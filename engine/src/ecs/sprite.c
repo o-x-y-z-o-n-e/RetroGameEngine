@@ -1,10 +1,143 @@
 #include "api/rge.h"
 #include "ecs/sprite.h"
+#include "ecs/scene.h"
 #include "assets/texture.h"
 #include "core/renderer.h"
 #include "util/bit_flags.h"
 
+#include <stdlib.h>
+
 #define SPRITE_FLAG_CENTERED 0
+
+#define MAX_LAYERS 10
+#define START_SPRITES_COUNT 100
+#define INCREASE_SPRITES_STEP 100
+
+typedef struct layer_t layer_t;
+typedef struct layer_t {
+	int16_t level;
+	registry_t* sprites;
+	layer_t* next;
+} layer_t;
+
+
+static layer_t* layers_head;
+
+
+//------------------------------------------------------------------------------
+
+
+static void on_sprite_add(void* cmp, entity_t* entity) {
+	((sprite_t*)(cmp))->owner = entity;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+static void rge_sprite_draw(void* component, float delta) {
+	sprite_t* sprite = (sprite_t*)component;
+	point_t location = rge_transform_get_global(sprite->owner);
+
+	rge_renderer_draw_atlas(sprite->texture, location.x + sprite->offset.x, location.y - sprite->offset.y, sprite->section);
+}
+
+
+//------------------------------------------------------------------------------
+
+
+static layer_t* init_layer(int16_t level) {
+	layer_t* layer = malloc(sizeof(layer_t));
+	if(layer == NULL)
+		return NULL;
+
+	layer->level = level;
+	layer->sprites = rge_registry_init(TYPE_SPRITE, sizeof(sprite_t), START_SPRITES_COUNT, INCREASE_SPRITES_STEP);
+	layer->next = NULL;
+
+	rge_registry_set_on_add(layer->sprites, on_sprite_add);
+	rge_registry_set_on_update(layer->sprites, rge_sprite_draw);
+
+	return layer;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+static layer_t* create_layer(int16_t level) {
+	// Insert at head.
+	if(level < layers_head->level) {
+		layer_t* layer = init_layer(level);
+		layer->next = layers_head;
+		layers_head = layer;
+		return layer;
+	}
+
+	layer_t* previous = NULL;
+	layer_t* current = layers_head;
+	while(current != NULL) {
+		if(level == current->level)
+			return current;
+
+		if(previous == NULL)
+			goto next;
+
+		// Insert in between.
+		if(level > previous->level && level < current->level) {
+			layer_t* layer = init_layer(level);
+			layer->next = previous->next;
+			previous->next = layer;
+			return layer;
+		}
+
+	next:
+		previous = current;
+		current = current->next;
+	}
+
+	// Insert at tail.
+	layer_t* layer = init_layer(level);
+	previous->next = layer;
+	return layer;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+static layer_t* get_layer(int16_t level) {
+	layer_t* current = layers_head;
+	while(current != NULL) {
+		if(current->level == level)
+			return current;
+
+		current = current->next;
+	}
+	return create_layer(level);
+}
+
+
+//------------------------------------------------------------------------------
+
+
+int rge_sprite_init() {
+	layers_head = init_layer(0);
+
+	return 1;
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void rge_sprite_draw_all() {
+	layer_t* current = layers_head;
+	while(current != NULL) {
+		rge_registry_update(current->sprites, 0);
+		current = current->next;
+	}
+}
 
 
 //------------------------------------------------------------------------------
@@ -40,7 +173,7 @@ sprite_t* rge_sprite_create(entity_t* entity, int16_t layer) {
 		return NULL;
 	}
 
-	registry_t* registry = rge_renderer_get_layer(layer)->sprites;
+	registry_t* registry = get_layer(layer)->sprites;
 	if(registry == NULL)
 		return NULL;
 

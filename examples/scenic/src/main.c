@@ -40,18 +40,18 @@ static void on_core_update(float delta) {
 int main() {
 	rge_log_info("Example Starting...");
 
-	if(!rge_core_init()) {
+	if(!rge_init()) {
 		rge_log_error("Could not initialize core!");
 		return 0;
 	}
 
 	rge_window_set_title("Example App");
-	rge_core_set_on_update(on_core_update);
+	rge_set_on_update(on_core_update);
 	rge_view_set_background(COLOR_RGB(255, 255, 255));
 
 	setup_my_scene();
 
-	rge_core_start();
+	rge_start();
 
 	return 0;
 }

@@ -1,5 +1,4 @@
 #include "api/rge.h"
-#include "core/core.h"
 #include "ecs/scene.h"
 #include "ecs/transform.h"
 #include "util/ptr_buffer.h"
@@ -338,7 +337,7 @@ static cmp_ref_t alloc_component(registry_t* registry) {
 		entity_t** new_owners = realloc(registry->owners, sizeof(entity_t*) * registry->components.buffer_size);
 		if(new_owners == NULL) {
 			rge_log_error("Oh no!");
-			rge_core_crash(1);
+			rge_crash(1);
 			return;
 		}
 
