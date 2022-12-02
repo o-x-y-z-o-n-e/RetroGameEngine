@@ -1,10 +1,10 @@
 [GENERAL]
 Write API descriptions.
 
-Physics/collision system.
+RNG.
+Math module.
+
 Audio (load/free & playback).
-Scripting.
-UI module.
 
 [WINDOWS]
 Change window icon.
@@ -16,3 +16,10 @@ Change window icon.
 [LINUX]
 Create window.
 System time counter.
+
+
+
+[FUTURE]
+Physics/collision system.
+Scripting.
+UI module.
