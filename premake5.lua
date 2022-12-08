@@ -9,6 +9,10 @@ workspace "RetroGameEngine"
 	
 	filter "system:macosx"
 		architecture "arm64"
+    
+    filter "system:linux"
+		architecture "x86_64"
+        toolset "clang"
 		
 
 ------------------------------------------------------------------
@@ -131,7 +135,8 @@ project "Scenic"
 	
 	filter "system:linux"
 		links {
-            "Engine"
+            "Engine",
+            "m"
         }
 	
 
@@ -193,7 +198,8 @@ project "Starship"
 	
 	filter "system:linux"
 		links {
-            "Engine"
+            "Engine",
+            "m"
         }
 	
 
