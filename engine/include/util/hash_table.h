@@ -20,7 +20,7 @@ hash_table_t* rge_hash_table_init(size_t table_size, size_t element_size);
 void rge_hash_table_free(hash_table_t* table);
 void rge_hash_table_remove(hash_table_t* table, const char* id);
 void* rge_hash_table_add(hash_table_t* table, const char* id);
-void* rge_hash_table_contains(const hash_table_t* table, const char* id);
+bool rge_hash_table_contains(const hash_table_t* table, const char* id);
 void* rge_hash_table_get(const hash_table_t* table, const char* id);
 
 #endif

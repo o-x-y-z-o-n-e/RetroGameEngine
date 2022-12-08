@@ -5,7 +5,7 @@
 //------------------------------------------------------------------------------
 
 
-static int32_t round(float f) {
+static int32_t round_f(float f) {
 	float i = (int)f;
 	float l = f - i;
 
@@ -32,8 +32,8 @@ transform_t* rge_transform_create(entity_t* entity) {
 
 point_t rge_float_to_point(float x, float y) {
 	return (point_t) {
-		round(x),
-		round(y)
+		round_f(x),
+		round_f(y)
 	};
 }
 

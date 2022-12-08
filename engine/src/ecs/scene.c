@@ -53,6 +53,8 @@ static bool rge_entity_add_child(entity_t* entity, entity_t* child) {
 	new_buffer[entity->child_count] = child;
 	entity->children = new_buffer;
 	entity->child_count = new_count;
+
+	return true;
 }
 
 
@@ -338,7 +340,10 @@ static cmp_ref_t alloc_component(registry_t* registry) {
 		if(new_owners == NULL) {
 			rge_log_error("Oh no!");
 			rge_crash(1);
-			return;
+			return (cmp_ref_t) {
+				NULL,
+				0
+			};
 		}
 
 		for(uint32_t i = registry->owners_size; i < registry->components.buffer_size; i++)

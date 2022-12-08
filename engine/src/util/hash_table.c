@@ -82,6 +82,8 @@ void* rge_hash_table_get(const hash_table_t* table, const char* id) {
 
 
 void rge_hash_table_remove(hash_table_t* table, const char* id) {
+	// TODO
+	/*
 	size_t hash = get_str_hash(id);
 
 	uint32_t index = rge_hash_table_fetch(table, id);
@@ -93,6 +95,7 @@ void rge_hash_table_remove(hash_table_t* table, const char* id) {
 
 	table->meta[index].hash = 0;
 	table->meta[index].used = false;
+	*/
 }
 
 
@@ -116,7 +119,7 @@ void* rge_hash_table_add(hash_table_t* table, const char* id) {
 //------------------------------------------------------------------------------
 
 
-void* rge_hash_table_contains(const hash_table_t* table, const char* id) {
+bool rge_hash_table_contains(const hash_table_t* table, const char* id) {
 	return rge_hash_table_find(table, get_str_hash(id), false) < table->table_size;
 }
 
