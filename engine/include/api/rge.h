@@ -190,7 +190,7 @@ void rge_close();
 void rge_set_on_update(void (*func)(float delta));
 /* Set a callback function that is called every program loop iteration. (Normally runs more often than on_update). */
 void rge_set_on_tick(void (*func)(int delta));
-/* TODO: Write Description. */
+/* Set a callback function that is called when the game loop wants to render to screen. You can override the default render procedure with this. Or pass NULL if you want to manually control render times. */
 void rge_set_on_render(void (*func)());
 /* TODO: Write Description. */
 void rge_crash(int error);
@@ -206,30 +206,29 @@ point_t rge_camera_get_location();
 // ===Window===
 /* Set the display text at the top of the window. */
 void rge_window_set_title(const char* title);
-/* Force the window to refresh the frame buffer. */
+/* Force the window to refresh the frame buffer. This needs to be called after any custom render procedures. */
 void rge_window_refresh();
 
 
 // ===View===
-/* TODO: Write Description. */
+/* Get the dimensions (wdith & height) of the viewport. */
 void rge_view_get_size(uint16_t* w, uint16_t* h);
-/* TODO: Write Description. */
+/* Returns the width of the viewport. */
 uint16_t rge_view_get_width();
-/* TODO: Write Description. */
+/* Returns the height of the viewport. */
 uint16_t rge_view_get_height();
-/* TODO: Write Description. */
+/* Sets the dimensions (width & height) of the viewport. */
 void rge_view_set_size(uint16_t w, uint16_t h);
-/* TODO: Write Description. */
+/* Set the background color for the default render procedure. */
 void rge_view_set_background(pixel_t color);
 
 
 // ===Renderer===
-/* TODO: Write Description. */
-/* TODO: Write Description. */
+/* Sets the frame buffer to the background color (clears the screen). */
 void rge_renderer_clear();
-/* TODO: Write Description. */
+/* Sets the color at location on the viewport. */
 void rge_renderer_set_pixel(uint16_t x, uint16_t y, pixel_t color);
-/* TODO: Write Description. */
+/* TODO: Write Description. CHANGE: world to screen space. */
 void rge_renderer_draw_texture(texture_t* texture, int32_t x, int32_t y);
 /* TODO: Write Description. */
 void rge_renderer_draw_atlas(texture_t* texture, int32_t x, int32_t y, rect_t bounds);
