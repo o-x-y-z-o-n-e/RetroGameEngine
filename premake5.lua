@@ -1,4 +1,4 @@
-workspace "RetroGameEngine"
+workspace "retro_game_engine"
     configurations {
         "debug",
         "release"
@@ -21,34 +21,23 @@ workspace "RetroGameEngine"
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 project "example"
-    location ""
     language "C++"
-
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("tmp/" .. outputdir .. "/%{prj.name}")
 
-
     files {
-        "%{prj.location}/include/**.h",
-		"%{prj.location}/src/**.c"
+        "%{prj.location}/**.hpp",
+		"%{prj.location}/**.cpp"
     }
-
 
     includedirs {
-		"%{prj.location}/include/",
-        "engine/include/api"
+		"%{prj.location}/"
     }
-	
 	
 	filter "system:windows"
 		staticruntime "On"
 		systemversion "latest"
-
-        links {
-            "Engine"
-        }
-	
 	
 	filter "system:macosx"
         buildoptions {
@@ -59,145 +48,12 @@ project "example"
             "-framework Cocoa",
             "-framework Foundation"
         }
-
-        links {
-            "Engine"
-        }
-	
 	
 	filter "system:linux"
 		links {
-            "Engine",
             "m"
         }
 	
-
-    filter "configurations:debug"
-		kind "ConsoleApp"
-        symbols "On"
-    
-    filter "configurations:release"
-		kind "WindowedApp"
-        optimize "On"
-
-
-------------------------------------------------------------------
-
-
-project "Starship"
-	location "examples/starship"
-	language "C"
-	
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-    objdir ("tmp/" .. outputdir .. "/%{prj.name}")
-
-
-    files {
-        "%{prj.location}/include/**.h",
-		"%{prj.location}/src/**.c"
-    }
-
-
-    includedirs {
-		"%{prj.location}/include/",
-        "engine/include/api"
-    }
-	
-	
-	filter "system:windows"
-		staticruntime "On"
-		systemversion "latest"
-
-        links {
-            "Engine"
-        }
-	
-	
-	filter "system:macosx"
-        buildoptions {
-            "-F /Library/Frameworks"
-        }
-        linkoptions {
-            "-F /Library/Frameworks",
-            "-framework Cocoa",
-            "-framework Foundation"
-        }
-
-        links {
-            "Engine"
-        }
-	
-	
-	filter "system:linux"
-		links {
-            "Engine",
-            "m"
-        }
-	
-
-    filter "configurations:debug"
-		kind "ConsoleApp"
-        symbols "On"
-    
-    filter "configurations:release"
-		kind "WindowedApp"
-        optimize "On"
-		
-
-------------------------------------------------------------------
-
-
-project "CHIP-8"
-	location "examples/chip8"
-	language "C"
-	
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-    objdir ("tmp/" .. outputdir .. "/%{prj.name}")
-
-
-    files {
-        "%{prj.location}/include/**.h",
-		"%{prj.location}/src/**.c"
-    }
-
-
-    includedirs {
-		"%{prj.location}/include/",
-        "engine/include/api"
-    }
-	
-	
-	filter "system:windows"
-		staticruntime "On"
-		systemversion "latest"
-
-        links {
-            "Engine"
-        }
-	
-	
-	filter "system:macosx"
-        buildoptions {
-            "-F /Library/Frameworks"
-        }
-        linkoptions {
-            "-F /Library/Frameworks",
-            "-framework Cocoa",
-            "-framework Foundation"
-        }
-
-        links {
-            "Engine"
-        }
-	
-	
-	filter "system:linux"
-		links {
-            "Engine",
-			"m"
-        }
-	
-
     filter "configurations:debug"
 		kind "ConsoleApp"
         symbols "On"

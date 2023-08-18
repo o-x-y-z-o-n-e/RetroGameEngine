@@ -1,7 +1,7 @@
 # Retro Game Engine (RGE)
 A simple 2D pixel software renderer.
 
-A game framework for making retro aesthetic games.
+A game framework for making retro aesthetic games. :)
 
 ## Core System Features
 - Sprite rendering.

@@ -180,7 +180,7 @@ namespace rge {
     void engine::on_physics(float delta_time) {}
     void engine::on_draw() {}
     void engine::on_init() {}
-    bool engine::on_command(const std::string& cmd) {}
+	bool engine::on_command(const std::string& cmd) { return false; }
     void engine::on_start() {}
     void engine::on_exit() {}
 
