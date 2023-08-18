@@ -180,8 +180,8 @@ namespace rge {
 			void get_size(int& width, int& height) const;
 
 		private:
-			int width, height;
-			class window_impl* implementation;
+			
+			class window_impl* impl;
 			// TODO: bool is_fullscreen;
 
 		};
@@ -468,7 +468,8 @@ namespace rge {
 
 			}
 
-		private:
+		public:
+			int width, height;
 			rge::platform::window* window;
 		};
 		#elif SYS_LINUX
@@ -482,7 +483,8 @@ namespace rge {
 
 			}
 
-		private:
+		public:
+			int width, height;
 			rge::platform::window* window;
 		};
 		#elif SYS_MACOSX
@@ -496,19 +498,20 @@ namespace rge {
 
 			}
 
-		private:
+		public:
+			int width, height;
 			rge::platform::window* window;
 		};
 		#endif
 
 		window::window() {
-			width = 800;
-			height = 600;
-			implementation = new window_impl(this);
+			impl = new window_impl(this);
+			impl->width = 800;
+			impl->height = 600;
 		}
 
 		window::~window() {
-			delete implementation;
+			delete impl;
 		}
 
 		rge::result window::create() {
@@ -520,15 +523,15 @@ namespace rge {
 			if(width < 1) return rge::FAIL;
 			if(height < 1) return rge::FAIL;
 
-			this->width = width;
-			this->height = height;
+			impl->width = width;
+			impl->height = height;
 
 			return rge::OK;
 		}
 
 		void window::get_size(int& width, int& height) const {
-			width = this->width;
-			height = this->height;
+			width = impl->width;
+			height = impl->height;
 		}
 		//********************************************//
 		//* Windows implementation of window class.  *//

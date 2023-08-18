@@ -22,6 +22,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 project "example"
     language "C++"
+    cppdialect "C++11"
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("tmp/" .. outputdir .. "/%{prj.name}")
