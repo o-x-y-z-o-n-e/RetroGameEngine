@@ -146,6 +146,22 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+	#pragma region /* rge::renderer */
+	//********************************************//
+	//* Renderer class.                          *//
+	//********************************************//
+	class renderer {
+
+	public:
+		renderer();
+		virtual ~renderer();
+
+	};
+	//********************************************//
+	//* Renderer class.                          *//
+	//********************************************//
+	#pragma endregion
+
 	namespace platform {
 
 		#pragma region /* rge::platform::window */
@@ -414,6 +430,24 @@ namespace rge {
 
 	//********************************************//
 	//* Texture class.                           *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::renderer */
+	//********************************************//
+	//* Renderer class.                          *//
+	//********************************************//
+	
+	renderer::renderer() {
+
+	}
+
+	renderer::~renderer() {
+
+	}
+
+	//********************************************//
+	//* Renderer class.                          *//
 	//********************************************//
 	#pragma endregion
 
