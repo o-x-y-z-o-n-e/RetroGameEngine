@@ -36,10 +36,12 @@ project "example"
     }
 	
 	filter "system:windows"
+		defines "SYS_WINDOWS"
 		staticruntime "On"
 		systemversion "latest"
 	
 	filter "system:macosx"
+		defines "SYS_MACOSX"
         buildoptions {
             "-F /Library/Frameworks"
         }
@@ -50,6 +52,7 @@ project "example"
         }
 	
 	filter "system:linux"
+		defines "SYS_LINUX"
 		links {
             "m"
         }

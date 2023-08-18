@@ -16,7 +16,7 @@ int main() {
         if(!game->get_is_running())
             break;
 
-        if(!game->command(cmd)) {
+        if(game->command(cmd) == rge::FAIL) {
             rge::log::error("Unknown command!");
         }
     }

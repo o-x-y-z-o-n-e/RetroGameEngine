@@ -11,6 +11,11 @@
 #include <iostream>
 
 namespace rge {
+	class engine;
+	class texture;
+	namespace platform {
+		class window;
+	}
 
     enum result { FAIL = 0, OK = 1 };
 
@@ -40,8 +45,8 @@ namespace rge {
         virtual void on_exit();
 
     public:
-        int get_frame_rate();
-        bool get_is_running();
+        int get_frame_rate() const;
+        bool get_is_running() const;
 
     public:
         float update_interval;
@@ -54,6 +59,7 @@ namespace rge {
     private:
         bool is_running;
         std::thread thread;
+		rge::platform::window* window;
         float update_counter;
         float physics_counter;
         float draw_counter;
@@ -63,6 +69,9 @@ namespace rge {
         float frame_timer;
 
     };
+	//********************************************//
+	//* Core Engine class.                       *//
+	//********************************************//
 	#pragma endregion
 
     #pragma region /* rge::log */
@@ -80,6 +89,92 @@ namespace rge {
 	//* Logging Module.                          *//
 	//********************************************//
     #pragma endregion
+
+	#pragma region /* rge::math */
+	//********************************************//
+	//* Math Module.                             *//
+	//********************************************//
+	namespace math {
+
+		float lerp(float a, float b, float t);
+
+	}
+	//********************************************//
+	//* Math Module.                             *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::color */
+	//********************************************//
+	//* Color struct.                            *//
+	//********************************************//
+	struct color {
+
+	public:
+		color(float r, float g, float b);
+		color(float r, float g, float b, float a);
+
+	public:
+		float r, g, b, a;
+
+	public:
+		static color lerp(const color& a, const color& b, float t);
+
+	};
+	//********************************************//
+	//* Color struct.                            *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::texture */
+	//********************************************//
+	//* Texture class.                           *//
+	//********************************************//
+	class texture {
+
+	public:
+		texture();
+		~texture();
+
+	private:
+		int width;
+		int height;
+
+	};
+	//********************************************//
+	//* Texture class.                           *//
+	//********************************************//
+	#pragma endregion
+
+	namespace platform {
+
+		#pragma region /* rge::platform::window */
+		//********************************************//
+		//* Window class.                            *//
+		//********************************************//
+		class window {
+
+		public:
+			window();
+			~window();
+
+		public:
+			virtual rge::result create();
+			virtual rge::result set_size(int width, int height);
+			void get_size(int& width, int& height) const;
+
+		private:
+			int width, height;
+			class window_impl* implementation;
+			// TODO: bool is_fullscreen;
+
+		};
+		//********************************************//
+		//* Window class.                            *//
+		//********************************************//
+		#pragma endregion
+
+	}
 
 }
 
@@ -111,14 +206,18 @@ namespace rge {
 		time_stamp_2 = std::chrono::system_clock::now();
 	}
 
-    engine::~engine() {}
+    engine::~engine() {
+		delete window;
+	}
 
     rge::result engine::init() {
         log::info("Initialising RGE...");
         // TODO
+
+		window = new rge::platform::window;
         
         on_init();
-        return OK;
+        return rge::OK;
     }
 
     rge::result engine::start(bool wait_until_exit, std::thread** game_thread) {
@@ -136,7 +235,7 @@ namespace rge {
         if(game_thread != nullptr)
             *game_thread = &thread;
 
-        return OK;
+        return rge::OK;
     }
 
     void engine::loop() {
@@ -183,17 +282,17 @@ namespace rge {
 
     rge::result engine::command(const std::string& cmd) {
         if(on_command(cmd))
-            return OK;
+            return rge::OK;
         
         if(cmd == "exit" || cmd == "quit") {
             exit();
         } else if(cmd == "rge_version") {
 			log::info("RGE VERSION: 0.00.1");
 		} else {
-			return FAIL;
+			return rge::FAIL;
 		}
 
-        return OK;
+        return rge::OK;
     }
 
     rge::result engine::exit() {
@@ -202,14 +301,14 @@ namespace rge {
         // TODO
         
         on_exit();
-        return OK;
+        return rge::OK;
     }
 
-    int engine::get_frame_rate() {
+    int engine::get_frame_rate() const {
         return frame_rate;
     }
 
-    bool engine::get_is_running() {
+    bool engine::get_is_running() const {
         return is_running;
     }
 
@@ -248,6 +347,161 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+	#pragma region /* rge::math */
+	//********************************************//
+	//* Math Module.                             *//
+	//********************************************//
+
+	float math::lerp(float a, float b, float t) {
+		if(t < 0) t = 0;
+		if(t > 1) t = 1;
+		return (a * (1 - t)) + (b * t);
+	}
+
+	//********************************************//
+	//* Logging Module.                          *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::color */
+	//********************************************//
+	//* Color struct.                            *//
+	//********************************************//
+	
+	color::color(float r, float g, float b) {
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->a = 1;
+	}
+
+	color::color(float r, float g, float b, float a) {
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->a = a;
+	}
+
+	color color::lerp(const color& a, const color& b, float t) {
+		if(t < 0) t = 0;
+		if(t > 1) t = 1;
+
+		return color(
+			a.r * (1 - t) + b.r * t,
+			a.g * (1 - t) + b.g * t,
+			a.b * (1 - t) + b.b * t,
+			a.a * (1 - t) + b.a * t
+		);
+	}
+
+	//********************************************//
+	//* Color struct.                            *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::texture */
+	//********************************************//
+	//* Texture class.                           *//
+	//********************************************//
+	
+	texture::texture() {
+
+	}
+
+	texture::~texture() {
+
+	}
+
+	//********************************************//
+	//* Texture class.                           *//
+	//********************************************//
+	#pragma endregion
+
+	namespace platform {
+
+		#pragma region /* rge::platform::window */
+		//********************************************//
+		//* Window class.                            *//
+		//********************************************//
+		#ifdef SYS_WINDOWS
+		class window_impl {
+		public:
+			window_impl(rge::platform::window* window) {
+				this->window = window;
+			}
+
+			~window_impl() {
+
+			}
+
+		private:
+			rge::platform::window* window;
+		};
+		#elif SYS_LINUX
+		class window_impl {
+		public:
+			window_impl(rge::platform::window* window) {
+				this->window = window;
+			}
+
+			~window_impl() {
+
+			}
+
+		private:
+			rge::platform::window* window;
+		};
+		#elif SYS_MACOSX
+		class window_impl {
+		public:
+			window_impl(rge::platform::window* window) {
+				this->window = window;
+			}
+
+			~window_impl() {
+
+			}
+
+		private:
+			rge::platform::window* window;
+		};
+		#endif
+
+		window::window() {
+			width = 800;
+			height = 600;
+			implementation = new window_impl(this);
+		}
+
+		window::~window() {
+			delete implementation;
+		}
+
+		rge::result window::create() {
+
+			return rge::OK;
+		}
+
+		rge::result window::set_size(int width, int height) {
+			if(width < 1) return rge::FAIL;
+			if(height < 1) return rge::FAIL;
+
+			this->width = width;
+			this->height = height;
+
+			return rge::OK;
+		}
+
+		void window::get_size(int& width, int& height) const {
+			width = this->width;
+			height = this->height;
+		}
+		//********************************************//
+		//* Windows implementation of window class.  *//
+		//********************************************//
+		#pragma endregion
+
+	}
 }
 
 #endif /* RGE_IMPL */
