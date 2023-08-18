@@ -14,7 +14,12 @@ namespace rge {
 
     enum result { FAIL = 0, OK = 1 };
 
+	#pragma region /* rge::engine */
+	//********************************************//
+	//* Core Engine class.                       *//
+	//********************************************//
     class engine {
+
     public:
         engine();
         virtual ~engine();
@@ -56,8 +61,14 @@ namespace rge {
         int frame_counter;
         int frame_rate;
         float frame_timer;
-    };
 
+    };
+	#pragma endregion
+
+    #pragma region /* rge::log */
+	//********************************************//
+	//* Logging Module.                          *//
+	//********************************************//
     namespace log {
 
         void info(const std::string& msg);
@@ -65,6 +76,10 @@ namespace rge {
         void error(const std::string& msg);
 
     }
+	//********************************************//
+	//* Logging Module.                          *//
+	//********************************************//
+    #pragma endregion
 
 }
 
@@ -75,7 +90,27 @@ namespace rge {
 
 namespace rge {
 
-    engine::engine() {}
+	#pragma region /* rge::engine */
+	//********************************************//
+	//* Core Engine class.                       *//
+	//********************************************//
+
+    engine::engine() {
+		is_running = false;
+		update_counter = 0;
+		physics_counter = 0;
+		draw_counter = 0;
+		update_interval = 1.0F / 60.0F;
+		physics_interval = 1.0F / 60.0F;
+		draw_interval = 1.0F / 60.0F;
+		frame_counter = 0;
+		frame_timer = 0;
+		frame_rate = 0;
+
+		time_stamp_1 = std::chrono::system_clock::now();
+		time_stamp_2 = std::chrono::system_clock::now();
+	}
+
     engine::~engine() {}
 
     rge::result engine::init() {
@@ -92,6 +127,7 @@ namespace rge {
 
         on_start();
 
+		is_running = true;
         thread = std::thread(&engine::loop, this);
 
         if(wait_until_exit)
@@ -104,7 +140,6 @@ namespace rge {
     }
 
     void engine::loop() {
-        is_running = true;
         while(is_running) {
             // Calculate the elapsed time since last frame.
             time_stamp_2 = std::chrono::system_clock::now();
@@ -138,10 +173,10 @@ namespace rge {
             frame_counter++;
             if(frame_timer >= 1.0F) {
                 frame_timer -= 1.0F;
-                frame_rate = (int)(1.0F / frame_counter);
-                //frame_counter = 0;
+                frame_rate = frame_counter;
+                frame_counter = 0;
 
-                std::cout << "fps: " << frame_counter << std::endl;
+				//std::cout << "fps: " << frame_counter << std::endl;
             }
         }
     }
@@ -152,9 +187,11 @@ namespace rge {
         
         if(cmd == "exit" || cmd == "quit") {
             exit();
-        } else {
-            return FAIL;
-        }
+        } else if(cmd == "rge_version") {
+			log::info("RGE VERSION: 0.00.1");
+		} else {
+			return FAIL;
+		}
 
         return OK;
     }
@@ -184,6 +221,15 @@ namespace rge {
     void engine::on_start() {}
     void engine::on_exit() {}
 
+	//********************************************//
+	//* Core Engine class.                       *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::log */
+	//********************************************//
+	//* Logging Module.                          *//
+	//********************************************//
 
     void log::info(const std::string& msg) {
         std::cout << "[INFO] " << msg << std::endl;
@@ -196,6 +242,11 @@ namespace rge {
     void log::error(const std::string& msg) {
         std::cout << "[ERROR] " << msg << std::endl;
     }
+
+	//********************************************//
+	//* Logging Module.                          *//
+	//********************************************//
+	#pragma endregion
 
 }
 

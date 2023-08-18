@@ -10,15 +10,13 @@ int main() {
 
     while(game->get_is_running()) {
         std::string cmd;
+		std::cout << "> ";
         std::getline(std::cin, cmd);
         
-
         if(!game->get_is_running())
             break;
 
-        if(game->command(cmd)) {
-            rge::log::info("Test");
-        } else {
+        if(!game->command(cmd)) {
             rge::log::error("Unknown command!");
         }
     }
