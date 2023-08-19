@@ -14,6 +14,10 @@
 namespace rge {
 	class engine;
 	class texture;
+	class render_target;
+	class renderer;
+	class renderer2d;
+	class renderer3d;
 	namespace platform {
 		class window;
 	}
@@ -103,13 +107,13 @@ namespace rge {
         rge::result exit();
         rge::result command(const std::string& cmd);
 
-    public:
+    protected:
         virtual void on_init();
         virtual bool on_command(const std::string& cmd);
         virtual void on_start();
         virtual void on_update(float delta_time);
         virtual void on_physics(float delta_time);
-        virtual void on_draw();
+        virtual void on_render();
         virtual void on_exit();
 
     public:
@@ -119,7 +123,7 @@ namespace rge {
     public:
         float update_interval;
         float physics_interval;
-        float draw_interval;
+        float render_interval;
 
     private:
         void loop();
@@ -130,7 +134,7 @@ namespace rge {
 		rge::platform::window* window;
         float update_counter;
         float physics_counter;
-        float draw_counter;
+        float render_counter;
         std::chrono::time_point<std::chrono::system_clock> time_stamp_1, time_stamp_2;
         int frame_counter;
         int frame_rate;
@@ -274,6 +278,9 @@ namespace rge {
 		bool get_on_cpu() const { return on_cpu; }
 		bool get_on_gpu() const { return on_gpu; }
 
+		// NOTE: TESTING FUNCTION
+		rge::result write_to_disk(const std::string& path);
+
 	private:
 		bool on_disk, on_cpu, on_gpu;
 		int width;
@@ -335,8 +342,8 @@ namespace rge {
 		virtual ~renderer2d();
 
 	public:
-		void Draw(const rge::texture& texture, const rge::rect& dest);
-		void Draw(const rge::texture& texture, const rge::rect& dest, const rge::rect& src);
+		void draw(const rge::texture& texture, const rge::rect& dest);
+		void draw(const rge::texture& texture, const rge::rect& dest, const rge::rect& src);
 
 
 	};
@@ -410,10 +417,10 @@ namespace rge {
 		is_running = false;
 		update_counter = 0;
 		physics_counter = 0;
-		draw_counter = 0;
+		render_counter = 0;
 		update_interval = 1.0F / 60.0F;
 		physics_interval = 1.0F / 60.0F;
-		draw_interval = 1.0F / 60.0F;
+		render_interval = 1.0F / 60.0F;
 		frame_counter = 0;
 		frame_timer = 0;
 		frame_rate = 0;
@@ -477,10 +484,10 @@ namespace rge {
             }
 
             // Tick the rendering routine.
-            draw_counter += delta_time;
-            if(draw_counter > draw_interval) {
-                on_draw();
-                draw_counter = 0;
+            render_counter += delta_time;
+            if(render_counter > render_interval) {
+                on_render();
+                render_counter = 0;
             }
 
             // Calculate fps.
@@ -530,7 +537,7 @@ namespace rge {
 
     void engine::on_update(float delta_time) {}
     void engine::on_physics(float delta_time) {}
-    void engine::on_draw() {}
+    void engine::on_render() {}
     void engine::on_init() {}
 	bool engine::on_command(const std::string& cmd) { return false; }
     void engine::on_start() {}
@@ -629,6 +636,12 @@ namespace rge {
 	texture::~texture() {
 
 	}
+
+	rge::result texture::write_to_disk(const std::string& path) {
+		if(!on_cpu) return rge::FAIL;
+		// TODO
+		return rge::OK;
+	}
 	//********************************************//
 	//* Texture class.                           *//
 	//********************************************//
@@ -683,12 +696,12 @@ namespace rge {
 
 	}
 
-	void renderer2d::Draw(const rge::texture& texture, const rge::rect& dest) {
+	void renderer2d::draw(const rge::texture& texture, const rge::rect& dest) {
 		if(!texture.get_on_cpu()) return;
 		
 	}
 
-	void renderer2d::Draw(const rge::texture& texture, const rge::rect& dest, const rge::rect& src) {
+	void renderer2d::draw(const rge::texture& texture, const rge::rect& dest, const rge::rect& src) {
 		if(!texture.get_on_cpu()) return;
 
 	}
