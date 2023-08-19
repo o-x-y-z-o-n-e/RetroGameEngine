@@ -9,6 +9,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include <functional>
 
 namespace rge {
 	class engine;
@@ -18,6 +19,47 @@ namespace rge {
 	}
 
     enum result { FAIL = 0, OK = 1 };
+
+	#pragma region /* rge::key */
+	//********************************************//
+	//* Key module.                              *//
+	//********************************************//
+	namespace key {
+		enum code {
+			NONE = 0,
+
+			A = 65,
+			B = 66,
+			C = 67,
+			D = 68,
+			E = 69,
+			F = 70,
+			G = 71,
+			H = 72,
+			I = 73,
+			J = 74,
+			K = 75,
+			L = 76,
+			M = 77,
+			N = 78,
+			O = 79,
+			P = 80,
+			Q = 81,
+			R = 82,
+			S = 83,
+			T = 84,
+			U = 85,
+			V = 86,
+			W = 87,
+			X = 88,
+			Y = 89,
+			Z = 90,
+		};
+	}
+	//********************************************//
+	//* Key module.                              *//
+	//********************************************//
+	#pragma endregion
 
 	#pragma region /* rge::engine */
 	//********************************************//
@@ -71,6 +113,69 @@ namespace rge {
     };
 	//********************************************//
 	//* Core Engine class.                       *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::event */
+	//********************************************//
+	//* Event class.                             *//
+	//********************************************//
+	enum class event_type {
+		NONE = 0,
+		WINDOW_CLOSE_REQUESTED, WINDOW_MOVED, WINDOW_RESIZED, WINDOW_FOCUSED, WINDOW_UNFOCUSED,
+		KEY_PRESSED, KEY_RELEASED,
+		MOUSE_PRESSED, MOUSE_RELEASED, MOUSE_MOVED, MOUSE_SCROLLED
+	};
+	//----------------------------------------------
+	#define EVENT_ENUM_TYPE(type) \
+	static event_type get_static_type() { return event_type::type; } \
+	virtual event_type get_event_type() const override { return get_static_type(); } \
+	//----------------------------------------------
+	class event {
+	public:
+		event() {
+			handled = false;
+		}
+
+	public:
+		template<typename T>
+		bool dispatch(std::function<bool(const T&)> func) {
+			if(get_event_type() == T::get_static_type()) {
+				handled |= func(static_cast<const T&>(&(*this)));
+				return true;
+			}
+			return false;
+		}
+		bool get_handled() const { return handled; }
+		virtual event_type get_event_type() const = 0;
+
+
+	private:
+		bool handled;
+	};
+	//----------------------------------------------
+	class key_event : public rge::event {
+	public:
+		rge::key::code get_key_code() const { return key_code; }
+
+	protected:
+		key_event(rge::key::code key_code) : rge::event() {
+			this->key_code = key_code;
+		}
+
+	protected:
+		rge::key::code key_code;
+	};
+	//----------------------------------------------
+	class key_pressed_event : public rge::key_event {
+		EVENT_ENUM_TYPE(KEY_PRESSED)
+	public:
+		key_pressed_event(rge::key::code key_code) : key_event(key_code) {
+
+		}
+	};
+	//********************************************//
+	//* Event class.                             *//
 	//********************************************//
 	#pragma endregion
 
