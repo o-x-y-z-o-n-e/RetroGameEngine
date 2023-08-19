@@ -61,6 +61,32 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+	#pragma region /* rge::rect */
+	//********************************************//
+	//* Rectangle struct.                        *//
+	//********************************************//
+	struct rect {
+		float x, y, w, h;
+		rect(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
+	};
+	//********************************************//
+	//* Rectangle struct.                        *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::vec2 */
+	//********************************************//
+	//* Vector2 struct.                          *//
+	//********************************************//
+	struct vec2 {
+		float x, y;
+		vec2(float x, float y) : x(x), y(y) {}
+	};
+	//********************************************//
+	//* Vector2 struct.                          *//
+	//********************************************//
+	#pragma endregion
+
 	#pragma region /* rge::engine */
 	//********************************************//
 	//* Core Engine class.                       *//
@@ -238,16 +264,39 @@ namespace rge {
 	class texture {
 
 	public:
-		texture();
+		texture(int width, int height);
 		~texture();
 
+	public:
+		int get_width() const { return width; }
+		int get_height() const { return height; }
+		bool get_on_disk() const { return on_disk; }
+		bool get_on_cpu() const { return on_cpu; }
+		bool get_on_gpu() const { return on_gpu; }
+
 	private:
+		bool on_disk, on_cpu, on_gpu;
 		int width;
 		int height;
 
 	};
 	//********************************************//
 	//* Texture class.                           *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::render_target */
+	//********************************************//
+	//* Render Target class.                     *//
+	//********************************************//
+	class render_target : public texture {
+
+	public:
+		render_target(int width, int height);
+
+	};
+	//********************************************//
+	//* Render Target class.                     *//
 	//********************************************//
 	#pragma endregion
 
@@ -261,9 +310,55 @@ namespace rge {
 		renderer();
 		virtual ~renderer();
 
+	public:
+		rge::result set_target(rge::render_target* target);
+		rge::render_target* get_target();
+		virtual void clear(rge::color color);
+
+	private:
+		rge::render_target* target;
+
 	};
 	//********************************************//
 	//* Renderer class.                          *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::renderer2d */
+	//********************************************//
+	//* Software Renderer 2D class.              *//
+	//********************************************//
+	class renderer2d : public rge::renderer {
+
+	public:
+		renderer2d();
+		virtual ~renderer2d();
+
+	public:
+		void Draw(const rge::texture& texture, const rge::rect& dest);
+		void Draw(const rge::texture& texture, const rge::rect& dest, const rge::rect& src);
+
+
+	};
+	//********************************************//
+	//* Software Renderer 2D class.              *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::renderer3d */
+	//********************************************//
+	//* Software Renderer 3D class.              *//
+	//********************************************//
+	class renderer3d : public rge::renderer {
+
+	public:
+		renderer3d();
+		virtual ~renderer3d();
+
+
+	};
+	//********************************************//
+	//* Software Renderer 3D class.              *//
 	//********************************************//
 	#pragma endregion
 
@@ -488,7 +583,6 @@ namespace rge {
 	//********************************************//
 	//* Color struct.                            *//
 	//********************************************//
-	
 	color::color(float r, float g, float b) {
 		this->r = r;
 		this->g = g;
@@ -514,7 +608,6 @@ namespace rge {
 			a.a * (1 - t) + b.a * t
 		);
 	}
-
 	//********************************************//
 	//* Color struct.                            *//
 	//********************************************//
@@ -524,17 +617,32 @@ namespace rge {
 	//********************************************//
 	//* Texture class.                           *//
 	//********************************************//
-	
-	texture::texture() {
+	texture::texture(int width, int height) {
+		this->width = width;
+		this->height = height;
 
+		on_disk = false;
+		on_cpu = false;
+		on_gpu = false;
 	}
 
 	texture::~texture() {
 
 	}
-
 	//********************************************//
 	//* Texture class.                           *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::render_target */
+	//********************************************//
+	//* Render Target class.                     *//
+	//********************************************//
+	render_target::render_target(int width, int height) : texture(width, height) {
+		
+	}
+	//********************************************//
+	//* Render Target class.                     *//
 	//********************************************//
 	#pragma endregion
 
@@ -542,17 +650,66 @@ namespace rge {
 	//********************************************//
 	//* Renderer class.                          *//
 	//********************************************//
-	
 	renderer::renderer() {
-
+		target = nullptr;
 	}
 
 	renderer::~renderer() {
 
 	}
 
+	rge::result renderer::set_target(rge::render_target* target) {
+		this->target = target;
+		return rge::OK;
+	}
+
+	rge::render_target* renderer::get_target() {
+		return target;
+	}
 	//********************************************//
 	//* Renderer class.                          *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::renderer2d */
+	//********************************************//
+	//* Software Renderer 2D class.              *//
+	//********************************************//
+	renderer2d::renderer2d() {
+
+	}
+
+	renderer2d::~renderer2d() {
+
+	}
+
+	void renderer2d::Draw(const rge::texture& texture, const rge::rect& dest) {
+		if(!texture.get_on_cpu()) return;
+		
+	}
+
+	void renderer2d::Draw(const rge::texture& texture, const rge::rect& dest, const rge::rect& src) {
+		if(!texture.get_on_cpu()) return;
+
+	}
+	//********************************************//
+	//* Software Renderer 2D class.              *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::renderer3d */
+	//********************************************//
+	//* Software Renderer 3D class.              *//
+	//********************************************//
+	renderer3d::renderer3d() {
+
+	}
+
+	renderer3d::~renderer3d() {
+
+	}
+	//********************************************//
+	//* Software Renderer 3D class.              *//
 	//********************************************//
 	#pragma endregion
 
@@ -563,6 +720,7 @@ namespace rge {
 		//* Window class.                            *//
 		//********************************************//
 		#ifdef SYS_WINDOWS
+		#include <windows.h>
 		class window_impl {
 		public:
 			window_impl(rge::platform::window* window) {
