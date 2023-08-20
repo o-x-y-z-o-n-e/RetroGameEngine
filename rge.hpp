@@ -971,6 +971,14 @@ namespace rge {
 		// TODO
 		return color();
 	}
+
+	rge::result texture::write_to_disk(const std::string& path) {
+		if(!on_cpu) return rge::FAIL;
+
+		// TODO
+
+		return rge::OK;
+	}
 	//********************************************//
 	//* Texture class.                           *//
 	//********************************************//
