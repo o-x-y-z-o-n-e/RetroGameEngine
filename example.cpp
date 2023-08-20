@@ -1,22 +1,45 @@
 #define RGE_IMPL
 #include "rge.hpp"
 
+class game : public rge::engine {
+
+private:
+    rge::renderer2d* renderer;
+
+    void on_init() override {
+        renderer = new rge::renderer2d;
+        renderer->set_target(nullptr);
+    }
+
+    bool on_command(const std::string& cmd) override {
+        if(cmd == "hello") {
+            rge::log::info("why hello there!");
+            return true;
+        }
+    }
+
+    void on_render() override {
+        
+    }
+    
+};
+
 int main() {
     std::thread* thread;
-    rge::engine* game = new rge::engine;
+    game* gm = new game;
+    
+    gm->init();
+    gm->start(false, &thread);
 
-    game->init();
-    game->start(false, &thread);
-
-    while(game->get_is_running()) {
+    while(gm->get_is_running()) {
         std::string cmd;
 		std::cout << "> ";
         std::getline(std::cin, cmd);
         
-        if(!game->get_is_running())
+        if(!gm->get_is_running())
             break;
 
-        if(game->command(cmd) == rge::FAIL) {
+        if(gm->command(cmd) == rge::FAIL) {
             rge::log::error("Unknown command!");
         }
     }
