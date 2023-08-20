@@ -336,50 +336,50 @@ namespace rge {
 	//********************************************//
 	//* Core Engine class.                       *//
 	//********************************************//
-    class engine {
-    public:
-        engine();
-        virtual ~engine();
-
-    public:
-        rge::result init();
-        rge::result start(bool wait_until_exit = true, std::thread** game_thread = nullptr);
-        rge::result exit();
-        rge::result command(const std::string& cmd);
-
-    protected:
-        virtual void on_init();
-        virtual bool on_command(const std::string& cmd);
-        virtual void on_start();
-        virtual void on_update(float delta_time);
-        virtual void on_physics(float delta_time);
-        virtual void on_render();
-        virtual void on_exit();
-
-    public:
-        int get_frame_rate() const;
-        bool get_is_running() const;
-
-    public:
-        float update_interval;
-        float physics_interval;
-        float render_interval;
-
-    private:
-        void loop();
-
-    private:
-        bool is_running;
-        std::thread thread;
+	class engine {
+	public:
+		engine();
+		virtual ~engine();
+	
+	public:
+		rge::result init();
+		rge::result start(bool wait_until_exit = true, std::thread** game_thread = nullptr);
+		rge::result exit();
+		rge::result command(const std::string& cmd);
+	
+	protected:
+		virtual void on_init();
+		virtual bool on_command(const std::string& cmd);
+		virtual void on_start();
+		virtual void on_update(float delta_time);
+		virtual void on_physics(float delta_time);
+		virtual void on_render();
+		virtual void on_exit();
+	
+	public:
+		int get_frame_rate() const;
+		bool get_is_running() const;
+	
+	public:
+		float update_interval;
+		float physics_interval;
+		float render_interval;
+	
+	private:
+		void loop();
+	
+	private:
+		bool is_running;
+		std::thread thread;
 		window* app_window;
-        float update_counter;
-        float physics_counter;
-        float render_counter;
-        std::chrono::time_point<std::chrono::system_clock> time_stamp_1, time_stamp_2;
-        int frame_counter;
-        int frame_rate;
-        float frame_timer;
-    };
+		float update_counter;
+		float physics_counter;
+		float render_counter;
+		std::chrono::time_point<std::chrono::system_clock> time_stamp_1, time_stamp_2;
+		int frame_counter;
+		int frame_rate;
+		float frame_timer;
+	};
 	//********************************************//
 	//* Core Engine class.                       *//
 	//********************************************//
@@ -1203,8 +1203,7 @@ namespace rge {
 	//********************************************//
 	//* Core Engine class.                       *//
 	//********************************************//
-
-    engine::engine() {
+	engine::engine() {
 		is_running = false;
 		update_counter = 0;
 		physics_counter = 0;
@@ -1215,125 +1214,124 @@ namespace rge {
 		frame_counter = 0;
 		frame_timer = 0;
 		frame_rate = 0;
-
+		
 		time_stamp_1 = std::chrono::system_clock::now();
 		time_stamp_2 = std::chrono::system_clock::now();
 	}
-
-    engine::~engine() {
+	
+	engine::~engine() {
 		delete app_window;
 	}
-
-    rge::result engine::init() {
-        log::info("Initialising RGE...");
-        // TODO
-
+	
+	rge::result engine::init() {
+		log::info("Initialising RGE...");
+		// TODO
+		
 		app_window = new window();
-        
-        on_init();
-        return rge::OK;
-    }
-
-    rge::result engine::start(bool wait_until_exit, std::thread** game_thread) {
-        log::info("Starting RGE...");
-        // TODO
-
-        on_start();
-
+		
+		on_init();
+		return rge::OK;
+	}
+	
+	rge::result engine::start(bool wait_until_exit, std::thread** game_thread) {
+		log::info("Starting RGE...");
+		// TODO
+		
+		on_start();
+		
 		is_running = true;
-        thread = std::thread(&engine::loop, this);
-
-        if(wait_until_exit)
-            thread.join();
-
-        if(game_thread != nullptr)
-            *game_thread = &thread;
-
-        return rge::OK;
-    }
-
-    void engine::loop() {
-        while(is_running) {
-            // Calculate the elapsed time since last frame.
-            time_stamp_2 = std::chrono::system_clock::now();
-		    std::chrono::duration<float> elapsed_time = time_stamp_2 - time_stamp_1;
-		    time_stamp_1 = time_stamp_2;
-            float delta_time = elapsed_time.count();
-
-            // Tick the update routine.
-            update_counter += delta_time;
-            if(update_counter > update_interval) {
-                on_update(update_counter);
-                update_counter = 0;
-            }
-
-            // Tick the physics routine.
-            physics_counter += delta_time;
-            if(physics_counter > physics_interval) {
-                on_physics(physics_counter);
-                physics_counter = 0;
-            }
-
-            // Tick the rendering routine.
-            render_counter += delta_time;
-            if(render_counter > render_interval) {
-                on_render();
-                render_counter = 0;
-            }
-
-            // Calculate fps.
-            frame_timer += delta_time;
-            frame_counter++;
-            if(frame_timer >= 1.0F) {
-                frame_timer -= 1.0F;
-                frame_rate = frame_counter;
-                frame_counter = 0;
-
+		thread = std::thread(&engine::loop, this);
+		
+		if(wait_until_exit)
+			thread.join();
+		
+		if(game_thread != nullptr)
+			*game_thread = &thread;
+		
+		return rge::OK;
+	}
+	
+	void engine::loop() {
+		while(is_running) {
+			// Calculate the elapsed time since last frame.
+			time_stamp_2 = std::chrono::system_clock::now();
+			std::chrono::duration<float> elapsed_time = time_stamp_2 - time_stamp_1;
+			time_stamp_1 = time_stamp_2;
+			float delta_time = elapsed_time.count();
+			
+			// Tick the update routine.
+			update_counter += delta_time;
+			if(update_counter > update_interval) {
+				on_update(update_counter);
+				update_counter = 0;
+			}
+			
+			// Tick the physics routine.
+			physics_counter += delta_time;
+			if(physics_counter > physics_interval) {
+				on_physics(physics_counter);
+				physics_counter = 0;
+			}
+			
+			// Tick the rendering routine.
+			render_counter += delta_time;
+			if(render_counter > render_interval) {
+				on_render();
+				render_counter = 0;
+			}
+			
+			// Calculate fps.
+			frame_timer += delta_time;
+			frame_counter++;
+			if(frame_timer >= 1.0F) {
+				frame_timer -= 1.0F;
+				frame_rate = frame_counter;
+				frame_counter = 0;
+				
 				//std::cout << "fps: " << frame_counter << std::endl;
-            }
-        }
-    }
-
-    rge::result engine::command(const std::string& cmd) {
-        if(on_command(cmd))
-            return rge::OK;
-        
-        if(cmd == "exit" || cmd == "quit") {
-            exit();
-        } else if(cmd == "rge_version") {
+			}
+		}
+	}
+	
+	rge::result engine::command(const std::string& cmd) {
+		if(on_command(cmd))
+			return rge::OK;
+		   
+		if(cmd == "exit" || cmd == "quit") {
+			exit();
+		} else if(cmd == "rge_version") {
 			log::info("RGE VERSION: 0.00.1");
 		} else {
 			return rge::FAIL;
 		}
-
-        return rge::OK;
-    }
-
-    rge::result engine::exit() {
-        is_running = false;
-
-        // TODO
-        
-        on_exit();
-        return rge::OK;
-    }
-
-    int engine::get_frame_rate() const {
-        return frame_rate;
-    }
-
-    bool engine::get_is_running() const {
-        return is_running;
-    }
-
-    void engine::on_update(float delta_time) {}
-    void engine::on_physics(float delta_time) {}
-    void engine::on_render() {}
-    void engine::on_init() {}
+		
+		return rge::OK;
+	}
+	
+	rge::result engine::exit() {
+		is_running = false;
+		
+		// TODO
+		
+		on_exit();
+		return rge::OK;
+	}
+	
+	int engine::get_frame_rate() const {
+		return frame_rate;
+	}
+	
+	bool engine::get_is_running() const {
+		return is_running;
+	}
+	
+	void engine::on_update(float delta_time) {}
+	void engine::on_physics(float delta_time) {}
+	void engine::on_render() {}
+	void engine::on_init() {}
 	bool engine::on_command(const std::string& cmd) { return false; }
-    void engine::on_start() {}
-    void engine::on_exit() {}
-
+	void engine::on_start() {}
+	void engine::on_exit() {}
 	//********************************************//
 	//* Core Engine class.                       *//
 	//********************************************//
