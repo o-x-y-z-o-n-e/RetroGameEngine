@@ -1,3 +1,9 @@
+/* RetroGameEngine (RGE)
+   Author: Jeremy Kiel 
+   Version: 0.00.1
+   License: N/A
+*/
+
 #ifndef RGE_DEF
 #define RGE_DEF
 
@@ -13,17 +19,18 @@
 #include <functional>
 #include <vector>
 
-
 namespace rge {
 
 	struct rect;
 	struct vec2;
 	struct vec3;
 	struct vec4;
+	struct quaternion;
 	struct matrix4x4;
 	struct color;
 	class engine;
 	class event;
+	class transform;
 	class camera;
 	class light;
 	class texture;
@@ -32,9 +39,18 @@ namespace rge {
 	class renderer;
 	class renderer2d;
 	class renderer3d;
-	namespace platform { class window; }
+	class window;
+	namespace platform {
+		class window_impl;
+	};
 
-    enum result { FAIL = 0, OK = 1 };
+	enum result { FAIL = 0, OK = 1 };
+
+	enum class light_mode {
+		DIRECTIONAL,
+		POINT,
+		SPOT
+	};
 
 	#pragma region /* rge::key */
 	//********************************************//
@@ -83,7 +99,11 @@ namespace rge {
 	//********************************************//
 	struct rect {
 		float x, y, w, h;
-		rect(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
+
+		rect(float x, float y, float w, float h);
+
+		vec2 get_min() const;
+		vec2 get_max() const;
 	};
 	//********************************************//
 	//* Rectangle struct.                        *//
@@ -96,29 +116,37 @@ namespace rge {
 	//********************************************//
 	struct vec2 {
 		float x, y;
-		vec2() : x(0), y(0) {}
-		vec2(float x, float y) : x(x), y(y) {}
 
-		vec2 operator + (const vec2& rhs) const { return vec2(this->x + rhs.x, this->y + rhs.y); }
-		vec2 operator - (const vec2& rhs) const { return vec2(this->x - rhs.x, this->y - rhs.y); }
-		vec2 operator * (const float& rhs) const { return vec2(this->x * rhs, this->y * rhs); }
-		vec2 operator * (const vec2& rhs) const { return vec2(this->x * rhs.x, this->y * rhs.y); }
-		vec2 operator / (const float& rhs) const { return vec2(this->x / rhs, this->y / rhs); }
-		vec2 operator / (const vec2& rhs) const { return vec2(this->x / rhs.x, this->y / rhs.y); }
+		vec2();
+		vec2(float x, float y);
 
-		vec2& operator += (const vec2& rhs) { this->x += rhs.x; this->y += rhs.y; return *this; }
-		vec2& operator -= (const vec2& rhs) { this->x -= rhs.x; this->y -= rhs.y; return *this; }
-		vec2& operator *= (const float& rhs) { this->x *= rhs;  this->y *= rhs;return *this; }
-		vec2& operator *= (const vec2& rhs) { this->x *= rhs.x; this->y *= rhs.y; return *this; }
-		vec2& operator /= (const float& rhs) { this->x /= rhs;  this->y /= rhs; return *this; }
-		vec2& operator /= (const vec2& rhs) { this->x /= rhs.x; this->y /= rhs.y; return *this; }
+		float magnitude() const;
 
-		vec2 operator + () const { return { +x, +y }; }
-		vec2 operator - () const { return { -x, -y }; }
+		static float dot(const vec2& a, const vec2& b);
+		static vec2 normalize(const vec2& v);
 
-		bool operator == (const vec2& rhs) const { return (this->x == rhs.x && this->y == rhs.y); }
-		bool operator != (const vec2& rhs) const { return (this->x != rhs.x || this->y != rhs.y); }
+		vec2 operator + (const vec2& rhs) const;
+		vec2 operator - (const vec2& rhs) const;
+		vec2 operator * (const float& rhs) const;
+		vec2 operator * (const vec2& rhs) const;
+		vec2 operator / (const float& rhs) const;
+		vec2 operator / (const vec2& rhs) const;
 
+		vec2& operator += (const vec2& rhs);
+		vec2& operator -= (const vec2& rhs);
+		vec2& operator *= (const float& rhs);
+		vec2& operator *= (const vec2& rhs);
+		vec2& operator /= (const float& rhs);
+		vec2& operator /= (const vec2& rhs);
+
+		vec2 operator + () const;
+		vec2 operator - () const;
+
+		bool operator == (const vec2& rhs) const;
+		bool operator != (const vec2& rhs) const;
+
+		operator vec3() const;
+		operator vec4() const;
 	};
 	//********************************************//
 	//* Vector2 struct.                          *//
@@ -132,11 +160,14 @@ namespace rge {
 	struct vec3 {
 		float x, y, z;
 
-		vec3() : x(0), y(0), z(0) {}
-		vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+		vec3();
+		vec3(float x, float y, float z);
 
-		static float dot(const rge::vec3& v1, const rge::vec3& v2);
-		static rge::vec3 cross(const rge::vec3& v1, const rge::vec3& v2);
+		float magnitude() const;
+
+		static float dot(const vec3& v1, const vec3& v2);
+		static vec3 cross(const vec3& v1, const vec3& v2);
+		static vec3 normalize(const vec3& v);
 
 		vec3 operator + (const vec3& rhs) const { return vec3(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z); }
 		vec3 operator - (const vec3& rhs) const { return vec3(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z); }
@@ -169,8 +200,9 @@ namespace rge {
 	//********************************************//
 	struct vec4 {
 		float x, y, z, w;
-		vec4() : x(0), y(0), z(0), w(0) {}
-		vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
+
+		vec4();
+		vec4(float x, float y, float z, float w);
 
 		vec4 operator + (const vec4& rhs) const { return vec4(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z, this->w + rhs.w); }
 		vec4 operator - (const vec4& rhs) const { return vec4(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z, this->w - rhs.w); }
@@ -193,9 +225,29 @@ namespace rge {
 		bool operator != (const vec4& rhs) const { return (this->x != rhs.x || this->y != rhs.y || this->z != rhs.z || this->w != rhs.w); }
 
 		operator vec3() const { return { x, y, z }; }
+		operator vec2() const { return { x, y }; }
 	};
 	//********************************************//
 	//* Vector4 struct.                          *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::quaternion */
+	//********************************************//
+	//* Quaternion struct.                       *//
+	//********************************************//
+	struct quaternion {
+		float x, y, z, w;
+
+		quaternion();
+		quaternion(float x, float y, float z, float w);
+
+		static quaternion identity() { return quaternion(); }
+
+		vec3 operator * (const vec3& rhs) const;
+	};
+	//********************************************//
+	//* Quaternion struct.                       *//
 	//********************************************//
 	#pragma endregion
 
@@ -204,23 +256,18 @@ namespace rge {
 	//* Matrix 4x4 struct.                       *//
 	//********************************************//
 	struct matrix4x4 {
- 
-		float v[4][4];
-		// Row>-^  ^-<Column
+		float m[4][4]; // Rows by columns.
 
-		matrix4x4() {
-			//v = {{0, 0, 0, 0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
-			for(int x = 0; x < 4; x++)
-				for(int y = 0; y < 4; y++)
-					v[x][y] = 0;
-		}
+		matrix4x4();
+		matrix4x4(vec4 col0, vec4 col1, vec4 col2, vec4 col3);
 
-		static rge::matrix4x4 identity() {
-			matrix4x4 m = matrix4x4();
-			// TODO
-			return m;
-		}
+		static matrix4x4 identity() { return matrix4x4(); }
 
+		vec3 multiply_point_3x4(const vec3& v) const;
+		vec3 multiply_vector(const vec3& v) const;
+
+		vec4 operator * (const vec4& rhs) const;
+		matrix4x4 operator * (const matrix4x4& rhs) const;
 	};
 	//********************************************//
 	//* Matrix 4x4 struct.                       *//
@@ -232,21 +279,25 @@ namespace rge {
 	//* Color struct.                            *//
 	//********************************************//
 	struct color {
-
-	public:
-		color() : r(1), g(1), b(1), a(1) {}
-		color(float r, float g, float b) : r(r), g(g), b(b), a(1) {}
-		color(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
-
-		color operator * (const color& rhs) const { return color(this->r * rhs.r, this->g * rhs.g, this->b * rhs.b, this->a * rhs.a); }
-		color& operator *= (const color& rhs) { this->r *= rhs.r; this->g *= rhs.g; this->b *= rhs.b; this->a *= rhs.a; return *this; }
-
-	public:
 		float r, g, b, a;
 
-	public:
+		color();
+		color(float r, float g, float b);
+		color(float r, float g, float b, float a);
+
 		static color lerp(const color& a, const color& b, float t);
 
+		color operator + (const color& rhs) const;
+		color& operator += (const color& rhs);
+		color operator - (const color& rhs) const;
+		color& operator -= (const color& rhs);
+		color operator * (const color& rhs) const;
+		color& operator *= (const color& rhs);
+
+		color operator * (const float& rhs) const;
+		color& operator *= (const float& rhs);
+		color operator / (const float& rhs) const;
+		color& operator /= (const float& rhs);
 	};
 	//********************************************//
 	//* Color struct.                            *//
@@ -258,11 +309,9 @@ namespace rge {
 	//* Math Module.                             *//
 	//********************************************//
 	namespace math {
-
 		float lerp(float a, float b, float t);
 		int min(int a, int b) { return a < b ? a : b; }
 		int max(int a, int b) { return a > b ? a : b; }
-
 	}
 	//********************************************//
 	//* Math Module.                             *//
@@ -274,11 +323,9 @@ namespace rge {
 	//* Logging Module.                          *//
 	//********************************************//
 	namespace log {
-
 		void info(const std::string& msg);
 		void warning(const std::string& msg);
 		void error(const std::string& msg);
-
 	}
 	//********************************************//
 	//* Logging Module.                          *//
@@ -290,7 +337,6 @@ namespace rge {
 	//* Core Engine class.                       *//
 	//********************************************//
     class engine {
-
     public:
         engine();
         virtual ~engine();
@@ -325,7 +371,7 @@ namespace rge {
     private:
         bool is_running;
         std::thread thread;
-		rge::platform::window* window;
+		window* app_window;
         float update_counter;
         float physics_counter;
         float render_counter;
@@ -333,7 +379,6 @@ namespace rge {
         int frame_counter;
         int frame_rate;
         float frame_timer;
-
     };
 	//********************************************//
 	//* Core Engine class.                       *//
@@ -351,15 +396,13 @@ namespace rge {
 		MOUSE_PRESSED, MOUSE_RELEASED, MOUSE_MOVED, MOUSE_SCROLLED
 	};
 	//----------------------------------------------
-	#define EVENT_ENUM_TYPE(type) \
+	#define EVENT_ENUM_TYPE(type) public:\
 	static event_type get_static_type() { return event_type::type; } \
 	virtual event_type get_event_type() const override { return get_static_type(); } \
 	//----------------------------------------------
 	class event {
 	public:
-		event() {
-			handled = false;
-		}
+		event();
 
 	public:
 		template<typename T>
@@ -370,7 +413,7 @@ namespace rge {
 			}
 			return false;
 		}
-		bool get_handled() const { return handled; }
+		bool get_handled() const;
 		virtual event_type get_event_type() const = 0;
 
 
@@ -378,28 +421,74 @@ namespace rge {
 		bool handled;
 	};
 	//----------------------------------------------
-	class key_event : public rge::event {
+	class key_event : public event {
+	protected: // Abstract class.
+		key_event(key::code key_code);
+
 	public:
-		rge::key::code get_key_code() const { return key_code; }
+		key::code get_key_code() const;
 
 	protected:
-		key_event(rge::key::code key_code) : rge::event() {
-			this->key_code = key_code;
-		}
-
-	protected:
-		rge::key::code key_code;
+		key::code key_code;
 	};
 	//----------------------------------------------
-	class key_pressed_event : public rge::key_event {
-		EVENT_ENUM_TYPE(KEY_PRESSED)
+	class key_pressed_event : public key_event {
 	public:
-		key_pressed_event(rge::key::code key_code) : key_event(key_code) {
+		key_pressed_event(key::code key_code);
 
-		}
+		EVENT_ENUM_TYPE(KEY_PRESSED)
 	};
 	//********************************************//
 	//* Event class.                             *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::transform */
+	//********************************************//
+	//* Transform class.                         *//
+	//********************************************//
+	class transform {
+		public:
+			transform();
+			transform(transform* parent);
+			transform(vec3 position, vec3 rotation, vec3 scale);
+			transform(vec3 position, vec3 rotation, vec3 scale, transform* parent);
+
+		public:
+			vec3 get_position() const;
+			quaternion get_rotation() const;
+			vec3 get_scale() const;
+			vec3 get_forward() const;
+			vec3 get_up() const;
+			vec3 get_right() const;
+			vec3 get_backward() const { return -get_forward(); };
+			vec3 get_down() const { return -get_up(); };
+			vec3 get_left() const { return -get_right(); };
+
+			void set_position(const vec3& position);
+			void set_rotation(const quaternion& rotation);
+			void set_scale(const vec3& scale);
+			// TODO: Add set_DIRECTION functions.
+			
+			vec3 get_global_position() const;
+			quaternion get_global_rotation() const;
+			vec3 get_global_forward() const;
+			vec3 get_global_up() const;
+			vec3 get_global_right() const;
+			vec3 get_global_backward() const { return -get_global_forward(); };
+			vec3 get_global_down() const { return -get_global_up(); };
+			vec3 get_global_left() const { return -get_global_right(); };
+
+			void set_global_position(const vec3& position);
+			void set_global_rotation(const quaternion& rotation);
+			// TODO: Add set_global_DIRECTION functions.
+
+		public:
+			matrix4x4 matrix;
+			transform* parent;
+	};
+	//********************************************//
+	//* Transform class.                         *//
 	//********************************************//
 	#pragma endregion
 
@@ -408,14 +497,20 @@ namespace rge {
 	//* Camera class.                            *//
 	//********************************************//
 	class camera {
-
 	public:
 		camera();
 		~camera();
 
 	public:
-		rge::vec3 get_world_position() const;
+		matrix4x4 get_view_matrix() const;
+		matrix4x4 get_projection_matrix() const;
 
+	public:
+		transform* transform;
+
+	private:
+		matrix4x4 view; // TODO: iirc this is the same a world transform matrix (but for camera). Might be redundent.
+		matrix4x4 projection;
 	};
 	//********************************************//
 	//* Camera class.                            *//
@@ -427,14 +522,16 @@ namespace rge {
 	//* Light class.                             *//
 	//********************************************//
 	class light {
-
 	public:
 		light();
 		~light();
 
 	public:
-		rge::vec3 get_world_position() const;
-
+		color tint;
+		float intensity;
+		float range;
+		light_mode type;
+		transform* transform;
 	};
 	//********************************************//
 	//* Light class.                             *//
@@ -446,27 +543,30 @@ namespace rge {
 	//* Texture class.                           *//
 	//********************************************//
 	class texture {
-
 	public:
 		texture(int width, int height);
 		~texture();
 
 	public:
-		int get_width() const { return width; }
-		int get_height() const { return height; }
-		bool get_on_disk() const { return on_disk; }
-		bool get_on_cpu() const { return on_cpu; }
-		bool get_on_gpu() const { return on_gpu; }
-		rge::color sample(float u, float v);
+		int get_width() const;
+		int get_height() const;
+		bool get_on_disk() const;
+		bool get_on_cpu() const;
+		bool get_on_gpu() const;
+		color sample(float u, float v) const;
 
 		// NOTE: TESTING FUNCTION
-		rge::result write_to_disk(const std::string& path);
+		rge::result write_to_disk(const std::string& path) const;
+		// rge::result read_from_disk(const std::string& path);
+
+	private:
+		void allocate();
 
 	private:
 		bool on_disk, on_cpu, on_gpu;
 		int width;
 		int height;
-
+		color* data;
 	};
 	//********************************************//
 	//* Texture class.                           *//
@@ -478,17 +578,15 @@ namespace rge {
 	//* Material class.                          *//
 	//********************************************//
 	class material {
-
 	public:
 		material();
 		~material();
 
 	public:
-		rge::texture* texture;
-		rge::color diffuse;
-		rge::color specular;
+		texture* texture;
+		color diffuse;
+		color specular;
 		float shininess;
-
 	};
 	//********************************************//
 	//* Material class.                          *//
@@ -500,10 +598,8 @@ namespace rge {
 	//* Render Target class.                     *//
 	//********************************************//
 	class render_target : public texture {
-
 	public:
 		render_target(int width, int height);
-
 	};
 	//********************************************//
 	//* Render Target class.                     *//
@@ -515,19 +611,17 @@ namespace rge {
 	//* Renderer class.                          *//
 	//********************************************//
 	class renderer {
-
 	public:
 		renderer();
 		virtual ~renderer();
 
 	public:
-		rge::result set_target(rge::render_target* target);
-		rge::render_target* get_target();
-		virtual void clear(rge::color color);
+		rge::result set_target(render_target* target);
+		render_target* get_target() const;
+		virtual void clear(color color);
 
 	protected:
-		rge::render_target* target;
-
+		render_target* target;
 	};
 	//********************************************//
 	//* Renderer class.                          *//
@@ -538,17 +632,14 @@ namespace rge {
 	//********************************************//
 	//* Software Renderer 2D class.              *//
 	//********************************************//
-	class renderer2d : public rge::renderer {
-
+	class renderer2d : public renderer {
 	public:
 		renderer2d();
 		virtual ~renderer2d();
 
 	public:
-		void draw(const rge::texture& texture, const rge::rect& dest);
-		void draw(const rge::texture& texture, const rge::rect& dest, const rge::rect& src);
-
-
+		void draw(const texture& texture, const rect& dest);
+		void draw(const texture& texture, const rect& dest, const rect& src);
 	};
 	//********************************************//
 	//* Software Renderer 2D class.              *//
@@ -559,93 +650,85 @@ namespace rge {
 	//********************************************//
 	//* Software Renderer 3D class.              *//
 	//********************************************//
-	class renderer3d : public rge::renderer {
-
+	class renderer3d : public renderer {
 	public:
 		renderer3d();
 		virtual ~renderer3d();
 
 	public:
-		void set_view(const rge::matrix4x4& view_matrix);
-		void set_projection(const rge::matrix4x4& projection_matrix);
-
-		void draw(
-			const std::vector<rge::vec3>& vertices,
+		void set_camera(camera* camera);
+		void set_ambience(const color& ambient_color);
+		rge::result draw(
+			const matrix4x4& model_to_world,
+			const std::vector<vec3>& vertices,
 			const std::vector<int>& triangles,
-			const std::vector<rge::vec3>& normals,
-			const std::vector<rge::vec2>& uvs,
-			const rge::material& material,
-			const rge::camera& camera
+			const std::vector<vec3>& normals,
+			const std::vector<vec2>& uvs,
+			const material& material
 		);
 
 	private:
-		rge::vec4 project_vertex(const rge::vec3& vertex);
 		void draw_interpolated_triangle(
-			const rge::vec4& r_v1,
-			const rge::vec4& r_v2,
-			const rge::vec4& r_v3,
-			const rge::vec3& w_v1,
-			const rge::vec3& w_v2,
-			const rge::vec3& w_v3,
-			const rge::vec3& w_n1,
-			const rge::vec3& w_n2,
-			const rge::vec3& w_n3,
-			const rge::vec2& t_uv1,
-			const rge::vec2& t_uv2,
-			const rge::vec2& t_uv3,
-			const rge::material& material,
-			const rge::vec3& camera_position
-		);
-		static rge::color calculate_blinn_phong(
-			const rge::vec3& position,
-			const rge::vec3& normal,
-			const rge::color& diffuse,
-			const rge::color& specular,
-			float shininess,
-			const rge::vec3& camera_position,
-			const std::vector<rge::light*>& lights
+			const vec4& r_v1,
+			const vec4& r_v2,
+			const vec4& r_v3,
+			const vec3& w_v1,
+			const vec3& w_v2,
+			const vec3& w_v3,
+			const vec3& w_n1,
+			const vec3& w_n2,
+			const vec3& w_n3,
+			const vec2& t_uv1,
+			const vec2& t_uv2,
+			const vec2& t_uv3,
+			const material& material
 		);
 
 	private:
-		rge::matrix4x4 view;
-		rge::matrix4x4 projection;
-		std::vector<rge::light*> lights;
+		static vec4 project_world_vertex(const vec3& vertex, const matrix4x4& projection);
+		static color calculate_blinn_phong(
+			const vec3& position,
+			const vec3& normal,
+			const color& diffuse,
+			const color& specular,
+			const color& ambient,
+			float shininess,
+			const vec3& camera_position,
+			const std::vector<light*>& lights
+		);
 
+	private:
+		camera* world_camera;
+		std::vector<light*> lights;
+		color ambience;
 	};
 	//********************************************//
 	//* Software Renderer 3D class.              *//
 	//********************************************//
 	#pragma endregion
 
-	namespace platform {
+	#pragma region /* rge::window */
+	//********************************************//
+	//* Window class.                            *//
+	//********************************************//
+	class window {
+	public:
+		window();
+		~window();
 
-		#pragma region /* rge::platform::window */
-		//********************************************//
-		//* Window class.                            *//
-		//********************************************//
-		class window {
+	public:
+		virtual rge::result create();
+		virtual rge::result set_size(int width, int height);
+		void get_size(int& width, int& height) const;
 
-		public:
-			window();
-			~window();
-
-		public:
-			virtual rge::result create();
-			virtual rge::result set_size(int width, int height);
-			void get_size(int& width, int& height) const;
-
-		private:
-			
-			class window_impl* impl;
-			// TODO: bool is_fullscreen;
-
-		};
-		//********************************************//
-		//* Window class.                            *//
-		//********************************************//
-		#pragma endregion
-
-	}
+	private:
+		class platform::window_impl* impl;
+		// TODO: bool is_fullscreen;
+	};
+	//********************************************//
+	//* Window class.                            *//
+	//********************************************//
+	#pragma endregion
 
 }
 
@@ -654,13 +737,40 @@ namespace rge {
 #ifdef RGE_IMPL
 #undef RGE_IMPL
 
+// Forward declaration of the user main() function.
+int main(int argc, char** argv);
+
+#ifdef SYS_WINDOWS
+#include <windows.h>
+// Real win32 entry point for release mode (DesktopApp).
+/*
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nShowCmd) {
+	// TODO: Get parameters.
+	return main(0, nullptr);
+}
+*/
+#endif
+
 namespace rge {
 
 	#pragma region /* rge::rect */
 	//********************************************//
 	//* Rectangle struct.                        *//
 	//********************************************//
-	
+	rect::rect(float x, float y, float w, float h) {
+		this->x = x;
+		this->y = y;
+		this->w = w;
+		this->h = h;
+	}
+
+	vec2 rect::get_min() const {
+		return vec2(x, y);
+	}
+
+	vec2 rect::get_max() const {
+		return vec2(x+w, y+h);
+	}
 	//********************************************//
 	//* Rectangle struct.                        *//
 	//********************************************//
@@ -670,7 +780,99 @@ namespace rge {
 	//********************************************//
 	//* Vector2 struct.                          *//
 	//********************************************//
+	vec2::vec2() {
+		this->x = 0;
+		this->y = 0;
+	}
+
+	vec2::vec2(float x, float y) {
+		this->x = x;
+		this->y = y;
+	}
+
+	float vec2::magnitude() const {
+		return sqrtf(x * x + y * y);
+	}
+
+	float vec2::dot(const vec2& a, const vec2& b) {
+		return a.x * b.x + a.y * b.y;
+	}
+
+	vec2 vec2::normalize(const vec2& v) {
+		return v / v.magnitude();
+	}
+
+	vec2 vec2::operator + (const vec2& rhs) const {
+		return vec2(this->x + rhs.x, this->y + rhs.y);
+	}
+
+	vec2 vec2::operator - (const vec2& rhs) const {
+		return vec2(this->x - rhs.x, this->y - rhs.y);
+	}
+
+	vec2 vec2::operator * (const float& rhs) const {
+		return vec2(this->x * rhs, this->y * rhs);
+	}
+
+	vec2 vec2::operator * (const vec2& rhs) const {
+		return vec2(this->x * rhs.x, this->y * rhs.y);
+	}
+
+	vec2 vec2::operator / (const float& rhs) const {
+		return vec2(this->x / rhs, this->y / rhs);
+	}
 	
+	vec2 vec2::operator / (const vec2& rhs) const {
+		return vec2(this->x / rhs.x, this->y / rhs.y);
+	}
+
+	vec2& vec2::operator += (const vec2& rhs) {
+		this->x += rhs.x; this->y += rhs.y; return *this;
+	}
+
+	vec2& vec2::operator -= (const vec2& rhs) { 
+		this->x -= rhs.x; this->y -= rhs.y; return *this; 
+	}
+
+	vec2& vec2::operator *= (const float& rhs) { 
+		this->x *= rhs;  this->y *= rhs;return *this;
+	}
+
+	vec2& vec2::operator *= (const vec2& rhs) {
+		this->x *= rhs.x; this->y *= rhs.y; return *this;
+	}
+
+	vec2& vec2::operator /= (const float& rhs) {
+		this->x /= rhs;  this->y /= rhs; return *this;
+	}
+
+	vec2& vec2::operator /= (const vec2& rhs) {
+		this->x /= rhs.x; this->y /= rhs.y; return *this;
+	}
+
+	vec2 vec2::operator + () const {
+		return { +x, +y };
+	}
+
+	vec2 vec2::operator - () const {
+		return { -x, -y };
+	}
+
+	bool vec2::operator == (const vec2& rhs) const {
+		return (this->x == rhs.x && this->y == rhs.y);
+	}
+
+	bool vec2::operator != (const vec2& rhs) const {
+		return (this->x != rhs.x || this->y != rhs.y);
+	}
+
+	vec2::operator vec3() const {
+		return vec3(x, y, 0);
+	}
+
+	vec2::operator vec4() const {
+		return vec4(x, y, 0, 0);
+	}
 	//********************************************//
 	//* Vector2 struct.                          *//
 	//********************************************//
@@ -680,17 +882,40 @@ namespace rge {
 	//********************************************//
 	//* Vector3 struct.                          *//
 	//********************************************//
-	float vec3::dot(const rge::vec3& v1, const rge::vec3& v2) {
+	vec3::vec3() {
+		this->x = 0;
+		this->y = 0;
+		this->z = 0;
+	}
+
+	vec3::vec3(float x, float y, float z) {
+		this->x = x;
+		this->y = y;
+		this->z = z;
+	}
+
+	float vec3::magnitude() const {
+		return sqrtf(x * x + y * y + z * z);
+	}
+
+	float vec3::dot(const vec3& v1, const vec3& v2) {
 		return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 	}
 
-	rge::vec3 vec3::cross(const rge::vec3& v1, const rge::vec3& v2) {
-		return rge::vec3(
+	vec3 vec3::cross(const vec3& v1, const vec3& v2) {
+		return vec3(
 			v1.y * v2.z - v1.z * v2.y,
 			v1.z * v2.x - v1.x * v2.z,
 			v1.x * v2.y - v1.y * v2.x
 		);
 	}
+
+	vec3 vec3::normalize(const vec3& v) {
+		return v / v.magnitude();
+	}
+
+	// TODO: Move operator definitions here
+
 	//********************************************//
 	//* Vector3 struct.                          *//
 	//********************************************//
@@ -700,9 +925,66 @@ namespace rge {
 	//********************************************//
 	//* Vector4 struct.                          *//
 	//********************************************//
-	
+	vec4::vec4() {
+		this->x = 0;
+		this->y = 0;
+		this->z = 0;
+		this->w = 0;
+	}
+
+	vec4::vec4(float x, float y, float z, float w) {
+		this->x = x;
+		this->y = y;
+		this->z = z;
+		this->w = w;
+	}
+
+	// TODO: Move operator definitions here
+
 	//********************************************//
 	//* Vector4 struct.                          *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::quaternion */
+	//********************************************//
+	//* Quaternion struct.                       *//
+	//********************************************//
+	quaternion::quaternion() {
+		this->x = 0;
+		this->y = 0;
+		this->z = 0;
+		this->w = 1;
+	}
+
+	quaternion::quaternion(float x, float y, float z, float w) {
+		this->x = x;
+		this->y = y;
+		this->z = z;
+		this->w = w;
+	}
+
+	vec3 quaternion::operator * (const vec3& rhs) const {
+		float num =   this->x * 2.0F;
+		float num2 =  this->y * 2.0F;
+		float num3 =  this->z * 2.0F;
+		float num4 =  this->x * num;
+		float num5 =  this->y * num2;
+		float num6 =  this->z * num3;
+		float num7 =  this->x * num2;
+		float num8 =  this->x * num3;
+		float num9 =  this->y * num3;
+		float num10 = this->w * num;
+		float num11 = this->w * num2;
+		float num12 = this->w * num3;
+		vec3 result = vec3();
+		result.x = (1.0F - (num5 + num6)) * rhs.x + (num7 - num12) * rhs.y + (num8 + num11) * rhs.z;
+		result.y = (num7 + num12) * rhs.x + (1.0F - (num4 + num6)) * rhs.y + (num9 - num10) * rhs.z;
+		result.z = (num8 - num11) * rhs.x + (num9 + num10) * rhs.y + (1.0F - (num4 + num5)) * rhs.z;
+		return result;
+	}
+	//********************************************//
+	//* Quaternion struct.                       *//
 	//********************************************//
 	#pragma endregion
 
@@ -710,7 +992,89 @@ namespace rge {
 	//********************************************//
 	//* Matrix 4x4 struct.                       *//
 	//********************************************//
-	
+	matrix4x4::matrix4x4() {
+		m[0][0] = 1;
+		m[0][1] = 0;
+		m[0][2] = 0;
+		m[0][3] = 0;
+		m[1][0] = 0;
+		m[1][1] = 1;
+		m[1][2] = 0;
+		m[1][3] = 0;
+		m[2][0] = 0;
+		m[2][1] = 0;
+		m[2][2] = 1;
+		m[2][3] = 0;
+		m[3][0] = 0;
+		m[3][1] = 0;
+		m[3][2] = 0;
+		m[3][3] = 1;
+	}
+
+	matrix4x4::matrix4x4(vec4 col0, vec4 col1, vec4 col2, vec4 col3) {
+		m[0][0] = col0.x;
+		m[0][1] = col1.x;
+		m[0][2] = col2.x;
+		m[0][3] = col3.x;
+		m[1][0] = col0.y;
+		m[1][1] = col1.y;
+		m[1][2] = col2.y;
+		m[1][3] = col3.y;
+		m[2][0] = col0.z;
+		m[2][1] = col1.z;
+		m[2][2] = col2.z;
+		m[2][3] = col3.z;
+		m[3][0] = col0.w;
+		m[3][1] = col1.w;
+		m[3][2] = col2.w;
+		m[3][3] = col3.w;
+	}
+
+	vec3 matrix4x4::multiply_point_3x4(const vec3& v) const {
+		vec3 result = vec3();
+		result.x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3];
+		result.y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3];
+		result.z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3];
+		return v;
+	}
+
+	vec3 matrix4x4::multiply_vector(const vec3& v) const {
+		vec3 result = vec3();
+		result.x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z;
+		result.y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z;
+		result.z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z;
+		return v;
+	}
+
+	vec4 matrix4x4::operator * (const vec4& rhs) const {
+		vec4 result = vec4();
+		result.x = this->m[0][0] * rhs.x + this->m[0][1] * rhs.y + this->m[0][2] * rhs.z + this->m[0][3] * rhs.w;
+		result.y = this->m[1][0] * rhs.x + this->m[1][1] * rhs.y + this->m[1][2] * rhs.z + this->m[1][3] * rhs.w;
+		result.z = this->m[2][0] * rhs.x + this->m[2][1] * rhs.y + this->m[2][2] * rhs.z + this->m[2][3] * rhs.w;
+		result.w = this->m[3][0] * rhs.x + this->m[3][1] * rhs.y + this->m[3][2] * rhs.z + this->m[3][3] * rhs.w;
+		return result;
+	}
+
+	matrix4x4 matrix4x4::operator * (const matrix4x4& rhs) const {
+		matrix4x4 result = matrix4x4::identity();
+		result.m[0][0] = this->m[0][0] * rhs.m[0][0] + this->m[0][1] * rhs.m[1][0] + this->m[0][2] * rhs.m[2][0] + this->m[0][3] * rhs.m[3][0];
+		result.m[0][1] = this->m[0][0] * rhs.m[0][1] + this->m[0][1] * rhs.m[1][1] + this->m[0][2] * rhs.m[2][1] + this->m[0][3] * rhs.m[3][1];
+		result.m[0][2] = this->m[0][0] * rhs.m[0][2] + this->m[0][1] * rhs.m[1][2] + this->m[0][2] * rhs.m[2][2] + this->m[0][3] * rhs.m[3][2];
+		result.m[0][3] = this->m[0][0] * rhs.m[0][3] + this->m[0][1] * rhs.m[1][3] + this->m[0][2] * rhs.m[2][3] + this->m[0][3] * rhs.m[3][3];
+		result.m[1][0] = this->m[1][0] * rhs.m[0][0] + this->m[1][1] * rhs.m[1][0] + this->m[1][2] * rhs.m[2][0] + this->m[1][3] * rhs.m[3][0];
+		result.m[1][1] = this->m[1][0] * rhs.m[0][1] + this->m[1][1] * rhs.m[1][1] + this->m[1][2] * rhs.m[2][1] + this->m[1][3] * rhs.m[3][1];
+		result.m[1][2] = this->m[1][0] * rhs.m[0][2] + this->m[1][1] * rhs.m[1][2] + this->m[1][2] * rhs.m[2][2] + this->m[1][3] * rhs.m[3][2];
+		result.m[1][3] = this->m[1][0] * rhs.m[0][3] + this->m[1][1] * rhs.m[1][3] + this->m[1][2] * rhs.m[2][3] + this->m[1][3] * rhs.m[3][3];
+		result.m[2][0] = this->m[2][0] * rhs.m[0][0] + this->m[2][1] * rhs.m[1][0] + this->m[2][2] * rhs.m[2][0] + this->m[2][3] * rhs.m[3][0];
+		result.m[2][1] = this->m[2][0] * rhs.m[0][1] + this->m[2][1] * rhs.m[1][1] + this->m[2][2] * rhs.m[2][1] + this->m[2][3] * rhs.m[3][1];
+		result.m[2][2] = this->m[2][0] * rhs.m[0][2] + this->m[2][1] * rhs.m[1][2] + this->m[2][2] * rhs.m[2][2] + this->m[2][3] * rhs.m[3][2];
+		result.m[2][3] = this->m[2][0] * rhs.m[0][3] + this->m[2][1] * rhs.m[1][3] + this->m[2][2] * rhs.m[2][3] + this->m[2][3] * rhs.m[3][3];
+		result.m[3][0] = this->m[3][0] * rhs.m[0][0] + this->m[3][1] * rhs.m[1][0] + this->m[3][2] * rhs.m[2][0] + this->m[3][3] * rhs.m[3][0];
+		result.m[3][1] = this->m[3][0] * rhs.m[0][1] + this->m[3][1] * rhs.m[1][1] + this->m[3][2] * rhs.m[2][1] + this->m[3][3] * rhs.m[3][1];
+		result.m[3][2] = this->m[3][0] * rhs.m[0][2] + this->m[3][1] * rhs.m[1][2] + this->m[3][2] * rhs.m[2][2] + this->m[3][3] * rhs.m[3][2];
+		result.m[3][3] = this->m[3][0] * rhs.m[0][3] + this->m[3][1] * rhs.m[1][3] + this->m[3][2] * rhs.m[2][3] + this->m[3][3] * rhs.m[3][3];
+		return result;
+	}
 	//********************************************//
 	//* Matrix 4x4 struct.                       *//
 	//********************************************//
@@ -720,6 +1084,13 @@ namespace rge {
 	//********************************************//
 	//* Color struct.                            *//
 	//********************************************//
+	color::color() {
+		this->r = 1;
+		this->g = 1;
+		this->b = 1;
+		this->a = 1;
+	}
+
 	color::color(float r, float g, float b) {
 		this->r = r;
 		this->g = g;
@@ -744,6 +1115,46 @@ namespace rge {
 			a.b * (1 - t) + b.b * t,
 			a.a * (1 - t) + b.a * t
 		);
+	}
+
+	color color::operator + (const color& rhs) const {
+		return color(this->r + rhs.r, this->g + rhs.g, this->b + rhs.b, this->a + rhs.a);
+	}
+
+	color& color::operator += (const color& rhs) {
+		this->r += rhs.r; this->g += rhs.g; this->b += rhs.b; this->a += rhs.a; return *this;
+	}
+
+	color color::operator - (const color& rhs) const {
+		return color(this->r - rhs.r, this->g - rhs.g, this->b - rhs.b, this->a - rhs.a);
+	}
+
+	color& color::operator -= (const color& rhs) {
+		this->r -= rhs.r; this->g -= rhs.g; this->b -= rhs.b; this->a -= rhs.a; return *this;
+	}
+
+	color color::operator * (const color& rhs) const {
+		return color(this->r * rhs.r, this->g * rhs.g, this->b * rhs.b, this->a * rhs.a);
+	}
+
+	color& color::operator *= (const color& rhs) {
+		this->r *= rhs.r; this->g *= rhs.g; this->b *= rhs.b; this->a *= rhs.a; return *this;
+	}
+
+	color color::operator * (const float& rhs) const {
+		return color(this->r * rhs, this->g * rhs, this->b * rhs, this->a * rhs);
+	}
+
+	color& color::operator *= (const float& rhs) {
+		this->r *= rhs; this->g *= rhs; this->b *= rhs; this->a *= rhs; return *this;
+	}
+
+	color color::operator / (const float& rhs) const {
+		return color(this->r / rhs, this->g / rhs, this->b / rhs, this->a / rhs);
+	}
+
+	color& color::operator /= (const float& rhs) {
+		this->r /= rhs; this->g /= rhs; this->b /= rhs; this->a /= rhs; return *this;
 	}
 	//********************************************//
 	//* Color struct.                            *//
@@ -810,14 +1221,14 @@ namespace rge {
 	}
 
     engine::~engine() {
-		delete window;
+		delete app_window;
 	}
 
     rge::result engine::init() {
         log::info("Initialising RGE...");
         // TODO
 
-		window = new rge::platform::window;
+		app_window = new window();
         
         on_init();
         return rge::OK;
@@ -928,25 +1339,167 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
-	// rge::event
+	#pragma region /* rge::event */
+	//********************************************//
+	//* Event class.                             *//
+	//********************************************//
+	event::event() {
+		handled = false;
+	}
+
+	bool event::get_handled() const {
+		return handled;
+	}
+	//----------------------------------------------
+	key_event::key_event(key::code key_code) : event() {
+		this->key_code = key_code;
+	}
+
+	key::code key_event::get_key_code() const {
+		return key_code;
+	}
+	//----------------------------------------------
+	key_pressed_event::key_pressed_event(key::code key_code) : key_event(key_code) {
+
+	}
+	//********************************************//
+	//* Event class.                             *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::transform */
+	//********************************************//
+	//* Transform class.                         *//
+	//********************************************//
+	transform::transform() {
+		matrix = matrix4x4::identity();
+		parent = nullptr;
+	}
+
+	vec3 transform::get_position() const {
+		return vec3(matrix.m[0][3], matrix.m[1][3], matrix.m[1][3]);
+	}
+
+	quaternion transform::get_rotation() const {
+		return quaternion(); // TODO
+	}
+
+	vec3 transform::get_scale() const {
+		// TODO: Test
+		return vec3(matrix.m[0][0], matrix.m[1][1], matrix.m[2][2]);
+	}
+
+	vec3 transform::get_forward() const {
+		return get_rotation() * vec3(0, 0, 1);
+	}
+
+	vec3 transform::get_up() const {
+		return get_rotation() * vec3(0, 1, 0);
+	}
+
+	vec3 transform::get_right() const {
+		return get_rotation() * vec3(1, 0, 0);
+	}
+
+	void transform::set_position(const vec3& position) {
+		matrix.m[0][3] = position.x;
+		matrix.m[1][3] = position.y;
+		matrix.m[2][3] = position.z;
+	}
+
+	void transform::set_rotation(const quaternion& rotation) {
+		// TODO
+	}
+
+	void transform::set_scale(const vec3& scale) {
+		// TODO: Test
+		matrix.m[0][0] = scale.x;
+		matrix.m[1][1] = scale.y;
+		matrix.m[2][2] = scale.z;
+	}
+
+	vec3 transform::get_global_position() const {
+		// TODO: Test
+		vec3 position = get_position();
+
+		if(parent != nullptr) {
+			position = parent->matrix.multiply_point_3x4(position);
+		}
+
+		return position;
+	}
+
+	quaternion transform::get_global_rotation() const {
+		return quaternion(); // TODO
+	}
+
+	vec3 transform::get_global_forward() const {
+		return get_global_rotation() * vec3(0, 0, 1);
+	}
+
+	vec3 transform::get_global_up() const {
+		return get_global_rotation() * vec3(0, 1, 0);
+	}
+
+	vec3 transform::get_global_right() const {
+		return get_global_rotation() * vec3(1, 0, 0);
+	}
+
+	void transform::set_global_position(const vec3& position) {
+		// TODO
+	}
+	
+	void transform::set_global_rotation(const quaternion& rotation) {
+		// TODO
+	}
+	//********************************************//
+	//* Transform class.                         *//
+	//********************************************//
+	#pragma endregion
 
 	#pragma region /* rge::camera */
 	//********************************************//
 	//* Camera class.                            *//
 	//********************************************//
 	camera::camera() {
+		transform = nullptr;
 
+		view = matrix4x4::identity();
+		projection = matrix4x4::identity();
 	}
 
 	camera::~camera() {
 
 	}
 
-	rge::vec3 camera::get_world_position() const {
-		return rge::vec3(0, 0, 0); // TODO
+	matrix4x4 camera::get_view_matrix() const {
+		return view;
+	}
+	
+	matrix4x4 camera::get_projection_matrix() const {
+		return projection;
 	}
 	//********************************************//
 	//* Camera class.                            *//
+	//********************************************//
+	#pragma endregion
+
+	#pragma region /* rge::light */
+	//********************************************//
+	//* Light class.                             *//
+	//********************************************//
+	light::light() {
+		tint = color(1, 1, 1);
+		intensity = 1.0F;
+		range = 10;
+		type = light_mode::POINT;
+	}
+
+	light::~light() {
+
+	}
+	//********************************************//
+	//* Light class.                             *//
 	//********************************************//
 	#pragma endregion
 
@@ -961,24 +1514,58 @@ namespace rge {
 		on_disk = false;
 		on_cpu = false;
 		on_gpu = false;
+
+		allocate();
 	}
 
 	texture::~texture() {
-
+		if(data != nullptr) delete[] data;
 	}
 
-	rge::color texture::sample(float u, float v) {
-		// TODO
-		return color();
+	int texture::get_width() const {
+		return width;
 	}
 
-	rge::result texture::write_to_disk(const std::string& path) {
+	int texture::get_height() const {
+		return height;
+	}
+
+	bool texture::get_on_disk() const {
+		return on_disk;
+	}
+
+	bool texture::get_on_cpu() const {
+		return on_cpu;
+	}
+
+	bool texture::get_on_gpu() const {
+		return on_gpu;
+	}
+
+	color texture::sample(float u, float v) const {
+		if(data == nullptr) return color(0, 0, 0);
+
+		int ui = (int)(u * width) % width;
+		int vi = (int)(v * height) % height;
+
+		if(ui < 0) ui += width;
+		if(vi < 0) vi += height;
+
+		return data[ui + (vi * width)];
+	}
+
+	rge::result texture::write_to_disk(const std::string& path) const {
 		if(!on_cpu) return rge::FAIL;
-
 		// TODO
-
 		return rge::OK;
 	}
+
+	void texture::allocate() {
+		if(data != nullptr) return;
+
+		data = new color[width * height];
+	}
+
 	//********************************************//
 	//* Texture class.                           *//
 	//********************************************//
@@ -1024,16 +1611,16 @@ namespace rge {
 
 	}
 
-	rge::result renderer::set_target(rge::render_target* target) {
+	rge::result renderer::set_target(render_target* target) {
 		this->target = target;
 		return rge::OK;
 	}
 
-	rge::render_target* renderer::get_target() {
+	render_target* renderer::get_target() const {
 		return target;
 	}
 
-	void renderer::clear(rge::color color) {
+	void renderer::clear(color color) {
 		// TODO
 	}
 	//********************************************//
@@ -1053,12 +1640,12 @@ namespace rge {
 
 	}
 
-	void renderer2d::draw(const rge::texture& texture, const rge::rect& dest) {
+	void renderer2d::draw(const texture& texture, const rect& dest) {
 		if(!texture.get_on_cpu()) return;
 		
 	}
 
-	void renderer2d::draw(const rge::texture& texture, const rge::rect& dest, const rge::rect& src) {
+	void renderer2d::draw(const texture& texture, const rect& dest, const rect& src) {
 		if(!texture.get_on_cpu()) return;
 
 	}
@@ -1072,63 +1659,105 @@ namespace rge {
 	//* Software Renderer 3D class.              *//
 	//********************************************//
 	renderer3d::renderer3d() {
-		view = matrix4x4::identity();
-		projection = matrix4x4::identity();
+		world_camera = nullptr;
+		lights = std::vector<light*>();
 	}
 
 	renderer3d::~renderer3d() {
 
 	}
 
-	void renderer3d::set_view(const rge::matrix4x4& view_matrix) {
-		view = view_matrix;
+	void renderer3d::set_camera(camera* camera) {
+		this->world_camera = camera;
 	}
 
-	void renderer3d::set_projection(const rge::matrix4x4& projection_matrix) {
-		projection = projection_matrix;
+	void renderer3d::set_ambience(const color& ambient_color) {
+		ambience = ambient_color;
 	}
 
-	rge::vec4 renderer3d::project_vertex(const rge::vec3& v) {
-		// TODO
-		return vec4();
-	}
-
-	void renderer3d::draw(
-		const std::vector<rge::vec3>& vertices,
+	rge::result renderer3d::draw(
+		const matrix4x4& model_to_world,
+		const std::vector<vec3>& vertices,
 		const std::vector<int>& triangles,
-		const std::vector<rge::vec3>& normals,
-		const std::vector<rge::vec2>& uvs,
-		const rge::material& material,
-		const rge::camera& camera)
+		const std::vector<vec3>& normals,
+		const std::vector<vec2>& uvs,
+		const material& material)
 	{
-		for(int i = 0; i < triangles.size(); i += 3) {
-			rge::vec4 proj_v1 = project_vertex(vertices[triangles[i]]);
-			rge::vec4 proj_v2 = project_vertex(vertices[triangles[i+1]]);
-			rge::vec4 proj_v3 = project_vertex(vertices[triangles[i+2]]);
+		if(world_camera == nullptr || target == nullptr) return rge::FAIL;
+
+		int i;
+		vec3 world_v1;
+		vec3 world_v2;
+		vec3 world_v3;
+		vec3 world_n1;
+		vec3 world_n2;
+		vec3 world_n3;
+		vec4 proj_v1;
+		vec4 proj_v2;
+		vec4 proj_v3;
+		vec3 proj_tri_normal;
+		vec3 proj_tri_center;
+		vec2 normalized_v1;
+		vec2 normalized_v2;
+		vec2 normalized_v3;
+		vec4 texturespace_v1;
+		vec4 texturespace_v2;
+		vec4 texturespace_v3;
+		vec3 camera_position = world_camera->transform != nullptr ? world_camera->transform->get_global_position() : vec3();
+		matrix4x4 world_to_projection = world_camera->get_projection_matrix() * world_camera->get_view_matrix();
+
+		float w = (float)get_target()->get_width();
+		float h = (float)get_target()->get_height();
+
+		// Loop through each of the triplets of triangle indices.
+		for(i = 0; i < triangles.size(); i += 3) {
+			// Transform model vertices to world vertices.
+			world_v1 = model_to_world.multiply_point_3x4(vertices[triangles[i]]);
+			world_v2 = model_to_world.multiply_point_3x4(vertices[triangles[i+1]]);
+			world_v3 = model_to_world.multiply_point_3x4(vertices[triangles[i+2]]);
+
+			// Transform model normals to world normals.
+			world_n1 = model_to_world.multiply_vector(normals[triangles[i]]);
+			world_n2 = model_to_world.multiply_vector(normals[triangles[i+1]]);
+			world_n2 = model_to_world.multiply_vector(normals[triangles[i+2]]);
+
+			// Get the projected vertices that make up the triangle based
+			// on these indices.
+			proj_v1 = project_world_vertex(world_v1, world_to_projection);
+			proj_v2 = project_world_vertex(world_v2, world_to_projection);
+			proj_v3 = project_world_vertex(world_v3, world_to_projection);
 
 			if(/* Check if all three projected vertices are within homogeneous clip bounds. */
 				proj_v1.x >= -1 && proj_v1.x <= 1 && proj_v1.y >= -1 && proj_v1.y <= 1 &&
 				proj_v2.x >= -1 && proj_v2.x <= 1 && proj_v2.y >= -1 && proj_v2.y <= 1 &&
 				proj_v3.x >= -1 && proj_v3.x <= 1 && proj_v3.y >= -1 && proj_v3.y <= 1
 			) {
-				rge::vec3 proj_tri_normal = rge::vec3::cross(proj_v2 - proj_v1, proj_v3 - proj_v1);
-				rge::vec3 proj_tri_center = (proj_v1 + proj_v2 + proj_v3) / 3;
+				// Calculate the normal of the projected triangle from the cross
+			    // product of two of its edges.
+				proj_tri_normal = vec3::cross(proj_v2 - proj_v1, proj_v3 - proj_v1);
 
-				if(rge::vec3::dot(proj_tri_normal, proj_tri_center - camera.get_world_position()) <= 0) {
+				// Calculate the centre of the projected triangle.
+				proj_tri_center = (proj_v1 + proj_v2 + proj_v3) / 3;
+
+				// Check the dot project of the projected triangle normal and
+				// the camera to triangle centre vector - if the dot product is
+				// <=0, the normal and vector point at each other, and the triangle
+				// must be facing the camera, so we should render it. If the dot
+				// product is >0, the are facing the same direction, therefore
+				// the triangle is facing away from the camera - don't render it.
+				if(vec3::dot(proj_tri_normal, proj_tri_center - camera_position) <= 0) {
 					// Normalize our projected vertices so that they are in the range
 					// Between 0 and 1 (instead of -1 and 1).
-					rge::vec2 normalized_v1 = rge::vec2((proj_v1.x + 1) / 2.0F, (proj_v1.y + 1) / 2.0F);
-					rge::vec2 normalized_v2 = rge::vec2((proj_v2.x + 1) / 2.0F, (proj_v2.y + 1) / 2.0F);
-					rge::vec2 normalized_v3 = rge::vec2((proj_v3.x + 1) / 2.0F, (proj_v3.y + 1) / 2.0F);
+					normalized_v1 = vec2((proj_v1.x + 1) / 2.0F, (proj_v1.y + 1) / 2.0F);
+					normalized_v2 = vec2((proj_v2.x + 1) / 2.0F, (proj_v2.y + 1) / 2.0F);
+					normalized_v3 = vec2((proj_v3.x + 1) / 2.0F, (proj_v3.y + 1) / 2.0F);
 
 					// Multiply our normalized vertex positions by the render target size
 					// to get their position in texture space (or if we were rendering
 					// to the screen - screen space).
-					float w = (float)get_target()->get_width();
-					float h = (float)get_target()->get_height();
-					rge::vec4 texturespace_v1 = rge::vec4(normalized_v1.x * w, normalized_v1.y * h, proj_v1.z, proj_v1.w);
-					rge::vec4 texturespace_v2 = rge::vec4(normalized_v2.x * w, normalized_v2.y * h, proj_v2.z, proj_v2.w);
-					rge::vec4 texturespace_v3 = rge::vec4(normalized_v3.x * w, normalized_v3.y * h, proj_v3.z, proj_v3.w);
+					texturespace_v1 = vec4(normalized_v1.x * w, normalized_v1.y * h, proj_v1.z, proj_v1.w);
+					texturespace_v2 = vec4(normalized_v2.x * w, normalized_v2.y * h, proj_v2.z, proj_v2.w);
+					texturespace_v3 = vec4(normalized_v3.x * w, normalized_v3.y * h, proj_v3.z, proj_v3.w);
 
 					// Draw the triangle interpolated between the three vertices,
 					// using the colours calculated for these vertices based
@@ -1137,49 +1766,50 @@ namespace rge {
 						texturespace_v1,
 						texturespace_v2,
 						texturespace_v3,
-						vertices[triangles[i]],
-						vertices[triangles[i+1]],
-						vertices[triangles[i+2]],
-						normals[triangles[i]],
-						normals[triangles[i+1]],
-						normals[triangles[i+2]],
+						world_v1,
+						world_v2,
+						world_v3,
+						world_n1,
+						world_n2,
+						world_n3,
 						uvs[triangles[i]],
 						uvs[triangles[i+1]],
 						uvs[triangles[i+2]],
-						material,
-						camera.get_world_position()
+						material
 					);
 				}
 			}
 		}
+
+		return rge::OK;
 	}
 
 	void renderer3d::draw_interpolated_triangle(
-		const rge::vec4& r_v1,
-		const rge::vec4& r_v2,
-		const rge::vec4& r_v3,
-		const rge::vec3& w_v1,
-		const rge::vec3& w_v2,
-		const rge::vec3& w_v3,
-		const rge::vec3& w_n1,
-		const rge::vec3& w_n2,
-		const rge::vec3& w_n3,
-		const rge::vec2& t_uv1,
-		const rge::vec2& t_uv2,
-		const rge::vec2& t_uv3,
-		const rge::material& material,
-		const rge::vec3& camera_position
+		const vec4& r_v1,
+		const vec4& r_v2,
+		const vec4& r_v3,
+		const vec3& w_v1,
+		const vec3& w_v2,
+		const vec3& w_v3,
+		const vec3& w_n1,
+		const vec3& w_n2,
+		const vec3& w_n3,
+		const vec2& t_uv1,
+		const vec2& t_uv2,
+		const vec2& t_uv3,
+		const material& material
 	) {
 		int x, y, p;
 		float denom;
 		float weight_v1, weight_v2, weight_v3;
 		float depth;
-		rge::vec3 v;
-		rge::vec3 n;
-		rge::vec2 uv;
-		rge::color diffuse;
-		rge::color source;
-		rge::color destination;
+		vec3 v;
+		vec3 n;
+		vec2 uv;
+		color diffuse;
+		color source;
+		color destination;
+		vec3 camera_position = world_camera->transform != nullptr ? world_camera->transform->get_global_position() : vec3();
 
 		// Calculate the bounding rectangle of the triangle based on the
 		// three vertices.
@@ -1233,7 +1863,18 @@ namespace rge {
 							diffuse *= material.texture->sample(uv.x, uv.y);
 
 						// Calculate the pixel colour based on the weighted vertex colours.
-						source = calculate_blinn_phong(v, n, diffuse, material.specular, material.shininess, camera_position, lights);
+						source = calculate_blinn_phong(
+							v,
+							n,
+							diffuse,
+							material.specular,
+							ambience,
+							material.shininess,
+							camera_position,
+							lights
+						);
+
+						// Match alpha to diffuse.
 						source.a = diffuse.a;
 
 						// Write color to render target.
@@ -1246,114 +1887,174 @@ namespace rge {
 			}
 		}
 	}
+	
+	vec4 renderer3d::project_world_vertex(const vec3& v, const matrix4x4& world_to_projection) {
+		vec4 hpv = world_to_projection * vec4(v.x, v.y, v.z, 1);
+		return vec4(hpv.x / hpv.w, hpv.y / hpv.w, hpv.z / hpv.w, hpv.w);
+	}
 
-	rge::color renderer3d::calculate_blinn_phong(
-		const rge::vec3& position,
-		const rge::vec3& normal,
-		const rge::color& diffuse,
-		const rge::color& specular,
+	color renderer3d::calculate_blinn_phong(
+		const vec3& position,
+		const vec3& normal,
+		const color& diffuse,
+		const color& specular,
+		const color& ambient,
 		float shininess,
-		const rge::vec3& camera_position,
-		const std::vector<rge::light*>& lights
+		const vec3& camera_position,
+		const std::vector<light*>& lights
 	) {
-		rge::color color;
+		int i;
+		color diffuse_sum = color(0, 0, 0);
+		color specular_sum = color(0, 0, 0);
+		float light_w;
+		vec3 light_pos;
+		color light_color;
+		float attenuation;
+		vec3 normal_direction = vec3::normalize(normal);
+		vec3 view_direction = vec3::normalize(camera_position - position);
+		vec3 vert_to_light;
+		float vert_to_light_mag;
+		vec3 light_direction;
+		color diffuse_reflection;
+		color specular_reflection;
+		color ambient_lighting = ambient * diffuse;
+		light* light;
 
-		return color;
+		// Loop through each light source.
+		for(i = 0; i < lights.size(); ++i) {
+			light = lights[i];
+
+			if(light->transform == nullptr)
+				continue;
+
+			// Calculate the light position and colour based on the light properties
+			// light_w is set to 0 if the light is directional, and 1 otherwise.
+			if(light->type == light_mode::DIRECTIONAL) {
+				light_pos = light->transform->get_global_backward();
+				light_w = 0.0F;
+				light_color = light->tint * light->intensity;
+				attenuation = 1.0F;
+			} else {
+				light_pos = light->transform->get_global_position();
+				light_w = 1.0F;
+
+				// For non direcitonal lights, we'll figure out the light
+				// color per pixel, based on the distance from the light
+				// to the pixel.
+				light_color = color(0, 0, 0);
+
+				// Calculate the distance from the light to the pixel, and 1/distance.
+				vert_to_light = light_pos - position;
+				vert_to_light_mag = vert_to_light.magnitude();
+
+				attenuation = 1.0F / vert_to_light_mag;
+
+				// Calculate the colour based on the distance and light range.
+				if(vert_to_light_mag < light->range)
+					light_color *= light->intensity;
+			}
+
+			// Calculate light direction.
+			light_direction = light_pos - (position * light_w);
+
+			// Calculate diffuse lighting.
+			diffuse_reflection = light_color * diffuse * fmaxf(0, vec3::dot(normal_direction, view_direction)) * attenuation;
+
+			// Calculate Specular reflection if the normal is pointing in the
+			// lights direction.
+			if(vec3::dot(normal_direction, light_direction) < 0.0) {
+				specular_reflection = color(0, 0, 0);
+			} else {
+				// Calculate the specular colour using Blinn-Phong lighting
+				specular_reflection = light_color * specular * powf(fmaxf(0.0F, vec3::dot(normal_direction, vec3::normalize(light_direction + view_direction))), shininess * 128) * attenuation;
+			}
+
+			diffuse_sum += diffuse_reflection;
+			specular_sum += specular_reflection;
+		}
+
+		// The final color for this pixel is the sum of the ambient, diffuse and specular.
+		return ambient_lighting + diffuse_sum + specular_sum;
 	}
 	//********************************************//
 	//* Software Renderer 3D class.              *//
 	//********************************************//
 	#pragma endregion
 
+	#pragma region /* rge::window */
+	//********************************************//
+	//* Window class.                            *//
+	//********************************************//
 	namespace platform {
-
-		#pragma region /* rge::platform::window */
-		//********************************************//
-		//* Window class.                            *//
-		//********************************************//
 		#ifdef SYS_WINDOWS
-		#include <windows.h>
 		class window_impl {
 		public:
-			window_impl(rge::platform::window* window) {
+			window_impl(window* window) {
 				this->window = window;
 			}
-
-			~window_impl() {
-
-			}
+			~window_impl() {}
 
 		public:
 			int width, height;
-			rge::platform::window* window;
+			window* window;
 		};
 		#elif SYS_LINUX
 		class window_impl {
 		public:
-			window_impl(rge::platform::window* window) {
+			window_impl(window* window) {
 				this->window = window;
 			}
-
-			~window_impl() {
-
-			}
+			~window_impl() {}
 
 		public:
 			int width, height;
-			rge::platform::window* window;
+			window* window;
 		};
 		#elif SYS_MACOSX
 		class window_impl {
 		public:
-			window_impl(rge::platform::window* window) {
+			window_impl(window* window) {
 				this->window = window;
 			}
-
-			~window_impl() {
-
-			}
+			~window_impl() {}
 
 		public:
 			int width, height;
-			rge::platform::window* window;
+			window* window;
 		};
 		#endif
-
-		window::window() {
-			impl = new window_impl(this);
-			impl->width = 800;
-			impl->height = 600;
-		}
-
-		window::~window() {
-			delete impl;
-		}
-
-		rge::result window::create() {
-
-			return rge::OK;
-		}
-
-		rge::result window::set_size(int width, int height) {
-			if(width < 1) return rge::FAIL;
-			if(height < 1) return rge::FAIL;
-
-			impl->width = width;
-			impl->height = height;
-
-			return rge::OK;
-		}
-
-		void window::get_size(int& width, int& height) const {
-			width = impl->width;
-			height = impl->height;
-		}
-		//********************************************//
-		//* Windows implementation of window class.  *//
-		//********************************************//
-		#pragma endregion
-
 	}
+
+	window::window() {
+		impl = new platform::window_impl(this);
+		impl->width = 800;
+		impl->height = 600;
+	}
+
+	window::~window() {
+		delete impl;
+	}
+
+	rge::result window::create() {
+		return rge::OK;
+	}
+
+	rge::result window::set_size(int width, int height) {
+		if(width < 1) return rge::FAIL;
+		if(height < 1) return rge::FAIL;
+		impl->width = width;
+		impl->height = height;
+		return rge::OK;
+	}
+
+	void window::get_size(int& width, int& height) const {
+		width = impl->width;
+		height = impl->height;
+	}
+	//********************************************//
+	//* Windows implementation of window class.  *//
+	//********************************************//
+	#pragma endregion
 }
 
 #endif /* RGE_IMPL */

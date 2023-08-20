@@ -28,8 +28,8 @@ project "example"
     objdir ("tmp/" .. outputdir .. "/%{prj.name}")
 
     files {
-        "%{prj.location}/**.hpp",
-		"%{prj.location}/**.cpp"
+        "%{prj.location}/rge.hpp",
+		"%{prj.location}/example.cpp"
     }
 
     includedirs {

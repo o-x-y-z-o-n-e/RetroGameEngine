@@ -1,5 +1,5 @@
 #define RGE_IMPL
-#include "rge.hpp"
+#include <rge.hpp>
 
 class game : public rge::engine {
 
@@ -16,15 +16,20 @@ private:
             rge::log::info("why hello there!");
             return true;
         }
+		return false;
     }
 
     void on_render() override {
-        
+		std::vector<rge::vec3> model_verts;
+		std::vector<rge::vec3> model_norms;
+
+
+
     }
     
 };
 
-int main() {
+int main(int argc, char** argv) {
     std::thread* thread;
     game* gm = new game;
     
