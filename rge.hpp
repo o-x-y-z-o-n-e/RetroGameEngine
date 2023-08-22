@@ -26,7 +26,7 @@ namespace rge {
 	struct vec3;
 	struct vec4;
 	struct quaternion;
-	struct matrix4x4;
+	struct mat4;
 	struct color;
 	class engine;
 	class event;
@@ -243,6 +243,7 @@ namespace rge {
 		quaternion(float x, float y, float z, float w);
 
 		static quaternion identity() { return quaternion(); }
+		static quaternion look(const vec3& forward, const vec3& up);
 
 		vec3 operator * (const vec3& rhs) const;
 	};
@@ -251,23 +252,32 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
-	#pragma region /* rge::matrix4x4 */
+	#pragma region /* rge::mat4 */
 	//********************************************//
 	//* Matrix 4x4 struct.                       *//
 	//********************************************//
-	struct matrix4x4 {
+	struct mat4 {
 		float m[4][4]; // Rows by columns.
 
-		matrix4x4();
-		matrix4x4(vec4 col0, vec4 col1, vec4 col2, vec4 col3);
+		mat4();
+		mat4(vec4 col0, vec4 col1, vec4 col2, vec4 col3);
 
-		static matrix4x4 identity() { return matrix4x4(); }
+		static mat4 identity() { return mat4(); }
+		static mat4 translate(const vec3& translation);
+		static mat4 rotate(const quaternion& rotation);
+		static mat4 scale(const vec3& scale);
+		static mat4 trs(const vec3& position, const quaternion& rotation, const vec3& scale);
 
 		vec3 multiply_point_3x4(const vec3& v) const;
 		vec3 multiply_vector(const vec3& v) const;
+		vec3 extract_translation() const;
+		quaternion extract_rotation() const;
+		vec3 extract_right_axis() const;
+		vec3 extract_up_axis() const;
+		vec3 extract_forward_axis() const;
 
 		vec4 operator * (const vec4& rhs) const;
-		matrix4x4 operator * (const matrix4x4& rhs) const;
+		mat4 operator * (const mat4& rhs) const;
 	};
 	//********************************************//
 	//* Matrix 4x4 struct.                       *//
@@ -448,44 +458,41 @@ namespace rge {
 	//* Transform class.                         *//
 	//********************************************//
 	class transform {
-		public:
-			transform();
-			transform(transform* parent);
-			transform(vec3 position, vec3 rotation, vec3 scale);
-			transform(vec3 position, vec3 rotation, vec3 scale, transform* parent);
+	public:
+		transform();
+		transform(transform* parent);
+		transform(vec3 position, vec3 rotation, vec3 scale);
+		transform(vec3 position, vec3 rotation, vec3 scale, transform* parent);
+	
+	public:
+		mat4 get_global_matrix() const;
 
-		public:
-			vec3 get_position() const;
-			quaternion get_rotation() const;
-			vec3 get_scale() const;
-			vec3 get_forward() const;
-			vec3 get_up() const;
-			vec3 get_right() const;
-			vec3 get_backward() const { return -get_forward(); };
-			vec3 get_down() const { return -get_up(); };
-			vec3 get_left() const { return -get_right(); };
+		vec3 get_forward() const;
+		vec3 get_up() const;
+		vec3 get_right() const;
+		vec3 get_backward() const { return -get_forward(); };
+		vec3 get_down() const { return -get_up(); };
+		vec3 get_left() const { return -get_right(); };
+		// TODO: Add set_DIRECTION functions.
+		
+		vec3 get_global_forward() const;
+		vec3 get_global_up() const;
+		vec3 get_global_right() const;
+		vec3 get_global_backward() const { return -get_global_forward(); };
+		vec3 get_global_down() const { return -get_global_up(); };
+		vec3 get_global_left() const { return -get_global_right(); };
+		// TODO: Add set_global_DIRECTION functions.
 
-			void set_position(const vec3& position);
-			void set_rotation(const quaternion& rotation);
-			void set_scale(const vec3& scale);
-			// TODO: Add set_DIRECTION functions.
-			
-			vec3 get_global_position() const;
-			quaternion get_global_rotation() const;
-			vec3 get_global_forward() const;
-			vec3 get_global_up() const;
-			vec3 get_global_right() const;
-			vec3 get_global_backward() const { return -get_global_forward(); };
-			vec3 get_global_down() const { return -get_global_up(); };
-			vec3 get_global_left() const { return -get_global_right(); };
+		vec3 get_global_position() const;
+		quaternion get_global_rotation() const;
+		void set_global_position(const vec3& position);
+		void set_global_rotation(const quaternion& rotation);
 
-			void set_global_position(const vec3& position);
-			void set_global_rotation(const quaternion& rotation);
-			// TODO: Add set_global_DIRECTION functions.
-
-		public:
-			matrix4x4 matrix;
-			transform* parent;
+	public:
+		vec3 position;
+		quaternion rotation;
+		vec3 scale;
+		transform* parent;
 	};
 	//********************************************//
 	//* Transform class.                         *//
@@ -502,15 +509,15 @@ namespace rge {
 		~camera();
 
 	public:
-		matrix4x4 get_view_matrix() const;
-		matrix4x4 get_projection_matrix() const;
+		mat4 get_view_matrix() const;
+		mat4 get_projection_matrix() const;
 
 	public:
 		transform* transform;
 
 	private:
-		matrix4x4 view; // TODO: iirc this is the same a world transform matrix (but for camera). Might be redundent.
-		matrix4x4 projection;
+		mat4 view; // TODO: iirc this is the same a world transform matrix (but for camera). Might be redundent.
+		mat4 projection;
 	};
 	//********************************************//
 	//* Camera class.                            *//
@@ -659,7 +666,7 @@ namespace rge {
 		void set_camera(camera* camera);
 		void set_ambience(const color& ambient_color);
 		rge::result draw(
-			const matrix4x4& model_to_world,
+			const mat4& model_to_world,
 			const std::vector<vec3>& vertices,
 			const std::vector<int>& triangles,
 			const std::vector<vec3>& normals,
@@ -685,7 +692,7 @@ namespace rge {
 		);
 
 	private:
-		static vec4 project_world_vertex(const vec3& vertex, const matrix4x4& projection);
+		static vec4 project_world_vertex(const vec3& vertex, const mat4& projection);
 		static color calculate_blinn_phong(
 			const vec3& position,
 			const vec3& normal,
@@ -964,23 +971,81 @@ namespace rge {
 		this->w = w;
 	}
 
+	quaternion quaternion::look(const vec3& forward, const vec3& up) {
+		quaternion q = quaternion::identity();
+		vec3 f = vec3::normalize(forward);
+		vec3 r = vec3::normalize(vec3::cross(up, f));
+		vec3 u = vec3::cross(f, r);
+		float num1;
+		float num2;
+		float num3;
+		float num4;
+		float num5;
+		float num6;
+		float num7;
+		float num8;
+
+		/*
+		mat4 m = mat4(
+			vec4(r.x,r.y,r.z,0),
+			vec4(u.x,u.y,u.z,0),
+			vec4(f.x,f.y,f.z,0),
+			vec4(0,0,0,1)
+		);*/
+
+		num8 = r.x + u.y + f.z;
+		if(num8 > 0.0F) {
+			num1 = sqrtf(num8 + 1.0F);
+			num1 = 0.5F / num1;
+			q.x = (u.z - f.z) * num1;
+			q.y = (f.x - r.z) * num1;
+			q.z = (r.y - u.x) * num1;
+			q.w = num1 * 0.5F;
+		} else if((r.x >= u.y) && (r.x >= f.z)) {
+			num7 = sqrtf(((1.0F + r.x) - u.y) - f.z);
+			num4 = 0.5F / num7;
+			q.x = num7 * 0.5F;
+			q.y = (r.y + u.x) * num4;
+			q.z = (r.z + f.x) * num4;
+			q.w = (u.z - f.y) * num4;
+		} else if(u.y > f.z) {
+			num6 = sqrtf(((1.0F + u.y) - r.x) - f.z);
+			num3 = 0.5F / num6;
+			q.x = (u.x + r.y) * num3;
+			q.y = num6 * 0.5F;
+			q.z = (f.y + u.z) * num3;
+			q.w = (f.x - r.z) * num3;
+		} else {
+			num5 = sqrtf(((1.0F + f.z) - r.x) - u.y);
+			num2 = 0.5F / num5;
+			q.x = (f.x + r.z) * num2;
+			q.y = (f.y + u.z) * num2;
+			q.z = num5 * 0.5F;
+			q.w = (r.y - u.x) * num2;
+		}
+
+		return q;
+	}
+
 	vec3 quaternion::operator * (const vec3& rhs) const {
-		float num =   this->x * 2.0F;
+		vec3 result = vec3();
+		float num1 =  this->x * 2.0F;
 		float num2 =  this->y * 2.0F;
 		float num3 =  this->z * 2.0F;
-		float num4 =  this->x * num;
+		float num4 =  this->x * num1;
 		float num5 =  this->y * num2;
 		float num6 =  this->z * num3;
 		float num7 =  this->x * num2;
 		float num8 =  this->x * num3;
 		float num9 =  this->y * num3;
-		float num10 = this->w * num;
+		float num10 = this->w * num1;
 		float num11 = this->w * num2;
 		float num12 = this->w * num3;
-		vec3 result = vec3();
+		
 		result.x = (1.0F - (num5 + num6)) * rhs.x + (num7 - num12) * rhs.y + (num8 + num11) * rhs.z;
 		result.y = (num7 + num12) * rhs.x + (1.0F - (num4 + num6)) * rhs.y + (num9 - num10) * rhs.z;
 		result.z = (num8 - num11) * rhs.x + (num9 + num10) * rhs.y + (1.0F - (num4 + num5)) * rhs.z;
+		
 		return result;
 	}
 	//********************************************//
@@ -988,11 +1053,11 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
-	#pragma region /* rge::matrix4x4 */
+	#pragma region /* rge::mat4 */
 	//********************************************//
 	//* Matrix 4x4 struct.                       *//
 	//********************************************//
-	matrix4x4::matrix4x4() {
+	mat4::mat4() {
 		m[0][0] = 1;
 		m[0][1] = 0;
 		m[0][2] = 0;
@@ -1011,7 +1076,7 @@ namespace rge {
 		m[3][3] = 1;
 	}
 
-	matrix4x4::matrix4x4(vec4 col0, vec4 col1, vec4 col2, vec4 col3) {
+	mat4::mat4(vec4 col0, vec4 col1, vec4 col2, vec4 col3) {
 		m[0][0] = col0.x;
 		m[0][1] = col1.x;
 		m[0][2] = col2.x;
@@ -1030,7 +1095,55 @@ namespace rge {
 		m[3][3] = col3.w;
 	}
 
-	vec3 matrix4x4::multiply_point_3x4(const vec3& v) const {
+	mat4 mat4::translate(const vec3& translation) {
+		mat4 m = mat4::identity();
+		m.m[0][3] = translation.x;
+		m.m[1][3] = translation.y;
+		m.m[2][3] = translation.z;
+		return m;
+	}
+
+	mat4 mat4::rotate(const quaternion& rotation) {
+		mat4 m = mat4::identity();
+		float x = rotation.x * 2.0F;
+		float y = rotation.y * 2.0F;
+		float z = rotation.z * 2.0F;
+		float xx = rotation.x * x;
+		float yy = rotation.y * y;
+		float zz = rotation.z * z;
+		float xy = rotation.x * y;
+		float xz = rotation.x * z;
+		float yz = rotation.y * z;
+		float wx = rotation.w * x;
+		float wy = rotation.w * y;
+		float wz = rotation.w * z;
+		
+		m.m[0][0] = 1.0f - (yy + zz);
+		m.m[1][0] = xy + wz;
+		m.m[2][0] = xz - wy;
+		m.m[0][1] = xy - wz;
+		m.m[1][1] = 1.0f - (xx + zz);
+		m.m[2][1] = yz + wx;
+		m.m[0][2] = xz + wy;
+		m.m[1][2] = yz - wx;
+		m.m[2][2] = 1.0f - (xx + yy);
+		
+		return m;
+	}
+
+	mat4 mat4::scale(const vec3& scale) {
+		mat4 m = mat4::identity();
+		m.m[0][0] = scale.x;
+		m.m[1][1] = scale.y;
+		m.m[2][2] = scale.z;
+		return m;
+	}
+
+	mat4 mat4::trs(const vec3& translation, const quaternion& rotation, const vec3& scale) {
+		return mat4::translate(translation) * mat4::rotate(rotation) * mat4::scale(scale);
+	}
+
+	vec3 mat4::multiply_point_3x4(const vec3& v) const {
 		vec3 result = vec3();
 		result.x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3];
 		result.y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3];
@@ -1038,7 +1151,7 @@ namespace rge {
 		return v;
 	}
 
-	vec3 matrix4x4::multiply_vector(const vec3& v) const {
+	vec3 mat4::multiply_vector(const vec3& v) const {
 		vec3 result = vec3();
 		result.x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z;
 		result.y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z;
@@ -1046,7 +1159,51 @@ namespace rge {
 		return v;
 	}
 
-	vec4 matrix4x4::operator * (const vec4& rhs) const {
+	vec3 mat4::extract_translation() const {
+		return vec3(m[0][3], m[1][3], m[2][3]);
+	}
+
+	quaternion mat4::extract_rotation() const {
+		/*
+		quaternion q = quaternion();
+		
+		q.w = sqrtf(fmaxf(0, 1.0F + m[0][0] + m[1][1] + m[2][2])) / 2.0F;
+		q.x = sqrtf(fmaxf(0, 1.0F + m[0][0] - m[1][1] - m[2][2])) / 2.0F;
+		q.y = sqrtf(fmaxf(0, 1.0F - m[0][0] + m[1][1] - m[2][2])) / 2.0F;
+		q.z = sqrtf(fmaxf(0, 1.0F - m[0][0] - m[1][1] + m[2][2])) / 2.0F;
+		if(q.x * (m[2][1] - m[1][2]) < 0) q.x *= -1;
+		if(q.y * (m[0][2] - m[2][0]) < 0) q.y *= -1;
+		if(q.z * (m[1][0] - m[0][1]) < 0) q.z *= -1;
+		
+		return q;
+		*/
+		
+		vec3 forward;
+		forward.x = m[0][2];
+		forward.y = m[1][2];
+		forward.z = m[2][2];
+		
+		vec3 up;
+		up.x = m[0][1];
+		up.y = m[1][1];
+		up.z = m[2][1];
+		
+		return quaternion::look(forward, up);
+	}
+
+	vec3 mat4::extract_right_axis() const {
+		return vec3::normalize(vec3(m[0][0], m[1][0], m[2][0]));
+	}
+
+	vec3 mat4::extract_up_axis() const {
+		return vec3::normalize(vec3(m[0][1], m[1][1], m[2][1]));
+	}
+
+	vec3 mat4::extract_forward_axis() const {
+		return vec3::normalize(vec3(m[0][2], m[1][2], m[2][2]));
+	}
+
+	vec4 mat4::operator * (const vec4& rhs) const {
 		vec4 result = vec4();
 		result.x = this->m[0][0] * rhs.x + this->m[0][1] * rhs.y + this->m[0][2] * rhs.z + this->m[0][3] * rhs.w;
 		result.y = this->m[1][0] * rhs.x + this->m[1][1] * rhs.y + this->m[1][2] * rhs.z + this->m[1][3] * rhs.w;
@@ -1055,8 +1212,8 @@ namespace rge {
 		return result;
 	}
 
-	matrix4x4 matrix4x4::operator * (const matrix4x4& rhs) const {
-		matrix4x4 result = matrix4x4::identity();
+	mat4 mat4::operator * (const mat4& rhs) const {
+		mat4 result = mat4();
 		result.m[0][0] = this->m[0][0] * rhs.m[0][0] + this->m[0][1] * rhs.m[1][0] + this->m[0][2] * rhs.m[2][0] + this->m[0][3] * rhs.m[3][0];
 		result.m[0][1] = this->m[0][0] * rhs.m[0][1] + this->m[0][1] * rhs.m[1][1] + this->m[0][2] * rhs.m[2][1] + this->m[0][3] * rhs.m[3][1];
 		result.m[0][2] = this->m[0][0] * rhs.m[0][2] + this->m[0][1] * rhs.m[1][2] + this->m[0][2] * rhs.m[2][2] + this->m[0][3] * rhs.m[3][2];
@@ -1165,13 +1322,11 @@ namespace rge {
 	//********************************************//
 	//* Math Module.                             *//
 	//********************************************//
-
 	float math::lerp(float a, float b, float t) {
 		if(t < 0) t = 0;
 		if(t > 1) t = 1;
 		return (a * (1 - t)) + (b * t);
 	}
-
 	//********************************************//
 	//* Logging Module.                          *//
 	//********************************************//
@@ -1181,7 +1336,6 @@ namespace rge {
 	//********************************************//
 	//* Logging Module.                          *//
 	//********************************************//
-
 	void log::info(const std::string& msg) {
 		std::cout << "[INFO] " << msg << std::endl;
 	}
@@ -1193,7 +1347,6 @@ namespace rge {
 	void log::error(const std::string& msg) {
 		std::cout << "[ERROR] " << msg << std::endl;
 	}
-
 	//********************************************//
 	//* Logging Module.                          *//
 	//********************************************//
@@ -1370,77 +1523,51 @@ namespace rge {
 	//* Transform class.                         *//
 	//********************************************//
 	transform::transform() {
-		matrix = matrix4x4::identity();
+		position = vec3();
+		rotation = quaternion();
+		scale = vec3();
 		parent = nullptr;
 	}
 
-	vec3 transform::get_position() const {
-		return vec3(matrix.m[0][3], matrix.m[1][3], matrix.m[1][3]);
-	}
+	mat4 transform::get_global_matrix() const {
+		mat4 m = mat4::trs(position, rotation, scale);
 
-	quaternion transform::get_rotation() const {
-		return quaternion(); // TODO
-	}
-
-	vec3 transform::get_scale() const {
-		// TODO: Test
-		return vec3(matrix.m[0][0], matrix.m[1][1], matrix.m[2][2]);
+		if(parent != nullptr)
+			return parent->get_global_matrix() * m;
+		else
+			return m;
 	}
 
 	vec3 transform::get_forward() const {
-		return get_rotation() * vec3(0, 0, 1);
+		return rotation * vec3(0, 0, 1);
 	}
 
 	vec3 transform::get_up() const {
-		return get_rotation() * vec3(0, 1, 0);
+		return rotation * vec3(0, 1, 0);
 	}
 
 	vec3 transform::get_right() const {
-		return get_rotation() * vec3(1, 0, 0);
-	}
-
-	void transform::set_position(const vec3& position) {
-		matrix.m[0][3] = position.x;
-		matrix.m[1][3] = position.y;
-		matrix.m[2][3] = position.z;
-	}
-
-	void transform::set_rotation(const quaternion& rotation) {
-		// TODO
-	}
-
-	void transform::set_scale(const vec3& scale) {
-		// TODO: Test
-		matrix.m[0][0] = scale.x;
-		matrix.m[1][1] = scale.y;
-		matrix.m[2][2] = scale.z;
-	}
-
-	vec3 transform::get_global_position() const {
-		// TODO: Test
-		vec3 position = get_position();
-
-		if(parent != nullptr) {
-			position = parent->matrix.multiply_point_3x4(position);
-		}
-
-		return position;
-	}
-
-	quaternion transform::get_global_rotation() const {
-		return quaternion(); // TODO
+		return rotation * vec3(1, 0, 0);
 	}
 
 	vec3 transform::get_global_forward() const {
-		return get_global_rotation() * vec3(0, 0, 1);
+		return get_global_matrix().extract_forward_axis();
 	}
 
 	vec3 transform::get_global_up() const {
-		return get_global_rotation() * vec3(0, 1, 0);
+		return get_global_matrix().extract_up_axis();
 	}
 
 	vec3 transform::get_global_right() const {
-		return get_global_rotation() * vec3(1, 0, 0);
+		return get_global_matrix().extract_right_axis();
+	}
+
+	vec3 transform::get_global_position() const {
+		return get_global_matrix().extract_translation();
+	}
+
+	quaternion transform::get_global_rotation() const {
+		return get_global_matrix().extract_rotation();
 	}
 
 	void transform::set_global_position(const vec3& position) {
@@ -1462,19 +1589,19 @@ namespace rge {
 	camera::camera() {
 		transform = nullptr;
 
-		view = matrix4x4::identity();
-		projection = matrix4x4::identity();
+		view = mat4::identity();
+		projection = mat4::identity();
 	}
 
 	camera::~camera() {
 
 	}
 
-	matrix4x4 camera::get_view_matrix() const {
+	mat4 camera::get_view_matrix() const {
 		return view;
 	}
 	
-	matrix4x4 camera::get_projection_matrix() const {
+	mat4 camera::get_projection_matrix() const {
 		return projection;
 	}
 	//********************************************//
@@ -1674,7 +1801,7 @@ namespace rge {
 	}
 
 	rge::result renderer3d::draw(
-		const matrix4x4& model_to_world,
+		const mat4& model_to_world,
 		const std::vector<vec3>& vertices,
 		const std::vector<int>& triangles,
 		const std::vector<vec3>& normals,
@@ -1702,7 +1829,7 @@ namespace rge {
 		vec4 texturespace_v2;
 		vec4 texturespace_v3;
 		vec3 camera_position = world_camera->transform != nullptr ? world_camera->transform->get_global_position() : vec3();
-		matrix4x4 world_to_projection = world_camera->get_projection_matrix() * world_camera->get_view_matrix();
+		mat4 world_to_projection = world_camera->get_projection_matrix() * world_camera->get_view_matrix();
 
 		float w = (float)get_target()->get_width();
 		float h = (float)get_target()->get_height();
@@ -1886,7 +2013,7 @@ namespace rge {
 		}
 	}
 	
-	vec4 renderer3d::project_world_vertex(const vec3& v, const matrix4x4& world_to_projection) {
+	vec4 renderer3d::project_world_vertex(const vec3& v, const mat4& world_to_projection) {
 		vec4 hpv = world_to_projection * vec4(v.x, v.y, v.z, 1);
 		return vec4(hpv.x / hpv.w, hpv.y / hpv.w, hpv.z / hpv.w, hpv.w);
 	}
