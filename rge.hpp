@@ -561,6 +561,7 @@ namespace rge {
 		bool get_on_cpu() const;
 		bool get_on_gpu() const;
 		color sample(float u, float v) const;
+		color* get_data() const;
 
 		// NOTE: TESTING FUNCTION
 		rge::result write_to_disk(const std::string& path) const;
@@ -606,6 +607,7 @@ namespace rge {
 	//********************************************//
 	class render_target : public texture {
 	public:
+		render_target();
 		render_target(int width, int height);
 	};
 	//********************************************//
@@ -625,7 +627,7 @@ namespace rge {
 	public:
 		rge::result set_target(render_target* target);
 		render_target* get_target() const;
-		virtual void clear(color color);
+		void clear(color c);
 
 	protected:
 		render_target* target;
@@ -756,6 +758,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 	return main(0, nullptr);
 }
 */
+#endif
+
+#ifdef RGE_USE_STB_IMAGE_WRITE
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 #endif
 
 namespace rge {
@@ -1045,7 +1052,7 @@ namespace rge {
 		result.x = (1.0F - (num5 + num6)) * rhs.x + (num7 - num12) * rhs.y + (num8 + num11) * rhs.z;
 		result.y = (num7 + num12) * rhs.x + (1.0F - (num4 + num6)) * rhs.y + (num9 - num10) * rhs.z;
 		result.z = (num8 - num11) * rhs.x + (num9 + num10) * rhs.y + (1.0F - (num4 + num5)) * rhs.z;
-		
+
 		return result;
 	}
 	//********************************************//
@@ -1587,14 +1594,14 @@ namespace rge {
 	//* Camera class.                            *//
 	//********************************************//
 	camera::camera() {
-		transform = nullptr;
+		transform = new rge::transform;
 
 		view = mat4::identity();
 		projection = mat4::identity();
 	}
 
 	camera::~camera() {
-
+		delete transform;
 	}
 
 	mat4 camera::get_view_matrix() const {
@@ -1679,16 +1686,40 @@ namespace rge {
 		return data[ui + (vi * width)];
 	}
 
+	color* texture::get_data() const {
+		return data;
+	}
+
 	rge::result texture::write_to_disk(const std::string& path) const {
 		if(!on_cpu) return rge::FAIL;
-		// TODO
-		return rge::OK;
+
+		#ifdef RGE_USE_STB_IMAGE_WRITE
+		uint8_t* buffer = (uint8_t*)malloc(4 * width * height);
+		for(int i = 0; i < width * height; ++i) {
+			color c = data[i];
+			buffer[i*4] = (uint8_t)(c.r * 255);
+			buffer[i*4+1] = (uint8_t)(c.g * 255);
+			buffer[i*4+2] = (uint8_t)(c.b * 255);
+			buffer[i*4+3] = (uint8_t)(c.a * 255);
+		}
+		if(!stbi_write_png(path.c_str(), width, height, 4, buffer, 4)) {
+			rge::log::error("File write fail.");
+			free(buffer);
+			return rge::FAIL;
+		} else {
+			free(buffer);
+			return rge::OK;
+		}
+		#else
+		return rge::FAIL;
+		#endif
 	}
 
 	void texture::allocate() {
 		if(data != nullptr) return;
 
 		data = new color[width * height];
+		on_cpu = true;
 	}
 
 	//********************************************//
@@ -1701,11 +1732,14 @@ namespace rge {
 	//* Material class.                           *//
 	//********************************************//
 	material::material() {
-
+		texture = nullptr;
+		diffuse = color(1,1,1);
+		specular = color(1,1,1);
+		shininess = 0;
 	}
 
 	material::~material() {
-
+		if(texture) delete texture;
 	}
 	//********************************************//
 	//* Texture class.                           *//
@@ -1716,6 +1750,10 @@ namespace rge {
 	//********************************************//
 	//* Render Target class.                     *//
 	//********************************************//
+	render_target::render_target() : texture(0, 0) {
+
+	}
+
 	render_target::render_target(int width, int height) : texture(width, height) {
 		
 	}
@@ -1745,8 +1783,10 @@ namespace rge {
 		return target;
 	}
 
-	void renderer::clear(color color) {
-		// TODO
+	void renderer::clear(color c) {
+		color* data = target->get_data();
+		for(int i = 0; i < target->get_width() * target->get_height(); ++i)
+			data[i] = c;
 	}
 	//********************************************//
 	//* Renderer class.                          *//
@@ -1757,7 +1797,7 @@ namespace rge {
 	//********************************************//
 	//* Software Renderer 2D class.              *//
 	//********************************************//
-	renderer2d::renderer2d() {
+	renderer2d::renderer2d() : renderer() {
 
 	}
 
@@ -1783,7 +1823,7 @@ namespace rge {
 	//********************************************//
 	//* Software Renderer 3D class.              *//
 	//********************************************//
-	renderer3d::renderer3d() {
+	renderer3d::renderer3d() : renderer() {
 		world_camera = nullptr;
 		lights = std::vector<light*>();
 	}

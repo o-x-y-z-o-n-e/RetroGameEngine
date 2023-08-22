@@ -1,5 +1,1 @@
-win32 OpenGL context & window
-win32 input
-Arena allocator
-rge::render_target
-rge::renderer
+camera view & projection matrix
