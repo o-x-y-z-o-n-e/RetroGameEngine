@@ -461,8 +461,8 @@ namespace rge {
 	public:
 		transform();
 		transform(transform* parent);
-		transform(vec3 position, vec3 rotation, vec3 scale);
-		transform(vec3 position, vec3 rotation, vec3 scale, transform* parent);
+		transform(vec3 position, quaternion rotation, vec3 scale);
+		transform(vec3 position, quaternion rotation, vec3 scale, transform* parent);
 	
 	public:
 		mat4 get_global_matrix() const;
@@ -489,10 +489,10 @@ namespace rge {
 		void set_global_rotation(const quaternion& rotation);
 
 	public:
+		transform* parent;
 		vec3 position;
 		quaternion rotation;
 		vec3 scale;
-		transform* parent;
 	};
 	//********************************************//
 	//* Transform class.                         *//
@@ -511,7 +511,7 @@ namespace rge {
 	public:
 		mat4 get_view_matrix() const;
 		mat4 get_projection_matrix() const;
-		void set_projection_matrix(float fov, float aspect, float near, float far);
+		void set_projection_matrix(float fov, float aspect, float near_plane, float far_plane);
 
 	public:
 		transform* transform;
@@ -677,7 +677,7 @@ namespace rge {
 			const material& material
 		);
 
-	private:
+	public:
 		void draw_interpolated_triangle(
 			const vec4& r_v1,
 			const vec4& r_v2,
@@ -1148,7 +1148,7 @@ namespace rge {
 	}
 
 	mat4 mat4::trs(const vec3& translation, const quaternion& rotation, const vec3& scale) {
-		return mat4::translate(translation) * mat4::rotate(rotation) * mat4::scale(scale);
+		return (mat4::translate(translation) * mat4::rotate(rotation)) * mat4::scale(scale);
 	}
 
 	vec3 mat4::multiply_point_3x4(const vec3& v) const {
@@ -1531,10 +1531,25 @@ namespace rge {
 	//* Transform class.                         *//
 	//********************************************//
 	transform::transform() {
-		position = vec3();
-		rotation = quaternion();
-		scale = vec3();
 		parent = nullptr;
+	}
+
+	transform::transform(transform* parent) {
+		this->parent = parent;
+	}
+
+	transform::transform(vec3 position, quaternion rotation, vec3 scale) {
+		parent = nullptr;
+		this->position = position;
+		this->rotation = rotation;
+		this->scale = scale;
+	}
+
+	transform::transform(vec3 position, quaternion rotation, vec3 scale, transform* parent) {
+		this->parent = parent;
+		this->position = position;
+		this->rotation = rotation;
+		this->scale = scale;
 	}
 
 	mat4 transform::get_global_matrix() const {
@@ -1595,10 +1610,7 @@ namespace rge {
 	//* Camera class.                            *//
 	//********************************************//
 	camera::camera() {
-		transform = new rge::transform;
-
-		view = mat4::identity();
-		projection = mat4::identity();
+		transform = new rge::transform(nullptr);
 	}
 
 	camera::~camera() {
@@ -1613,7 +1625,7 @@ namespace rge {
 		return projection;
 	}
 
-	void camera::set_projection_matrix(float fov, float aspect, float near, float far) {
+	void camera::set_projection_matrix(float fov, float aspect, float near_plane, float far_plane) {
 		float uh, uw, frustum_depth, one_over_depth;
 
 		// General form of the Projection Matrix
@@ -1628,14 +1640,14 @@ namespace rge {
 
 		uh = 1.0F / tanf(fov * 0.5F);
 		uw = uh / aspect;
-		frustum_depth = far - near;
+		frustum_depth = far_plane - near_plane;
 		one_over_depth = 1.0F / frustum_depth;
 
 		projection = mat4::identity();
 		projection.m[0][0] = uw;
 		projection.m[1][1] = uh;
-		projection.m[2][2] = far / (far - near);
-		projection.m[3][2] = -far * near / (far - near);
+		projection.m[2][2] = far_plane / (far_plane - near_plane);
+		projection.m[3][2] = -far_plane * near_plane / (far_plane - near_plane);
 		projection.m[2][3] = 1.0F;
 		projection.m[3][3] = 0.0F;
 	}
@@ -1854,7 +1866,6 @@ namespace rge {
 	//********************************************//
 	renderer3d::renderer3d() : renderer() {
 		world_camera = nullptr;
-		lights = std::vector<light*>();
 	}
 
 	renderer3d::~renderer3d() {
@@ -2004,6 +2015,9 @@ namespace rge {
 		color source;
 		color destination;
 		vec3 camera_position = world_camera->transform != nullptr ? world_camera->transform->get_global_position() : vec3();
+		color* buffer = target->get_data();
+
+		printf("x:%f\n", r_v1.x);
 
 		// Calculate the bounding rectangle of the triangle based on the
 		// three vertices.
@@ -2018,20 +2032,28 @@ namespace rge {
 		if(y_min < 0) y_min = 0;
 		if(y_max > target->get_height()) y_max = target->get_height();
 
+		printf("xmin:%d\n", x_min);
+		printf("xmax:%d\n", x_max);
+		printf("ymin:%d\n", y_min);
+		printf("ymax:%d\n", y_max);
+
 		// Loop through every pixel in the bounding rect.
-		for(y = y_min; y <= y_max; ++y) {
-			for(x = x_min; x <= x_max; ++x) {
+		for(y = y_min; y <= y_max; y++) {
+			for(x = x_min; x <= x_max; x++) {
+				vec2 ps = vec2(x, y);
+
 				// Calculate the weights w1, w2 and w3 for the barycentric
 				// coordinates based on the positions of the three vertices.
 				denom = (r_v2.y - r_v3.y) * (r_v1.x - r_v3.x) + (r_v3.x - r_v2.x) * (r_v1.y - r_v3.y);
-				weight_v1 = ((r_v2.y - r_v3.y) * (x - r_v3.x) + (r_v3.x - r_v2.x) * (y - r_v3.y)) / denom;
-				weight_v2 = ((r_v3.y - r_v1.y) * (x - r_v3.x) + (r_v1.x - r_v3.x) * (y - r_v3.y)) / denom;
-				weight_v3 = 1 - weight_v1 - weight_v2;
+				weight_v1 = ((r_v2.y - r_v3.y) * (ps.x - r_v3.x) + (r_v3.x - r_v2.x) * (ps.y - r_v3.y)) / denom;
+				weight_v2 = ((r_v3.y - r_v1.y) * (ps.x - r_v3.x) + (r_v1.x - r_v3.x) * (ps.y - r_v3.y)) / denom;
+				weight_v3 = 1.0F - weight_v1 - weight_v2;
 
 				// If w1, w2 and w3 are >= 0, we are inside the triangle (or
 				// on an edge, but either way, render the pixel).
-				if(weight_v1 >= 0 && weight_v2 >= 0 && weight_v3 >= 0) {
+				if(weight_v1 >= 0.0F && weight_v2 >= 0.0F && weight_v3 >= 0.0F) {
 					// Calculate the position in our buffer based on our x and y values.
+					// p = y + (x * get_target()->get_height());
 					p = x + (y * get_target()->get_width());
 
 					// Calculate the depth value of this pixel.
@@ -2039,7 +2061,7 @@ namespace rge {
 
 					// If the depth value is less than what is currently in the
 					// depth buffer for this pixel.
-					if(depth < 1000) { // TODO: Depth buffer
+					if(depth < 10000000000000000000) { // TODO: Depth buffer
 						// Calculate the world position for this pixel.
 						v = w_v1 * weight_v1 + w_v2 * weight_v2 + w_v3 * weight_v3;
 
@@ -2070,6 +2092,8 @@ namespace rge {
 
 						// Match alpha to diffuse.
 						source.a = diffuse.a;
+
+						buffer[p] = diffuse;
 
 						// Write color to render target.
 						// TODO: frameBuffer[bufferPosition] = sourcePixelColour;
