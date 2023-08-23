@@ -57,8 +57,8 @@ public:
 			renderer->clear(rge::color(0.4F, 0.4F, 0.4F));
 
 			rge::vec4 r_v1 = rge::vec4(2, 0, 0.0F, 0.0F);
-			rge::vec4 r_v2 = rge::vec4(8, 16, 0.0F, 0.0F);
-			rge::vec4 r_v3 = rge::vec4(16, 0, 0.0F, 0.0F);
+			rge::vec4 r_v2 = rge::vec4(8, 12, 0.0F, 0.0F);
+			rge::vec4 r_v3 = rge::vec4(14, 0, 0.0F, 0.0F);
 			rge::vec3 w_v1 = rge::vec3(-1, 0, 5);
 			rge::vec3 w_v2 = rge::vec3(0, 2, 5);
 			rge::vec3 w_v3 = rge::vec3(1, 0, 5);

@@ -2049,9 +2049,13 @@ namespace rge {
 				weight_v2 = ((r_v3.y - r_v1.y) * (ps.x - r_v3.x) + (r_v1.x - r_v3.x) * (ps.y - r_v3.y)) / denom;
 				weight_v3 = 1.0F - weight_v1 - weight_v2;
 
+				float e1 = (ps.x-r_v1.x)*(r_v2.y-r_v1.y)-(ps.y-r_v1.y)*(r_v2.x-r_v1.x);
+				float e2 = (ps.x-r_v2.x)*(r_v3.y-r_v2.y)-(ps.y-r_v2.y)*(r_v3.x-r_v2.x);
+				float e3 = (ps.x-r_v3.x)*(r_v1.y-r_v3.y)-(ps.y-r_v3.y)*(r_v1.x-r_v3.x);
+
 				// If w1, w2 and w3 are >= 0, we are inside the triangle (or
 				// on an edge, but either way, render the pixel).
-				if(weight_v1 >= 0.0F && weight_v2 >= 0.0F && weight_v3 >= 0.0F) {
+				if(e1 >= 0.0F && e2 >= 0.0F && e3 >= 0.0F) {
 					// Calculate the position in our buffer based on our x and y values.
 					// p = y + (x * get_target()->get_height());
 					p = x + (y * get_target()->get_width());
@@ -2061,7 +2065,7 @@ namespace rge {
 
 					// If the depth value is less than what is currently in the
 					// depth buffer for this pixel.
-					if(depth < 10000000000000000000) { // TODO: Depth buffer
+					if(depth < 100) { // TODO: Depth buffer
 						// Calculate the world position for this pixel.
 						v = w_v1 * weight_v1 + w_v2 * weight_v2 + w_v3 * weight_v3;
 
