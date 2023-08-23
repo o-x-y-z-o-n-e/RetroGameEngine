@@ -511,6 +511,7 @@ namespace rge {
 	public:
 		mat4 get_view_matrix() const;
 		mat4 get_projection_matrix() const;
+		void set_projection_matrix(float fov, float aspect, float near, float far);
 
 	public:
 		transform* transform;
@@ -1611,6 +1612,33 @@ namespace rge {
 	mat4 camera::get_projection_matrix() const {
 		return projection;
 	}
+
+	void camera::set_projection_matrix(float fov, float aspect, float near, float far) {
+		float uh, uw, frustum_depth, one_over_depth;
+
+		// General form of the Projection Matrix
+    	//
+    	// uh = cot(fov / 2) = 1 / tan(fov / 2)
+    	// uw / uh = 1 / aspect
+    	// 
+    	//   uw         0       0       0
+    	//    0        uh       0       0
+    	//    0         0      f/(f-n)  1
+    	//    0         0    -fn/(f-n)  0
+
+		uh = 1.0F / tanf(fov * 0.5F);
+		uw = uh / aspect;
+		frustum_depth = far - near;
+		one_over_depth = 1.0F / frustum_depth;
+
+		projection = mat4::identity();
+		projection.m[0][0] = uw;
+		projection.m[1][1] = uh;
+		projection.m[2][2] = far / (far - near);
+		projection.m[3][2] = -far * near / (far - near);
+		projection.m[2][3] = 1.0F;
+		projection.m[3][3] = 0.0F;
+	}
 	//********************************************//
 	//* Camera class.                            *//
 	//********************************************//
@@ -1646,12 +1674,13 @@ namespace rge {
 		on_disk = false;
 		on_cpu = false;
 		on_gpu = false;
+		data = nullptr;
 
 		allocate();
 	}
 
 	texture::~texture() {
-		if(data != nullptr) delete[] data;
+		if(data) delete[] data;
 	}
 
 	int texture::get_width() const {
@@ -1716,7 +1745,7 @@ namespace rge {
 	}
 
 	void texture::allocate() {
-		if(data != nullptr) return;
+		if(data) return;
 
 		data = new color[width * height];
 		on_cpu = true;
@@ -1785,7 +1814,7 @@ namespace rge {
 
 	void renderer::clear(color c) {
 		color* data = target->get_data();
-		for(int i = 0; i < target->get_width() * target->get_height(); ++i)
+		for(int i = 0; i < target->get_width() * target->get_height(); i++)
 			data[i] = c;
 	}
 	//********************************************//
@@ -1849,7 +1878,7 @@ namespace rge {
 		const material& material)
 	{
 		if(world_camera == nullptr || target == nullptr) return rge::FAIL;
-
+		
 		int i;
 		vec3 world_v1;
 		vec3 world_v2;
