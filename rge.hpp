@@ -264,6 +264,7 @@ namespace rge {
 		mat4(vec4 col0, vec4 col1, vec4 col2, vec4 col3);
 
 		static mat4 identity() { return mat4(); }
+		static mat4 zero() { return mat4(vec4(0, 0, 0, 0), vec4(0, 0, 0, 0), vec4(0, 0, 0, 0), vec4(0, 0, 0, 0)); }
 		static mat4 translate(const vec3& translation);
 		static mat4 rotate(const quaternion& rotation);
 		static mat4 scale(const vec3& scale);
@@ -320,6 +321,8 @@ namespace rge {
 	//* Math Module.                             *//
 	//********************************************//
 	namespace math {
+		#define DEG_2_RAD 0.0174532924F
+		#define RAD_2_DEG 57.29578F
 		float lerp(float a, float b, float t);
 		int min(int a, int b) { return a < b ? a : b; }
 		int max(int a, int b) { return a > b ? a : b; }
@@ -1644,6 +1647,9 @@ namespace rge {
     	//    0         0      f/(f-n)  1
     	//    0         0    -fn/(f-n)  0
 
+		fov *= DEG_2_RAD;
+
+		/*
 		uh = 1.0F / tanf(fov * 0.5F);
 		uw = uh / aspect;
 		frustum_depth = far_plane - near_plane;
@@ -1656,6 +1662,14 @@ namespace rge {
 		projection.m[3][2] = -far_plane * near_plane / (far_plane - near_plane);
 		projection.m[2][3] = 1.0F;
 		projection.m[3][3] = 0.0F;
+		*/
+
+		projection = mat4::zero();
+		projection.m[0][0] = 1.0F / (aspect * tanf(fov / 2.0F));
+		projection.m[1][1] = 1.0F / tanf(fov / 2.0F);
+		projection.m[2][2] = -((-near_plane - far_plane) / (near_plane - far_plane));
+		projection.m[2][3] = (2 * far_plane * near_plane) / (near_plane - far_plane);
+		projection.m[3][2] = -1.0F;
 	}
 	//********************************************//
 	//* Camera class.                            *//
