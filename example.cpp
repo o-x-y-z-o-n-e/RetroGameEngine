@@ -1,11 +1,12 @@
 #define RGE_IMPL
 #define RGE_USE_STB_IMAGE_WRITE
+#define RGE_USE_STB_IMAGE
 #include <rge.hpp>
 
 class game : public rge::engine {
 
 private:
-    rge::material* material;
+    ptr(rge::material) material;
     rge::camera* camera;
     rge::renderer3d* renderer;
     rge::render_target* render;
@@ -17,7 +18,7 @@ private:
 
 public:
     game() : rge::engine() {
-        material = new rge::material();
+        material = alloc(rge::material)();
         render = new rge::render_target(320, 200);
 		camera = new rge::camera();
         renderer = new rge::renderer3d();
@@ -25,13 +26,14 @@ public:
 
     void on_init() override {
         camera->set_projection_matrix(60, 1.6F, 0.1F, 100.0F);
+        camera->transform->position = rge::vec3(0,0,0);
 
         renderer->set_target(render);
         renderer->set_camera(camera);
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
 
-        camera->transform->position = rge::vec3(0,0,0);
 		material->diffuse = rge::color(1, 0, 1);
+        material->texture = rge::texture::read_from_disk("test.bmp");
 
         model_verts.push_back(rge::vec3(-1,0,2));
         model_verts.push_back(rge::vec3(0,2,2));
@@ -48,8 +50,6 @@ public:
         model_uvs.push_back(rge::vec2(0,0));
         model_uvs.push_back(rge::vec2(0.5F,1));
         model_uvs.push_back(rge::vec2(1,0));
-
-        
     }
 
     bool on_command(const std::string& cmd) override {
@@ -89,7 +89,7 @@ public:
 			);
             */
 
-			render->write_to_disk("render.bmp");
+			render->get_frame_buffer()->write_to_disk("render.bmp");
             return true;
         }
 		return false;

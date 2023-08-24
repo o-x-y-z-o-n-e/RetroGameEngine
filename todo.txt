@@ -1,1 +1,2 @@
+convert pointers to shared_ptr
 camera view & projection matrix

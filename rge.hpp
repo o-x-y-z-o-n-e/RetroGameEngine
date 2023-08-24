@@ -18,6 +18,10 @@
 #include <iostream>
 #include <functional>
 #include <vector>
+#include <memory>
+
+#define ptr(T) std::shared_ptr<T>
+#define alloc(T) std::make_shared<T>
 
 namespace rge {
 
@@ -543,7 +547,7 @@ namespace rge {
 		float intensity;
 		float range;
 		light_mode type;
-		transform* transform;
+		ptr(transform) transform;
 	};
 	//********************************************//
 	//* Light class.                             *//
@@ -570,7 +574,7 @@ namespace rge {
 
 		// NOTE: TESTING FUNCTION
 		rge::result write_to_disk(const std::string& path) const;
-		// rge::result read_from_disk(const std::string& path);
+		static ptr(texture) read_from_disk(const std::string& path);
 
 	private:
 		void allocate();
@@ -596,7 +600,7 @@ namespace rge {
 		~material();
 
 	public:
-		texture* texture;
+		ptr(texture) texture;
 		color diffuse;
 		color specular;
 		float shininess;
@@ -610,10 +614,23 @@ namespace rge {
 	//********************************************//
 	//* Render Target class.                     *//
 	//********************************************//
-	class render_target : public texture {
+	class render_target {
 	public:
 		render_target();
 		render_target(int width, int height);
+
+	public:
+		int get_width() const;
+		int get_height() const;
+
+		texture* get_frame_buffer() const;
+		texture* get_depth_buffer() const;
+
+	private:
+		int width;
+		int height;
+		texture* frame_buffer;
+		texture* depth_buffer;
 	};
 	//********************************************//
 	//* Render Target class.                     *//
@@ -632,7 +649,7 @@ namespace rge {
 	public:
 		rge::result set_target(render_target* target);
 		render_target* get_target() const;
-		void clear(color c);
+		void clear(color background);
 
 	protected:
 		render_target* target;
@@ -653,7 +670,9 @@ namespace rge {
 
 	public:
 		void draw(const texture& texture, const rect& dest);
+		void draw(const render_target& render, const rect& dest);
 		void draw(const texture& texture, const rect& dest, const rect& src);
+		void draw(const render_target& render, const rect& dest, const rect& src);
 	};
 	//********************************************//
 	//* Software Renderer 2D class.              *//
@@ -770,6 +789,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #endif
+
+#ifdef RGE_USE_STB_IMAGE
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#endif
+
+#define LOG_MISSING_DEP(OP, LIB) rge::log::error("Operation '"#OP"' failed! Dependancy not installed: "#LIB);
 
 namespace rge {
 
@@ -1778,7 +1804,50 @@ namespace rge {
 			return rge::OK;
 		}
 		#else
+		LOG_MISSING_DEP(write_texture_to_disk, stb_image_write.h)
 		return rge::FAIL;
+		#endif
+	}
+
+	ptr(texture) texture::read_from_disk(const std::string& path) {
+		#ifdef RGE_USE_STB_IMAGE
+
+		int i, w, h, ch;
+		uint8_t* input_buffer = stbi_load(path.c_str(), &w, &h, &ch, 4);
+
+		if(ch != 3 && ch != 4) {
+			rge::log::error("Texture file read failed: only RGB & RGBA formats supported!");
+			stbi_image_free(input_buffer);
+			return nullptr;
+		}
+
+		ptr(texture) tex = alloc(texture)(w, h);
+		color* tex_data = tex->get_data();
+		color c;
+		for(i = 0; i < w * h; ++i) {
+			if(ch == 3) {
+				c = color(
+					input_buffer[i*3] / 255.0F,
+					input_buffer[i*3+1] / 255.0F,
+					input_buffer[i*3+2] / 255.0F
+				);
+			} else if(ch == 4) {
+				c = color(
+					input_buffer[i*4] / 255.0F,
+					input_buffer[i*4+1] / 255.0F,
+					input_buffer[i*4+2] / 255.0F,
+					input_buffer[i*4+3] / 255.0F
+				);
+			}
+
+			tex_data[i] = c;
+		}
+
+		stbi_image_free(input_buffer);
+		return tex;
+		#else
+		LOG_MISSING_DEP(read_texture_from_disk, stb_image.h)
+		return nullptr;
 		#endif
 	}
 
@@ -1796,20 +1865,19 @@ namespace rge {
 
 	#pragma region /* rge::material */
 	//********************************************//
-	//* Material class.                           *//
+	//* Material class.                          *//
 	//********************************************//
 	material::material() {
-		texture = nullptr;
 		diffuse = color(1,1,1);
 		specular = color(1,1,1);
 		shininess = 0;
 	}
 
 	material::~material() {
-		if(texture) delete texture;
+		
 	}
 	//********************************************//
-	//* Texture class.                           *//
+	//* Material class.                          *//
 	//********************************************//
 	#pragma endregion
 
@@ -1817,12 +1885,40 @@ namespace rge {
 	//********************************************//
 	//* Render Target class.                     *//
 	//********************************************//
-	render_target::render_target() : texture(0, 0) {
-
+	render_target::render_target() {
+		width = 0;
+		height = 0;
+		frame_buffer = nullptr;
+		depth_buffer = nullptr;
 	}
 
-	render_target::render_target(int width, int height) : texture(width, height) {
-		
+	render_target::render_target(int width, int height) {
+		if(width < 0) width = 0;
+		if(height < 0) height = 0;
+
+		this->width = width;
+		this->height = height;
+
+		if(width > 0 && height > 0) {
+			frame_buffer = new texture(width, height);
+			depth_buffer = new texture(width, height);
+		}
+	}
+
+	int render_target::get_width() const {
+		return width;
+	}
+
+	int render_target::get_height() const {
+		return height;
+	}
+
+	texture* render_target::get_frame_buffer() const {
+		return frame_buffer;
+	}
+
+	texture* render_target::get_depth_buffer() const {
+		return depth_buffer;
 	}
 	//********************************************//
 	//* Render Target class.                     *//
@@ -1850,10 +1946,13 @@ namespace rge {
 		return target;
 	}
 
-	void renderer::clear(color c) {
-		color* data = target->get_data();
-		for(int i = 0; i < target->get_width() * target->get_height(); i++)
-			data[i] = c;
+	void renderer::clear(color background) {
+		color* frame_buffer = target->get_frame_buffer()->get_data();
+		color* depth_buffer = target->get_depth_buffer()->get_data();
+		for(int i = 0; i < target->get_width() * target->get_height(); i++) {
+			frame_buffer[i] = background;
+			depth_buffer[i] = color(0,0,0,0);
+		}
 	}
 	//********************************************//
 	//* Renderer class.                          *//
@@ -1877,9 +1976,18 @@ namespace rge {
 		
 	}
 
+	void renderer2d::draw(const render_target& render, const rect& dest) {
+		//draw(target.)
+		
+	}
+
 	void renderer2d::draw(const texture& texture, const rect& dest, const rect& src) {
 		if(!texture.get_on_cpu()) return;
 
+	}
+
+	void renderer2d::draw(const render_target& render, const rect& dest, const rect& src) {
+		
 	}
 	//********************************************//
 	//* Software Renderer 2D class.              *//
@@ -2044,7 +2152,8 @@ namespace rge {
 		color source;
 		color destination;
 		vec3 camera_position = world_camera->transform != nullptr ? world_camera->transform->get_global_position() : vec3();
-		color* buffer = target->get_data();
+		color* frame_buffer = target->get_frame_buffer()->get_data();
+		color* depth_buffer = target->get_depth_buffer()->get_data();
 
 		// Calculate the bounding rectangle of the triangle based on the
 		// three vertices.
@@ -2111,7 +2220,7 @@ namespace rge {
 
 					// If the depth value is less than what is currently in the
 					// depth buffer for this pixel.
-					if(depth < 1000) { // TODO: Depth buffer
+					if(depth < depth_buffer[ptr].r) {
 						// Calculate the world position for this pixel.
 						v = w_v1 * weight_v1 + w_v2 * weight_v2 + w_v3 * weight_v3;
 
@@ -2144,10 +2253,10 @@ namespace rge {
 						source.a = diffuse.a;
 
 						// Write color to render target.
-						buffer[ptr] = diffuse;
+						frame_buffer[ptr] = diffuse;
 
 						// Update the depth buffer with this depth value.
-						// TODO
+						depth_buffer[ptr].r = depth;
 					}
 				}
 			}
