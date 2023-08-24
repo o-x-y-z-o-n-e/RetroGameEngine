@@ -123,6 +123,7 @@ namespace rge {
 		float magnitude() const;
 
 		static float dot(const vec2& a, const vec2& b);
+		static float cross(const vec2& a, const vec2& b);
 		static vec2 normalize(const vec2& v);
 
 		vec2 operator + (const vec2& rhs) const;
@@ -695,6 +696,7 @@ namespace rge {
 		);
 
 	private:
+		static float edge_func(const vec2& a, const vec2& b, const vec2& c);
 		static vec4 project_world_vertex(const vec3& vertex, const mat4& projection);
 		static color calculate_blinn_phong(
 			const vec3& position,
@@ -811,6 +813,10 @@ namespace rge {
 
 	float vec2::dot(const vec2& a, const vec2& b) {
 		return a.x * b.x + a.y * b.y;
+	}
+
+	float vec2::cross(const vec2& a, const vec2& b) {
+    	return a.x * b.y - a.y * b.x;
 	}
 
 	vec2 vec2::normalize(const vec2& v) {
@@ -1736,14 +1742,20 @@ namespace rge {
 
 		#ifdef RGE_USE_STB_IMAGE_WRITE
 		uint8_t* buffer = (uint8_t*)malloc(4 * width * height);
-		for(int i = 0; i < width * height; ++i) {
+		for(int i = 0; i < width * height; i++) {
 			color c = data[i];
 			buffer[i*4] = (uint8_t)(c.r * 255);
 			buffer[i*4+1] = (uint8_t)(c.g * 255);
 			buffer[i*4+2] = (uint8_t)(c.b * 255);
 			buffer[i*4+3] = (uint8_t)(c.a * 255);
 		}
+		/*
 		if(!stbi_write_png(path.c_str(), width, height, 4, buffer, 4)) {
+			rge::log::error("File write fail.");
+			free(buffer);
+			return rge::FAIL;
+		} */
+		if(!stbi_write_bmp(path.c_str(), width, height, 4, buffer)) {
 			rge::log::error("File write fail.");
 			free(buffer);
 			return rge::FAIL;
@@ -1916,11 +1928,13 @@ namespace rge {
 
 		// Loop through each of the triplets of triangle indices.
 		for(i = 0; i < triangles.size(); i += 3) {
+			printf("tri #%d\n", i / 3);
+
 			// Transform model vertices to world vertices.
 			world_v1 = model_to_world.multiply_point_3x4(vertices[triangles[i]]);
 			world_v2 = model_to_world.multiply_point_3x4(vertices[triangles[i+1]]);
 			world_v3 = model_to_world.multiply_point_3x4(vertices[triangles[i+2]]);
-
+			printf("x: %f, y: %f, z: %f\n", world_v1.x, world_v1.y, world_v1.z);
 			// Transform model normals to world normals.
 			world_n1 = model_to_world.multiply_vector(normals[triangles[i]]);
 			world_n2 = model_to_world.multiply_vector(normals[triangles[i+1]]);
@@ -1943,7 +1957,7 @@ namespace rge {
 
 				// Calculate the centre of the projected triangle.
 				proj_tri_center = (proj_v1 + proj_v2 + proj_v3) / 3;
-
+				printf("inside bounds\n");
 				// Check the dot project of the projected triangle normal and
 				// the camera to triangle centre vector - if the dot product is
 				// <=0, the normal and vector point at each other, and the triangle
@@ -2004,7 +2018,8 @@ namespace rge {
 		const vec2& t_uv3,
 		const material& material
 	) {
-		int x, y, p;
+		int x, y;
+		int ptr;
 		float denom;
 		float weight_v1, weight_v2, weight_v3;
 		float depth;
@@ -2016,8 +2031,6 @@ namespace rge {
 		color destination;
 		vec3 camera_position = world_camera->transform != nullptr ? world_camera->transform->get_global_position() : vec3();
 		color* buffer = target->get_data();
-
-		printf("x:%f\n", r_v1.x);
 
 		// Calculate the bounding rectangle of the triangle based on the
 		// three vertices.
@@ -2032,40 +2045,59 @@ namespace rge {
 		if(y_min < 0) y_min = 0;
 		if(y_max > target->get_height()) y_max = target->get_height();
 
-		printf("xmin:%d\n", x_min);
-		printf("xmax:%d\n", x_max);
-		printf("ymin:%d\n", y_min);
-		printf("ymax:%d\n", y_max);
+		// printf("xmin:%d\n", x_min);
+		// printf("xmax:%d\n", x_max);
+		// printf("ymin:%d\n", y_min);
+		// printf("ymax:%d\n", y_max);
+
+		// vec2 v0(r_v1.x, r_v1.y);
+		// vec2 v1(r_v2.x, r_v2.y);
+		// vec2 v2(r_v3.x, r_v3.y);
+		// vec2 e0 = v1 - v0;
+		// vec2 e1 = v2 - v1;
+		// vec2 e2 = v0 - v2;
 
 		// Loop through every pixel in the bounding rect.
 		for(y = y_min; y <= y_max; y++) {
 			for(x = x_min; x <= x_max; x++) {
-				vec2 ps = vec2(x, y);
+				vec2 p(x + 0.5F, y + 0.5F);
+
+				// vec2 v0_to_p = p - v0;
+				// vec2 v1_to_p = p - v1;
+				// vec2 v2_to_p = p - v2;
+				// float v0v1p = vec2::cross(e0, v0_to_p);
+				// float v1v2p = vec2::cross(e1, v1_to_p);
+				// float v2v0p = vec2::cross(e2, v2_to_p);
 
 				// Calculate the weights w1, w2 and w3 for the barycentric
 				// coordinates based on the positions of the three vertices.
 				denom = (r_v2.y - r_v3.y) * (r_v1.x - r_v3.x) + (r_v3.x - r_v2.x) * (r_v1.y - r_v3.y);
-				weight_v1 = ((r_v2.y - r_v3.y) * (ps.x - r_v3.x) + (r_v3.x - r_v2.x) * (ps.y - r_v3.y)) / denom;
-				weight_v2 = ((r_v3.y - r_v1.y) * (ps.x - r_v3.x) + (r_v1.x - r_v3.x) * (ps.y - r_v3.y)) / denom;
+				weight_v1 = ((r_v2.y - r_v3.y) * (p.x - r_v3.x) + (r_v3.x - r_v2.x) * (p.y - r_v3.y)) / denom;
+				weight_v2 = ((r_v3.y - r_v1.y) * (p.x - r_v3.x) + (r_v1.x - r_v3.x) * (p.y - r_v3.y)) / denom;
 				weight_v3 = 1.0F - weight_v1 - weight_v2;
 
-				float e1 = (ps.x-r_v1.x)*(r_v2.y-r_v1.y)-(ps.y-r_v1.y)*(r_v2.x-r_v1.x);
-				float e2 = (ps.x-r_v2.x)*(r_v3.y-r_v2.y)-(ps.y-r_v2.y)*(r_v3.x-r_v2.x);
-				float e3 = (ps.x-r_v3.x)*(r_v1.y-r_v3.y)-(ps.y-r_v3.y)*(r_v1.x-r_v3.x);
+				// float e1 = (ps.x-r_v1.x)*(r_v2.y-r_v1.y)-(ps.y-r_v1.y)*(r_v2.x-r_v1.x);
+				// float e2 = (ps.x-r_v2.x)*(r_v3.y-r_v2.y)-(ps.y-r_v2.y)*(r_v3.x-r_v2.x);
+				// float e3 = (ps.x-r_v3.x)*(r_v1.y-r_v3.y)-(ps.y-r_v3.y)*(r_v1.x-r_v3.x);
+				
+				// float w0 = edge_func(v1, v2, p);
+				// float w1 = edge_func(v2, v0, p);
+				// float w2 = edge_func(v0, v1, p);
 
 				// If w1, w2 and w3 are >= 0, we are inside the triangle (or
 				// on an edge, but either way, render the pixel).
-				if(e1 >= 0.0F && e2 >= 0.0F && e3 >= 0.0F) {
+				if(weight_v1 >= 0.0F && weight_v2 >= 0.0F && weight_v3 >= 0.0F) {
 					// Calculate the position in our buffer based on our x and y values.
-					// p = y + (x * get_target()->get_height());
-					p = x + (y * get_target()->get_width());
+					ptr = x + (y * get_target()->get_width());
 
+					// printf("ptr: %d, x: %d, y: %d\n", ptr, x, y);
+					
 					// Calculate the depth value of this pixel.
 					depth = r_v1.z * weight_v1 + r_v2.z * weight_v2 + r_v3.z * weight_v3;
 
 					// If the depth value is less than what is currently in the
 					// depth buffer for this pixel.
-					if(depth < 100) { // TODO: Depth buffer
+					if(depth < 1000) { // TODO: Depth buffer
 						// Calculate the world position for this pixel.
 						v = w_v1 * weight_v1 + w_v2 * weight_v2 + w_v3 * weight_v3;
 
@@ -2097,10 +2129,8 @@ namespace rge {
 						// Match alpha to diffuse.
 						source.a = diffuse.a;
 
-						buffer[p] = diffuse;
-
 						// Write color to render target.
-						// TODO: frameBuffer[bufferPosition] = sourcePixelColour;
+						buffer[ptr] = diffuse;
 
 						// Update the depth buffer with this depth value.
 						// TODO
@@ -2108,6 +2138,10 @@ namespace rge {
 				}
 			}
 		}
+	}
+
+	float renderer3d::edge_func(const vec2& a, const vec2& b, const vec2& c) {
+		return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
 	}
 	
 	vec4 renderer3d::project_world_vertex(const vec3& v, const mat4& world_to_projection) {
