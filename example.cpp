@@ -1,7 +1,8 @@
 #define RGE_IMPL
 #define RGE_USE_STB_IMAGE_WRITE
 #define RGE_USE_STB_IMAGE
-#include <rge.hpp>
+#include <rge/rge.hpp>
+#include <rge/ecs.hpp>
 
 class game : public rge::engine {
 

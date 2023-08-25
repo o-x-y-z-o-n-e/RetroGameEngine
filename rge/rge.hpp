@@ -4,10 +4,10 @@
    License: N/A
 */
 
-#ifndef RGE_DEF
-#define RGE_DEF
-
 #define RGE_VERSION 0001
+
+#ifndef RGE_API
+#define RGE_API
 
 #include <cstdint>
 #include <cmath>
@@ -97,6 +97,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::rect */
 	//********************************************//
 	//* Rectangle struct.                        *//
@@ -113,6 +114,7 @@ namespace rge {
 	//* Rectangle struct.                        *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::vec2 */
 	//********************************************//
@@ -158,6 +160,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::vec3 */
 	//********************************************//
 	//* Vector3 struct.                          *//
@@ -199,6 +202,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::vec4 */
 	//********************************************//
 	//* Vector4 struct.                          *//
@@ -237,6 +241,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::quaternion */
 	//********************************************//
 	//* Quaternion struct.                       *//
@@ -256,6 +261,7 @@ namespace rge {
 	//* Quaternion struct.                       *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::mat4 */
 	//********************************************//
@@ -290,6 +296,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::color */
 	//********************************************//
 	//* Color struct.                            *//
@@ -320,6 +327,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::math */
 	//********************************************//
 	//* Math Module.                             *//
@@ -336,6 +344,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::log */
 	//********************************************//
 	//* Logging Module.                          *//
@@ -349,6 +358,7 @@ namespace rge {
 	//* Logging Module.                          *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::engine */
 	//********************************************//
@@ -402,6 +412,7 @@ namespace rge {
 	//* Core Engine class.                       *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::event */
 	//********************************************//
@@ -461,6 +472,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::transform */
 	//********************************************//
 	//* Transform class.                         *//
@@ -507,6 +519,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::camera */
 	//********************************************//
 	//* Camera class.                            *//
@@ -533,6 +546,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::light */
 	//********************************************//
 	//* Light class.                             *//
@@ -553,6 +567,7 @@ namespace rge {
 	//* Light class.                             *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::texture */
 	//********************************************//
@@ -590,6 +605,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::material */
 	//********************************************//
 	//* Material class.                          *//
@@ -609,6 +625,7 @@ namespace rge {
 	//* Material class.                          *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::render_target */
 	//********************************************//
@@ -637,6 +654,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::renderer */
 	//********************************************//
 	//* Renderer class.                          *//
@@ -659,6 +677,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::renderer2d */
 	//********************************************//
 	//* Software Renderer 2D class.              *//
@@ -678,6 +697,7 @@ namespace rge {
 	//* Software Renderer 2D class.              *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::renderer3d */
 	//********************************************//
@@ -701,19 +721,19 @@ namespace rge {
 		);
 
 	public:
-		void draw_interpolated_triangle(
-			const vec4& r_v1,
-			const vec4& r_v2,
-			const vec4& r_v3,
-			const vec3& w_v1,
-			const vec3& w_v2,
-			const vec3& w_v3,
-			const vec3& w_n1,
-			const vec3& w_n2,
-			const vec3& w_n3,
-			const vec2& t_uv1,
-			const vec2& t_uv2,
-			const vec2& t_uv3,
+		void rasterize_triangle(
+			const vec4& r_v1, // <- render_target coords
+			const vec4& r_v2, // <- ^^^
+			const vec4& r_v3, // <- ^^^
+			const vec3& w_v1, // <- world vertices
+			const vec3& w_v2, // <- ^^^
+			const vec3& w_v3, // <- ^^^
+			const vec3& w_n1, // <- world normals
+			const vec3& w_n2, // <- ^^^
+			const vec3& w_n3, // <- ^^^
+			const vec2& t_uv1, // <- texture coords
+			const vec2& t_uv2, // <- ^^^
+			const vec2& t_uv3, // <- ^^^
 			const material& material
 		);
 
@@ -741,6 +761,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::window */
 	//********************************************//
 	//* Window class.                            *//
@@ -766,7 +787,7 @@ namespace rge {
 
 }
 
-#endif /* RGE_DEF */
+#endif /* RGE_API */
 
 #ifdef RGE_IMPL
 #undef RGE_IMPL
@@ -787,12 +808,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 
 #ifdef RGE_USE_STB_IMAGE_WRITE
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include <stb_image_write.h>
 #endif
 
 #ifdef RGE_USE_STB_IMAGE
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include <stb_image.h>
 #endif
 
 #define LOG_MISSING_DEP(OP, LIB) rge::log::error("Operation '"#OP"' failed! Dependancy not installed: "#LIB);
@@ -821,6 +842,7 @@ namespace rge {
 	//* Rectangle struct.                        *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::vec2 */
 	//********************************************//
@@ -928,6 +950,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::vec3 */
 	//********************************************//
 	//* Vector3 struct.                          *//
@@ -971,6 +994,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::vec4 */
 	//********************************************//
 	//* Vector4 struct.                          *//
@@ -995,6 +1019,7 @@ namespace rge {
 	//* Vector4 struct.                          *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::quaternion */
 	//********************************************//
@@ -1095,6 +1120,7 @@ namespace rge {
 	//* Quaternion struct.                       *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::mat4 */
 	//********************************************//
@@ -1280,6 +1306,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::color */
 	//********************************************//
 	//* Color struct.                            *//
@@ -1361,6 +1388,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::math */
 	//********************************************//
 	//* Math Module.                             *//
@@ -1374,6 +1402,7 @@ namespace rge {
 	//* Logging Module.                          *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::log */
 	//********************************************//
@@ -1394,6 +1423,7 @@ namespace rge {
 	//* Logging Module.                          *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::engine */
 	//********************************************//
@@ -1533,6 +1563,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::event */
 	//********************************************//
 	//* Event class.                             *//
@@ -1560,6 +1591,7 @@ namespace rge {
 	//* Event class.                             *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::transform */
 	//********************************************//
@@ -1640,6 +1672,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::camera */
 	//********************************************//
 	//* Camera class.                            *//
@@ -1702,6 +1735,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::light */
 	//********************************************//
 	//* Light class.                             *//
@@ -1720,6 +1754,7 @@ namespace rge {
 	//* Light class.                             *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::texture */
 	//********************************************//
@@ -1863,6 +1898,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::material */
 	//********************************************//
 	//* Material class.                          *//
@@ -1880,6 +1916,7 @@ namespace rge {
 	//* Material class.                          *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::render_target */
 	//********************************************//
@@ -1925,6 +1962,7 @@ namespace rge {
 	//********************************************//
 	#pragma endregion
 
+
 	#pragma region /* rge::renderer */
 	//********************************************//
 	//* Renderer class.                          *//
@@ -1958,6 +1996,7 @@ namespace rge {
 	//* Renderer class.                          *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::renderer2d */
 	//********************************************//
@@ -1993,6 +2032,7 @@ namespace rge {
 	//* Software Renderer 2D class.              *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::renderer3d */
 	//********************************************//
@@ -2103,7 +2143,7 @@ namespace rge {
 					// Draw the triangle interpolated between the three vertices,
 					// using the colours calculated for these vertices based
 					// on the triangle indices.
-					draw_interpolated_triangle(
+					rasterize_triangle(
 						texturespace_v1,
 						texturespace_v2,
 						texturespace_v3,
@@ -2125,7 +2165,7 @@ namespace rge {
 		return rge::OK;
 	}
 
-	void renderer3d::draw_interpolated_triangle(
+	void renderer3d::rasterize_triangle(
 		const vec4& r_v1,
 		const vec4& r_v2,
 		const vec4& r_v3,
@@ -2359,6 +2399,7 @@ namespace rge {
 	//* Software Renderer 3D class.              *//
 	//********************************************//
 	#pragma endregion
+
 
 	#pragma region /* rge::window */
 	//********************************************//

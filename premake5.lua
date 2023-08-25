@@ -23,17 +23,21 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 project "example"
     language "C++"
     cppdialect "C++11"
+    location "./"
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("tmp/" .. outputdir .. "/%{prj.name}")
 
     files {
-        "%{prj.location}/rge.hpp",
+        "%{prj.location}/rge/rge.hpp",
+        "%{prj.location}/rge/ecs.hpp",
+        "%{prj.location}/rge/gl.hpp",
 		"%{prj.location}/example.cpp"
     }
 
     includedirs {
-		"%{prj.location}/"
+        "%{prj.location}/",
+        "%{prj.location}/vendor/"
     }
 	
 	filter "system:windows"

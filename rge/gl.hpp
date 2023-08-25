@@ -4,7 +4,9 @@
    License: N/A
 */
 
-#ifndef RGE_GL_DEF
-#define RGE_GL_DEF
+#ifndef RGE_GL
+#define RGE_GL
 
-#endif /* RGE_GL_DEF */
+#include <rge/rge.hpp>
+
+#endif /* RGE_GL */

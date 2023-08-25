@@ -12,9 +12,7 @@
 *.vcxproj.user
 
 **/Makefile
-
-mygameboy/roms/
-mygameboy/docs/
+*.make
 
 # macOS nonsense.
 *.DS_Store
