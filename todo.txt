@@ -1,5 +1,4 @@
-convert pointers to shared_ptr
-camera view & projection matrix
+camera view & perspective matrix
 2d renderer
 input
 window creation

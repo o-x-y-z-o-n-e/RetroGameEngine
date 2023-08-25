@@ -532,7 +532,9 @@ namespace rge {
 	public:
 		mat4 get_view_matrix() const;
 		mat4 get_projection_matrix() const;
-		void set_projection_matrix(float fov, float aspect, float near_plane, float far_plane);
+
+		void set_perspective(float fov, float aspect, float near_plane, float far_plane);
+		void set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane);
 
 	public:
 		transform* transform;
@@ -976,10 +978,10 @@ namespace rge {
 	}
 
 	vec3 vec3::cross(const vec3& v1, const vec3& v2) {
-		return vec3(
-			v1.y * v2.z - v1.z * v2.y,
-			v1.z * v2.x - v1.x * v2.z,
-			v1.x * v2.y - v1.y * v2.x
+		return -vec3(
+			(v1.y * v2.z) - (v1.z * v2.y),
+			(v1.z * v2.x) - (v1.x * v2.z),
+			(v1.x * v2.y) - (v1.y * v2.x)
 		);
 	}
 
@@ -1217,7 +1219,7 @@ namespace rge {
 		result.x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3];
 		result.y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3];
 		result.z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3];
-		return v;
+		return result;
 	}
 
 	vec3 mat4::multiply_vector(const vec3& v) const {
@@ -1225,7 +1227,7 @@ namespace rge {
 		result.x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z;
 		result.y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z;
 		result.z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z;
-		return v;
+		return result;
 	}
 
 	vec3 mat4::extract_translation() const {
@@ -1693,8 +1695,8 @@ namespace rge {
 		return projection;
 	}
 
-	void camera::set_projection_matrix(float fov, float aspect, float near_plane, float far_plane) {
-		float uh, uw, frustum_depth, one_over_depth;
+	void camera::set_perspective(float fov, float aspect, float near_plane, float far_plane) {
+		// float uh, uw, frustum_depth, one_over_depth;
 
 		// General form of the Projection Matrix
     	//
@@ -1729,6 +1731,21 @@ namespace rge {
 		projection.m[2][2] = -((-near_plane - far_plane) / (near_plane - far_plane));
 		projection.m[2][3] = (2 * far_plane * near_plane) / (near_plane - far_plane);
 		projection.m[3][2] = -1.0F;
+	}
+
+	void camera::set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane) {
+		projection = mat4::zero();
+		projection.m[0][0] = 2.0F / (right_plane - left_plane);
+		projection.m[1][1] = 2.0F / (top_plane - bottom_plane);
+		projection.m[2][2] = 1.0F / (far_plane - near_plane);
+		// projection.m[2][2] = 2.0F / (far_plane - near_plane);
+
+		projection.m[0][3] = -((right_plane + left_plane) / (right_plane - left_plane));
+		projection.m[1][3] = -((top_plane + bottom_plane) / (top_plane - bottom_plane));
+		projection.m[2][3] = near_plane / (near_plane - far_plane);
+		// projection.m[2][3] = -((far_plane + near_plane) / (far_plane - near_plane));
+
+		projection.m[3][3] = 1.0F;
 	}
 	//********************************************//
 	//* Camera class.                            *//
@@ -1989,7 +2006,7 @@ namespace rge {
 		color* depth_buffer = target->get_depth_buffer()->get_data();
 		for(int i = 0; i < target->get_width() * target->get_height(); i++) {
 			frame_buffer[i] = background;
-			depth_buffer[i] = color(0,0,0,0);
+			depth_buffer[i] = color(1,0,0,0);
 		}
 	}
 	//********************************************//
@@ -2090,13 +2107,11 @@ namespace rge {
 
 		// Loop through each of the triplets of triangle indices.
 		for(i = 0; i < triangles.size(); i += 3) {
-			printf("tri #%d\n", i / 3);
-
 			// Transform model vertices to world vertices.
 			world_v1 = model_to_world.multiply_point_3x4(vertices[triangles[i]]);
 			world_v2 = model_to_world.multiply_point_3x4(vertices[triangles[i+1]]);
 			world_v3 = model_to_world.multiply_point_3x4(vertices[triangles[i+2]]);
-			printf("x: %f, y: %f, z: %f\n", world_v1.x, world_v1.y, world_v1.z);
+			
 			// Transform model normals to world normals.
 			world_n1 = model_to_world.multiply_vector(normals[triangles[i]]);
 			world_n2 = model_to_world.multiply_vector(normals[triangles[i+1]]);
@@ -2108,25 +2123,57 @@ namespace rge {
 			proj_v2 = project_world_vertex(world_v2, world_to_projection);
 			proj_v3 = project_world_vertex(world_v3, world_to_projection);
 
+			// Cheap hack: convert camera space z from [-1, 1] to [0, 1]
+			// proj_v1.z /= 2.0F;
+			// proj_v1.z += 0.5F;
+			// proj_v2.z /= 2.0F;
+			// proj_v2.z += 0.5F;
+			// proj_v3.z /= 2.0F;
+			// proj_v3.z += 0.5F;
+
+			// NOTE: Debugging
+			// printf("p1x: %f, p1y: %f, p1z: %f\n", proj_v1.x, proj_v1.y, proj_v1.z);
+			// printf("p2x: %f, p2y: %f, p2z: %f\n", proj_v2.x, proj_v2.y, proj_v2.z);
+			// printf("p3x: %f, p3y: %f, p3z: %f\n", proj_v3.x, proj_v3.y, proj_v3.z);
+
 			if(/* Check if all three projected vertices are within homogeneous clip bounds. */
 				proj_v1.x >= -1 && proj_v1.x <= 1 && proj_v1.y >= -1 && proj_v1.y <= 1 &&
 				proj_v2.x >= -1 && proj_v2.x <= 1 && proj_v2.y >= -1 && proj_v2.y <= 1 &&
 				proj_v3.x >= -1 && proj_v3.x <= 1 && proj_v3.y >= -1 && proj_v3.y <= 1
 			) {
+				// NOTE: Debugging
+				// printf("inside bounds\n");
+
 				// Calculate the normal of the projected triangle from the cross
 			    // product of two of its edges.
 				proj_tri_normal = vec3::cross(proj_v2 - proj_v1, proj_v3 - proj_v1);
 
 				// Calculate the centre of the projected triangle.
 				proj_tri_center = (proj_v1 + proj_v2 + proj_v3) / 3;
-				printf("inside bounds\n");
+
+				// NOTE: Debugging
+				// printf("cx: %f\n", camera_position.x);
+				// printf("cy: %f\n", camera_position.y);
+				// printf("cz: %f\n", camera_position.z);
+				// printf("nx: %f\n", proj_tri_normal.x);
+				// printf("ny: %f\n", proj_tri_normal.y);
+				// printf("nz: %f\n", proj_tri_normal.z);
+				// printf("ax: %f\n", proj_tri_center.x);
+				// printf("ay: %f\n", proj_tri_center.y);
+				// printf("az: %f\n", proj_tri_center.z);
+
 				// Check the dot project of the projected triangle normal and
 				// the camera to triangle centre vector - if the dot product is
 				// <=0, the normal and vector point at each other, and the triangle
 				// must be facing the camera, so we should render it. If the dot
 				// product is >0, the are facing the same direction, therefore
 				// the triangle is facing away from the camera - don't render it.
-				if(vec3::dot(proj_tri_normal, proj_tri_center - camera_position) <= 0) {
+				float d = vec3::dot(proj_tri_normal, proj_tri_center - camera_position);
+
+				// NOTE: Debugging
+				// printf("d: %f\n", d);
+
+				if(d >= 0) {
 					// Normalize our projected vertices so that they are in the range
 					// Between 0 and 1 (instead of -1 and 1).
 					normalized_v1 = vec2((proj_v1.x + 1) / 2.0F, (proj_v1.y + 1) / 2.0F);
@@ -2208,11 +2255,13 @@ namespace rge {
 		if(y_min < 0) y_min = 0;
 		if(y_max > target->get_height()) y_max = target->get_height();
 
+		// NOTE: Debugging
 		// printf("xmin:%d\n", x_min);
 		// printf("xmax:%d\n", x_max);
 		// printf("ymin:%d\n", y_min);
 		// printf("ymax:%d\n", y_max);
 
+		// TODO: Delete
 		// vec2 v0(r_v1.x, r_v1.y);
 		// vec2 v1(r_v2.x, r_v2.y);
 		// vec2 v2(r_v3.x, r_v3.y);
@@ -2224,7 +2273,8 @@ namespace rge {
 		for(y = y_min; y <= y_max; y++) {
 			for(x = x_min; x <= x_max; x++) {
 				vec2 p(x + 0.5F, y + 0.5F);
-
+				
+				// TODO: Delete
 				// vec2 v0_to_p = p - v0;
 				// vec2 v1_to_p = p - v1;
 				// vec2 v2_to_p = p - v2;
@@ -2239,10 +2289,12 @@ namespace rge {
 				weight_v2 = ((r_v3.y - r_v1.y) * (p.x - r_v3.x) + (r_v1.x - r_v3.x) * (p.y - r_v3.y)) / denom;
 				weight_v3 = 1.0F - weight_v1 - weight_v2;
 
+				// TODO: Delete
 				// float e1 = (ps.x-r_v1.x)*(r_v2.y-r_v1.y)-(ps.y-r_v1.y)*(r_v2.x-r_v1.x);
 				// float e2 = (ps.x-r_v2.x)*(r_v3.y-r_v2.y)-(ps.y-r_v2.y)*(r_v3.x-r_v2.x);
 				// float e3 = (ps.x-r_v3.x)*(r_v1.y-r_v3.y)-(ps.y-r_v3.y)*(r_v1.x-r_v3.x);
 				
+				// TODO: Delete
 				// float w0 = edge_func(v1, v2, p);
 				// float w1 = edge_func(v2, v0, p);
 				// float w2 = edge_func(v0, v1, p);
@@ -2253,6 +2305,7 @@ namespace rge {
 					// Calculate the position in our buffer based on our x and y values.
 					ptr = x + (y * get_target()->get_width());
 
+					// NOTE: Debugging
 					// printf("ptr: %d, x: %d, y: %d\n", ptr, x, y);
 					
 					// Calculate the depth value of this pixel.

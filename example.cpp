@@ -26,7 +26,8 @@ public:
     }
 
     void on_init() override {
-        camera->set_projection_matrix(60, 1.6F, 0.1F, 100.0F);
+        //camera->set_perspective(60, 1.6F, 1.0F, 1000.0F);
+		camera->set_orthographic(-16, 16, 10, -10, 1.0F, 100.0F);
         camera->transform->position = rge::vec3(0,0,0);
 
         renderer->set_target(render);
@@ -34,11 +35,11 @@ public:
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
 
 		material->diffuse = rge::color(1, 0, 1);
-        material->texture = rge::texture::read_from_disk("test.bmp");
+        //material->texture = rge::texture::read_from_disk("tests/test.bmp");
 
-        model_verts.push_back(rge::vec3(-1,0,2));
-        model_verts.push_back(rge::vec3(0,2,2));
-        model_verts.push_back(rge::vec3(1,0,2));
+        model_verts.push_back(rge::vec3(-1,0,0));
+        model_verts.push_back(rge::vec3(0,2,0));
+        model_verts.push_back(rge::vec3(1,0,0));
 
         model_tris.push_back(0);
         model_tris.push_back(1);
@@ -60,7 +61,7 @@ public:
 			renderer->clear(rge::color(0.4F, 0.4F, 0.4F));
 
 			renderer->draw(
-				rge::mat4::identity(),
+				rge::mat4::trs(rge::vec3(0, 0, 100), rge::quaternion::identity(), rge::vec3(1,1,1)),
 				model_verts,
 				model_tris,
 				model_norms,
@@ -90,7 +91,7 @@ public:
 			);
             */
 
-			render->get_frame_buffer()->write_to_disk("render.bmp");
+			render->get_frame_buffer()->write_to_disk("tests/render.bmp");
             return true;
         }
 		return false;
