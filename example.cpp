@@ -27,8 +27,9 @@ public:
 
     void on_init() override {
         //camera->set_perspective(60, 1.6F, 1.0F, 1000.0F);
-		camera->set_orthographic(-16, 16, 10, -10, 1.0F, 100.0F);
+		camera->set_orthographic(-16, 16, 10, -10, 0.0F, 100.0F);
         camera->transform->position = rge::vec3(0,0,0);
+		camera->transform->rotation = rge::quaternion::euler(0, 0, 0);
 
         renderer->set_target(render);
         renderer->set_camera(camera);
@@ -61,7 +62,7 @@ public:
 			renderer->clear(rge::color(0.4F, 0.4F, 0.4F));
 
 			renderer->draw(
-				rge::mat4::trs(rge::vec3(0, 0, 100), rge::quaternion::identity(), rge::vec3(1,1,1)),
+				rge::mat4::trs(rge::vec3(0, 0, 2), rge::quaternion::euler(0, 45 * DEG_2_RAD, 0), rge::vec3(3, 1, 1)),
 				model_verts,
 				model_tris,
 				model_norms,

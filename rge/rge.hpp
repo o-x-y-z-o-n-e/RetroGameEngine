@@ -254,6 +254,7 @@ namespace rge {
 
 		static quaternion identity() { return quaternion(); }
 		static quaternion look(const vec3& forward, const vec3& up);
+		static quaternion euler(float yaw, float pitch, float roll);
 
 		vec3 operator * (const vec3& rhs) const;
 	};
@@ -540,7 +541,6 @@ namespace rge {
 		transform* transform;
 
 	private:
-		mat4 view; // TODO: iirc this is the same a world transform matrix (but for camera). Might be redundent.
 		mat4 projection;
 	};
 	//********************************************//
@@ -1097,6 +1097,26 @@ namespace rge {
 		return q;
 	}
 
+	quaternion quaternion::euler(float yaw, float pitch, float roll) {
+		float half_roll = roll * 0.5f;
+		float half_pitch = pitch * 0.5f;
+		float half_yaw = yaw * 0.5f;
+
+		float sin_roll = sinf(half_roll);
+		float cos_roll = cosf(half_roll);
+		float sin_pitch = sinf(half_pitch);
+		float cos_pitch = cosf(half_pitch);
+		float sin_yaw = sinf(half_yaw);
+		float cos_yaw = cosf(half_yaw);
+
+		return quaternion(
+			(cos_yaw * sin_pitch * cos_roll) + (sin_yaw * cos_pitch * sin_roll),
+			(sin_yaw * cos_pitch * cos_roll) - (cos_yaw * sin_pitch * sin_roll),
+			(cos_yaw * cos_pitch * sin_roll) - (sin_yaw * sin_pitch * cos_roll),
+			(cos_yaw * cos_pitch * cos_roll) + (sin_yaw * sin_pitch * sin_roll)
+		);
+	}
+
 	vec3 quaternion::operator * (const vec3& rhs) const {
 		vec3 result = vec3();
 		float num1 =  this->x * 2.0F;
@@ -1445,6 +1465,8 @@ namespace rge {
 		
 		time_stamp_1 = std::chrono::system_clock::now();
 		time_stamp_2 = std::chrono::system_clock::now();
+
+		app_window = nullptr;
 	}
 	
 	engine::~engine() {
@@ -1601,10 +1623,12 @@ namespace rge {
 	//********************************************//
 	transform::transform() {
 		parent = nullptr;
+		this->scale = vec3(1, 1, 1);
 	}
 
 	transform::transform(transform* parent) {
 		this->parent = parent;
+		this->scale = vec3(1, 1, 1);
 	}
 
 	transform::transform(vec3 position, quaternion rotation, vec3 scale) {
@@ -1680,7 +1704,7 @@ namespace rge {
 	//* Camera class.                            *//
 	//********************************************//
 	camera::camera() {
-		transform = new rge::transform(nullptr);
+		transform = new rge::transform();
 	}
 
 	camera::~camera() {
@@ -1688,7 +1712,44 @@ namespace rge {
 	}
 
 	mat4 camera::get_view_matrix() const {
-		return view;
+		mat4 r = mat4::identity();
+
+		if(transform == nullptr) return r;
+
+		mat4 m = transform->get_global_matrix();
+		vec3 pos = m.extract_translation();
+		vec3 rgt = m.extract_right_axis();
+		vec3 up = m.extract_up_axis();
+		vec3 fwd = m.extract_forward_axis();
+		
+		r.m[0][0] = rgt.x;
+		r.m[1][0] = rgt.y;
+		r.m[2][0] = rgt.z;
+		r.m[0][1] = up.x;
+		r.m[1][1] = up.y;
+		r.m[2][1] = up.z;
+		r.m[0][2] = fwd.x;
+		r.m[1][2] = fwd.y;
+		r.m[2][2] = fwd.z;
+		r.m[0][3] = -vec3::dot(rgt, pos);
+		r.m[1][3] = -vec3::dot(up, pos);
+		r.m[2][3] = -vec3::dot(fwd, pos);
+
+		// NOTE: Debugging
+		// printf("px: %f\n", pos.x);
+		// printf("py: %f\n", pos.y);
+		// printf("pz: %f\n", pos.z);
+		// printf("rx: %f\n", rgt.x);
+		// printf("ry: %f\n", rgt.y);
+		// printf("rz: %f\n", rgt.z);
+		// printf("ux: %f\n", up.x);
+		// printf("uy: %f\n", up.y);
+		// printf("uz: %f\n", up.z);
+		// printf("fx: %f\n", fwd.x);
+		// printf("fy: %f\n", fwd.y);
+		// printf("fz: %f\n", fwd.z);
+
+		return r;
 	}
 	
 	mat4 camera::get_projection_matrix() const {
@@ -1862,6 +1923,8 @@ namespace rge {
 	}
 
 	ptr(texture) texture::read_from_disk(const std::string& path) {
+		// TODO: Check if file exists.
+
 		#ifdef RGE_USE_STB_IMAGE
 
 		int i, w, h, ch;
