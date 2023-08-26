@@ -29,8 +29,8 @@ public:
     }
 
     void on_init() override {
-		render = get_window()->get_render_target();
-		// render = new rge::render_target(320, 200);
+		// render = get_window()->get_render_target();
+		render = new rge::render_target(320, 200);
 
         // camera->set_perspective(60, 1.6F, 1.0F, 1000.0F);
 		camera->set_orthographic(-16, 16, 10, -10, 0.0F, 100.0F);
@@ -68,7 +68,6 @@ public:
 	}
 
     void on_render() override {
-        return;
 		renderer->clear(rge::color(0.4F, 0.4F, 0.4F));
 
 		renderer->draw(
@@ -80,11 +79,9 @@ public:
 			*material
 		);
 
-		/* TODO: Implement rge::renderer2d
 		int width, height;
 		get_window()->get_size(width, height);
 		get_window()->get_compositor()->draw(*render, rge::rect(0, 0, width, height));
-		*/
     }
 };
 

@@ -2721,8 +2721,8 @@ static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		case WM_SIZE:
 		{
 			width = LOWORD(lParam);
-			height = HIWORD(lParam)
-			create_frame(width, height);
+			height = HIWORD(lParam);
+			create_frame();
 			// rge::log::info("New window dimensions [%u, %u]", width, height);
 
 			InvalidateRect(handle, NULL, FALSE);
