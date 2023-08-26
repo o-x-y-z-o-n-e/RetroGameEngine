@@ -334,6 +334,7 @@ namespace math {
 	#define DEG_2_RAD 0.0174532924F
 	#define RAD_2_DEG 57.29578F
 	float lerp(float a, float b, float t);
+	float inverse_lerp(float a, float b, float v);
 	int min(int a, int b) { return a < b ? a : b; }
 	int max(int a, int b) { return a > b ? a : b; }
 }
@@ -400,6 +401,7 @@ private:
 	bool has_init;
 	bool is_running;
 	std::thread thread;
+	bool multi_threaded;
 	window* app_window;
 	float update_counter;
 	float physics_counter;
@@ -811,6 +813,12 @@ int main(int argc, char** argv);
 #ifdef SYS_WINDOWS
 #include <windows.h>
 #endif /* SYS_WINDOWS */
+
+#ifdef SYS_MACOSX
+#include <objc/runtime.h>
+#include <objc/message.h>
+#include <Carbon/Carbon.h>
+#endif /* SYS_MACOSX */
 
 #ifdef RGE_USE_STB_IMAGE_WRITE
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -1424,6 +1432,10 @@ float math::lerp(float a, float b, float t) {
 	if(t > 1) t = 1;
 	return (a * (1 - t)) + (b * t);
 }
+
+float math::inverse_lerp(float a, float b, float v) {
+	return (v - a) / (b - a);
+}
 //********************************************//
 //* Logging Module.                          *//
 //********************************************//
@@ -1470,6 +1482,7 @@ engine::engine() {
 	time_stamp_1 = std::chrono::system_clock::now();
 	time_stamp_2 = std::chrono::system_clock::now();
 	app_window = nullptr;
+	multi_threaded = false;
 }
 
 engine::~engine() {
@@ -1477,13 +1490,13 @@ engine::~engine() {
 }
 
 void engine::create(bool wait_until_exit) {
-	thread = std::thread(&engine::procedure, this);
-
-	while(!is_running)
-		continue;
-
-	if(wait_until_exit)
-		wait_for_exit();
+	if(wait_until_exit) {
+		procedure();
+	} else {
+		multi_threaded = true;
+		thread = std::thread(&engine::procedure, this);
+		while(!is_running) continue;
+	}
 }
 
 void engine::procedure() {
@@ -1611,7 +1624,8 @@ window* engine::get_window() const {
 }
 
 void engine::wait_for_exit() {
-	thread.join();
+	if(multi_threaded)
+		thread.join();
 }
 
 void engine::on_update(float delta_time) {}
@@ -2151,21 +2165,51 @@ renderer2d::~renderer2d() {
 
 void renderer2d::draw(const texture& texture, const rect& dest) {
 	if(!texture.get_on_cpu()) return;
+
+	int x, y, ptr;
+	float u, v;
+
+	vec2 min = dest.get_min();
+	vec3 max = dest.get_max();
 	
+	int x_min = (int)(min.x);
+	int y_min = (int)(min.y);
+	int x_max = (int)(max.x);
+	int y_max = (int)(max.y);
+
+	if(x_min < 0) x_min = 0;
+	if(y_min < 0) y_min = 0;
+	if(x_max > target->get_width()) x_max = target->get_width();
+	if(y_max > target->get_height()) y_max = target->get_height();
+
+	color* input_buffer = texture.get_data();
+	color* frame_buffer = target->get_frame_buffer()->get_data();
+
+	for(y = y_min; y <= y_max; y++) {
+		for(x = x_min; x <= x_max; x++) {
+			vec2 p(x + 0.5F, y + 0.5F);
+			if(p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y) {
+				ptr = x + (y * target->get_height());
+				u = math::inverse_lerp(min.x, max.x, p.x);
+				v = math::inverse_lerp(min.y, max.y, p.y);
+
+				frame_buffer[ptr] = texture.sample(u, v);
+			}
+		}
+	}
 }
 
 void renderer2d::draw(const render_target& render, const rect& dest) {
-	//draw(target.)
-	
+	draw(*render.get_frame_buffer(), dest);
 }
 
 void renderer2d::draw(const texture& texture, const rect& dest, const rect& src) {
 	if(!texture.get_on_cpu()) return;
-
+	// TODO
 }
 
 void renderer2d::draw(const render_target& render, const rect& dest, const rect& src) {
-	
+	draw(*render.get_frame_buffer(), dest, src);
 }
 //********************************************//
 //* Software Renderer 2D class.              *//
@@ -2610,11 +2654,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 	return main(0, nullptr);
 }
 
-static void create_frame(int w, int h) {
-	width = w;
-	height = h;
-	frame.bitmap_info.bmiHeader.biWidth = w;
-	frame.bitmap_info.bmiHeader.biHeight = h;
+static void create_frame() {
+	frame.bitmap_info.bmiHeader.biWidth = width;
+	frame.bitmap_info.bmiHeader.biHeight = height;
 
 	if(frame.bitmap) {
 		DeleteObject(frame.bitmap);
@@ -2628,7 +2670,7 @@ static void create_frame(int w, int h) {
 	SelectObject(device_context, frame.bitmap);
 
 	if(core->get_window() != nullptr)
-		core->get_window()->get_render_target()->resize(w, h);
+		core->get_window()->get_render_target()->resize(width, height);
 }
 
 static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -2678,7 +2720,9 @@ static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		
 		case WM_SIZE:
 		{
-			create_frame(LOWORD(lParam), HIWORD(lParam));
+			width = LOWORD(lParam);
+			height = HIWORD(lParam)
+			create_frame(width, height);
 			// rge::log::info("New window dimensions [%u, %u]", width, height);
 
 			InvalidateRect(handle, NULL, FALSE);
@@ -2811,9 +2855,9 @@ static void refresh() {
 	InvalidateRect(handle, NULL, FALSE);
 	UpdateWindow(handle);
 }
+
 #elif SYS_LINUX
 
-#elif SYS_MACOSX
 static int width, height;
 static engine* core;
 
@@ -2824,6 +2868,112 @@ static void create(rge::engine* e) {
 static void create_frame(int w, int h) {
 
 }
+
+#elif SYS_MACOSX
+
+#define cls objc_getClass
+#define sel sel_getUid
+#define msg ((id (*)(id, SEL, ...))objc_msgSend)
+#define cls_msg ((id (*)(Class, SEL, ...))objc_msgSend)
+
+// poor man's bindings!
+typedef enum NSApplicationActivationPolicy {
+    NSApplicationActivationPolicyRegular   = 0,
+    NSApplicationActivationPolicyAccessory = 1,
+    NSApplicationActivationPolicyERROR     = 2,
+} NSApplicationActivationPolicy;
+
+typedef enum NSWindowStyleMask {
+    NSWindowStyleMaskBorderless     = 0,
+    NSWindowStyleMaskTitled         = 1 << 0,
+    NSWindowStyleMaskClosable       = 1 << 1,
+    NSWindowStyleMaskMiniaturizable = 1 << 2,
+    NSWindowStyleMaskResizable      = 1 << 3,
+} NSWindowStyleMask;
+
+typedef enum NSBackingStoreType {
+    NSBackingStoreBuffered = 2,
+} NSBackingStoreType;
+
+static int width, height;
+struct {
+	uint8_t* buffer;
+} static frame;
+static engine* core;
+static id app;
+static id wnd;
+static id con;
+static CGContextRef gc;
+
+static void create_frame() {
+	CGContextRelease(gc);
+
+    CGColorSpaceRef rgb = CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
+    gc = CGBitmapContextCreate(NULL, width, height, 8, 0, rgb, kCGImageByteOrder32Big | kCGImageAlphaPremultipliedLast);
+    CGColorSpaceRelease(rgb);
+
+    size_t pitch = CGBitmapContextGetBytesPerRow(gc);
+    frame.buffer = (uint8_t*)CGBitmapContextGetData(gc);
+
+	if(core->get_window() != nullptr)
+		core->get_window()->get_render_target()->resize(width, height);
+}
+
+static void create(rge::engine* e) {
+	// id app = [NSApplication sharedApplication];
+    app = cls_msg(cls("NSApplication"), sel("sharedApplication"));
+
+    // [app setActivationPolicy:NSApplicationActivationPolicyRegular];
+    msg(app, sel("setActivationPolicy:"), NSApplicationActivationPolicyRegular);
+
+	msg(app, sel("finishLaunching"));
+
+	width = 800;
+	height = 600;
+    struct CGRect frame_rect = {0, 0, (CGFloat)width, (CGFloat)height};
+
+    // id wnd = [[NSWindow alloc] initWithContentRect:frame_rect styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
+    wnd = msg(
+		cls_msg(cls("NSWindow"), sel("alloc")),
+        sel("initWithContentRect:styleMask:backing:defer:"),
+        frame_rect,
+        NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable,
+        NSBackingStoreBuffered,
+        false
+	);
+
+	con = msg(
+		cls_msg(cls("NSWindowController"), sel("alloc")),
+		sel("initWithWindow:"),
+		wnd
+	);
+	msg(con, sel("autorelease"));
+
+    msg(wnd, sel("setTitle:"), cls_msg(cls("NSString"), sel("stringWithUTF8String:"), "Pure C App"));
+
+    // [wnd makeKeyAndOrderFront:nil];
+    msg(wnd, sel("makeKeyAndOrderFront:"), nil);
+
+    // [app activateIgnoringOtherApps:YES];
+    msg(app, sel("activateIgnoringOtherApps:"), true);
+
+    msg(app, sel("run"));
+
+	create_frame();
+}
+
+static void poll_events() {
+
+}
+
+static void refresh() {
+	CGImageRef image = CGBitmapContextCreateImage(gc);
+	// TODO
+    // window.contentView.wantsLayer = YES;
+    // window.contentView.layer.contents = (__bridge id)image;
+    CGImageRelease(image);
+}
+
 #endif
 } /* namesapce window */
 } /* namespace platform */
@@ -2853,7 +3003,9 @@ window* window::create(engine* core) {
 rge::result window::set_size(int width, int height) {
 	if(width < 1) return rge::FAIL;
 	if(height < 1) return rge::FAIL;
-	platform::window::create_frame(width, height);
+
+	// TODO
+
 	return rge::OK;
 }
 

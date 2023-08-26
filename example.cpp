@@ -68,6 +68,7 @@ public:
 	}
 
     void on_render() override {
+        return;
 		renderer->clear(rge::color(0.4F, 0.4F, 0.4F));
 
 		renderer->draw(
@@ -90,7 +91,7 @@ public:
 
 int main(int argc, char** argv) {
     game* gm = new game();
-	gm->create(false);
+	gm->create(true);
 
     while(gm->get_is_running()) {
         std::string cmd;
