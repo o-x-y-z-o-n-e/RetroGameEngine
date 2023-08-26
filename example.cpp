@@ -108,8 +108,11 @@ int main(int argc, char** argv) {
     std::thread* thread;
     game* gm = new game();
     
-    gm->init();
-    gm->start(false, &thread);
+	if(gm->init() != rge::OK)
+		goto error_quit;
+
+	if(gm->start(false, &thread) != rge::OK)
+		goto error_quit;
 
     while(gm->get_is_running()) {
         std::string cmd;
@@ -125,6 +128,10 @@ int main(int argc, char** argv) {
     }
 
     thread->join();
-
     return 0;
+
+error_quit:
+	if(gm) delete gm;
+	printf("RGE crashed!\n");
+	return 1;
 }

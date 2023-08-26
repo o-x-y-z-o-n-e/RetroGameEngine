@@ -2,3 +2,5 @@ fix quaternions + camera view + perspective matrix
 2d renderer
 input
 window creation
+better logging
+multithreaded command queue
