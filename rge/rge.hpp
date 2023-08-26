@@ -368,10 +368,18 @@ public:
 	virtual ~engine();
 
 public:
-	rge::result init();
-	rge::result start(bool wait_until_exit = true, std::thread** game_thread = nullptr);
+	void create(bool wait_until_exit = true);
 	rge::result exit();
 	rge::result command(const std::string& cmd);
+	void wait_for_exit();
+	int get_frame_rate() const;
+	bool get_is_running() const;
+	window* get_window() const;
+
+public:
+	float update_interval;
+	float physics_interval;
+	float render_interval;
 
 protected:
 	virtual void on_init();
@@ -382,16 +390,10 @@ protected:
 	virtual void on_render();
 	virtual void on_exit();
 
-public:
-	int get_frame_rate() const;
-	bool get_is_running() const;
-
-public:
-	float update_interval;
-	float physics_interval;
-	float render_interval;
-
 private:
+	void procedure();
+	rge::result init();
+	rge::result start();
 	void loop();
 
 private:
@@ -586,10 +588,13 @@ public:
 	bool get_on_gpu() const;
 	color sample(float u, float v) const;
 	color* get_data() const;
+	void dump_to_raw_buffer(uint8_t* buffer) const;
 
 	// NOTE: TESTING FUNCTION
 	rge::result write_to_disk(const std::string& path) const;
 	static ptr(texture) read_from_disk(const std::string& path);
+
+
 
 private:
 	void allocate();
@@ -637,11 +642,14 @@ public:
 	render_target(int width, int height);
 
 public:
+	rge::result resize(int width, int height);
+
 	int get_width() const;
 	int get_height() const;
 
 	texture* get_frame_buffer() const;
 	texture* get_depth_buffer() const;
+	
 
 private:
 	int width;
@@ -773,6 +781,8 @@ public:
 	void get_size(int& width, int& height) const;
 	void poll_events();
 	void refresh();
+	render_target* get_render_target() const;
+	renderer2d* get_compositor() const;
 
 private:
 	window(engine* core);
@@ -780,7 +790,8 @@ private:
 private:
 	static window* instance;
 	engine* core;
-	// TODO: bool is_fullscreen;
+	render_target* target;
+	renderer2d* compositor;
 };
 //********************************************//
 //* Window class.                            *//
@@ -799,13 +810,6 @@ int main(int argc, char** argv);
 
 #ifdef SYS_WINDOWS
 #include <windows.h>
-// Real win32 entry point for release mode (DesktopApp).
-/*
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nShowCmd) {
-	// TODO: Get parameters.
-	return main(0, nullptr);
-}
-*/
 #endif /* SYS_WINDOWS */
 
 #ifdef RGE_USE_STB_IMAGE_WRITE
@@ -1463,15 +1467,29 @@ engine::engine() {
 	frame_counter = 0;
 	frame_timer = 0;
 	frame_rate = 0;
-	
 	time_stamp_1 = std::chrono::system_clock::now();
 	time_stamp_2 = std::chrono::system_clock::now();
-
 	app_window = nullptr;
 }
 
 engine::~engine() {
 	delete app_window;
+}
+
+void engine::create(bool wait_until_exit) {
+	thread = std::thread(&engine::procedure, this);
+
+	while(!is_running)
+		continue;
+
+	if(wait_until_exit)
+		wait_for_exit();
+}
+
+void engine::procedure() {
+	if(init() != rge::OK) return;
+	if(start() != rge::OK) return;
+	loop();
 }
 
 rge::result engine::init() {
@@ -1481,10 +1499,8 @@ rge::result engine::init() {
 	}
 
 	log::info("Initialising RGE...");
-	// TODO
-	
-	app_window = window::create(this);
 
+	app_window = window::create(this);
 	if(app_window == nullptr) {
 		log::error("Could not assign window to this instance of RGE!");
 		return rge::FAIL;
@@ -1495,7 +1511,7 @@ rge::result engine::init() {
 	return rge::OK;
 }
 
-rge::result engine::start(bool wait_until_exit, std::thread** game_thread) {
+rge::result engine::start() {
 	if(!has_init) {
 		log::error("RGE core has not been initialised!");
 		return rge::FAIL;
@@ -1507,13 +1523,6 @@ rge::result engine::start(bool wait_until_exit, std::thread** game_thread) {
 	on_start();
 	
 	is_running = true;
-	thread = std::thread(&engine::loop, this);
-	
-	if(wait_until_exit)
-		thread.join();
-	
-	if(game_thread != nullptr)
-		*game_thread = &thread;
 	
 	return rge::OK;
 }
@@ -1579,11 +1588,13 @@ rge::result engine::command(const std::string& cmd) {
 }
 
 rge::result engine::exit() {
-	is_running = false;
-	
-	// TODO
-	
+	if(!is_running) return rge::FAIL;
+
 	on_exit();
+	
+	printf("\n[Press any key to exit]");
+
+	is_running = false;
 	return rge::OK;
 }
 
@@ -1593,6 +1604,14 @@ int engine::get_frame_rate() const {
 
 bool engine::get_is_running() const {
 	return is_running;
+}
+
+window* engine::get_window() const {
+	return app_window;
+}
+
+void engine::wait_for_exit() {
+	thread.join();
 }
 
 void engine::on_update(float delta_time) {}
@@ -1910,18 +1929,24 @@ color* texture::get_data() const {
 	return data;
 }
 
+void texture::dump_to_raw_buffer(uint8_t* buffer) const {
+	if(!on_cpu) return;
+
+	for(int i = 0; i < width * height; i++) {
+		color c = data[i];
+		buffer[i * 4] = (uint8_t)(c.r * 255);
+		buffer[i * 4 + 1] = (uint8_t)(c.g * 255);
+		buffer[i * 4 + 2] = (uint8_t)(c.b * 255);
+		buffer[i * 4 + 3] = (uint8_t)(c.a * 255);
+	}
+}
+
 rge::result texture::write_to_disk(const std::string& path) const {
 	if(!on_cpu) return rge::FAIL;
 
 	#ifdef RGE_USE_STB_IMAGE_WRITE
 	uint8_t* buffer = (uint8_t*)malloc(4 * width * height);
-	for(int i = 0; i < width * height; i++) {
-		color c = data[i];
-		buffer[i*4] = (uint8_t)(c.r * 255);
-		buffer[i*4+1] = (uint8_t)(c.g * 255);
-		buffer[i*4+2] = (uint8_t)(c.b * 255);
-		buffer[i*4+3] = (uint8_t)(c.a * 255);
-	}
+	dump_to_raw_buffer(buffer);
 	/*
 	if(!stbi_write_png(path.c_str(), width, height, 4, buffer, 4)) {
 		rge::log::error("File write fail.");
@@ -2023,23 +2048,37 @@ material::~material() {
 //* Render Target class.                     *//
 //********************************************//
 render_target::render_target() {
-	width = 0;
-	height = 0;
+	width = 1;
+	height = 1;
 	frame_buffer = nullptr;
 	depth_buffer = nullptr;
 }
 
 render_target::render_target(int width, int height) {
-	if(width < 0) width = 0;
-	if(height < 0) height = 0;
+	if(width < 1) width = 1;
+	if(height < 1) height = 1;
 
 	this->width = width;
 	this->height = height;
 
-	if(width > 0 && height > 0) {
-		frame_buffer = new texture(width, height);
-		depth_buffer = new texture(width, height);
-	}
+	frame_buffer = new texture(width, height);
+	depth_buffer = new texture(width, height);
+}
+
+rge::result render_target::resize(int width, int height) {
+	if(width < 0) return rge::FAIL;
+	if(height < 0) return rge::FAIL;
+
+	this->width = width;
+	this->height = height;
+
+	if(frame_buffer) delete frame_buffer;
+	if(depth_buffer) delete depth_buffer;
+
+	frame_buffer = new texture(width, height);
+	depth_buffer = new texture(width, height);
+
+	return rge::OK;
 }
 
 int render_target::get_width() const {
@@ -2545,7 +2584,11 @@ namespace platform {
 namespace window {
 #ifdef SYS_WINDOWS
 
-static WNDCLASS config;
+static HINSTANCE instance;
+static int cmdShow;
+const wchar_t CLASS_NAME[] = L"Sample Window";
+const wchar_t TITLE[] = L"Testing 123";
+static WNDCLASSW config = {0};
 static HWND handle;
 static HDC device_context;
 static int width, height;
@@ -2556,6 +2599,16 @@ struct {
 	HBITMAP bitmap;
 	uint8_t* buffer;
 } static frame;
+
+// Real win32 entry point for release mode (DesktopApp).
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
+	// TODO: Get entry parameters.
+
+	platform::window::instance = hInstance;
+	platform::window::cmdShow = nCmdShow;
+
+	return main(0, nullptr);
+}
 
 static void create_frame(int w, int h) {
 	width = w;
@@ -2573,6 +2626,9 @@ static void create_frame(int w, int h) {
 		return;
 
 	SelectObject(device_context, frame.bitmap);
+
+	if(core->get_window() != nullptr)
+		core->get_window()->get_render_target()->resize(w, h);
 }
 
 static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -2588,7 +2644,6 @@ static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			PostQuitMessage(0);
 			break;
 		}
-
 		case WM_PAINT:
 		{
 			PAINTSTRUCT ps;
@@ -2620,7 +2675,7 @@ static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			EndPaint(hwnd, &ps);
 			break;
 		}
-
+		
 		case WM_SIZE:
 		{
 			create_frame(LOWORD(lParam), HIWORD(lParam));
@@ -2653,7 +2708,7 @@ static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				}
 			}
 			break;
-
+			
 		default:
 		{
 			return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -2673,16 +2728,18 @@ static void create(rge::engine* e) {
 		height = 600;
 		has_focus = true;
 
-		config.lpfnWndProc = on_event;
+		ZeroMemory(&config, sizeof(WNDCLASSW)); // Clear the window class structure
+		config.lpszClassName = CLASS_NAME;
 		config.hInstance = GetModuleHandle(NULL);
-		config.lpszClassName = L"CLASS_NAME";
-		//config.style = 0;
-		//config.cbClsExtra = 0;
-		//config.cbWndExtra = 0;
-		//config.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+		config.lpfnWndProc = on_event;
 		config.hCursor = LoadCursor(NULL, IDC_ARROW);
-		//config.hbrBackground = (HBRUSH)(GRAY_BRUSH);
-		//config.lpszMenuName = NULL;
+		config.hbrBackground = (HBRUSH)COLOR_WINDOW;
+		config.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+		config.style = 0;
+		config.cbClsExtra = 0;
+		config.cbWndExtra = 0;
+		config.lpszMenuName = NULL;
+		
 
 		if(RegisterClass(&config)) {
 			SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
@@ -2693,10 +2750,10 @@ static void create(rge::engine* e) {
 			frame.bitmap_info.bmiHeader.biPlanes = 1;
 			frame.bitmap_info.bmiHeader.biBitCount = 32;
 			frame.bitmap_info.bmiHeader.biCompression = BI_RGB;
-
+			
 			handle = CreateWindow(
-				L"CLASS_NAME",
-				L"Game Title",
+				CLASS_NAME,
+				TITLE,
 				WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 				CW_USEDEFAULT,
 				CW_USEDEFAULT,
@@ -2704,9 +2761,10 @@ static void create(rge::engine* e) {
 				height,
 				NULL,
 				NULL,
-				config.hInstance,
+				NULL,
 				NULL
 			);
+			
 		} else {
 			rge::log::error("Window registration failed!");
 		}
@@ -2714,6 +2772,7 @@ static void create(rge::engine* e) {
 		if(handle == NULL) {
 			rge::log::error("Window creation failed!");
 		} else {
+			// TODO: swap with create_frame();
 			SendMessage(handle, WM_SIZE, 0, (width)+(height << 16));
 		}
 	}
@@ -2730,7 +2789,7 @@ static void set_title(const char* title) {
 static void poll_events() {
 	MSG msg;
 
-	while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+	while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
@@ -2786,6 +2845,7 @@ window* window::create(engine* core) {
 
 	instance = new window(core);
 	platform::window::create(core);
+	instance->target->resize(platform::window::width, platform::window::height);
 
 	return instance;
 }
@@ -2807,11 +2867,24 @@ void window::poll_events() {
 }
 
 void window::refresh() {
+	uint8_t* buffer = platform::window::frame.buffer;
+	target->get_frame_buffer()->dump_to_raw_buffer(buffer);
 	platform::window::refresh();
+}
+
+render_target* window::get_render_target() const {
+	return target;
+}
+
+renderer2d* window::get_compositor() const {
+	return compositor;
 }
 
 window::window(engine* core) {
 	this->core = core;
+	this->target = new render_target();
+	this->compositor = new renderer2d();
+	this->compositor->set_target(this->target);
 }
 //********************************************//
 //* Window class.                            *//

@@ -17,16 +17,22 @@ private:
 	std::vector<rge::vec3> model_norms;
     std::vector<rge::vec2> model_uvs;
 
+	float counter;
+
 public:
     game() : rge::engine() {
         material = alloc(rge::material)();
-        render = new rge::render_target(320, 200);
+		render = nullptr;
 		camera = new rge::camera();
         renderer = new rge::renderer3d();
+		counter = 0;
     }
 
     void on_init() override {
-        //camera->set_perspective(60, 1.6F, 1.0F, 1000.0F);
+		render = get_window()->get_render_target();
+		// render = new rge::render_target(320, 200);
+
+        // camera->set_perspective(60, 1.6F, 1.0F, 1000.0F);
 		camera->set_orthographic(-16, 16, 10, -10, 0.0F, 100.0F);
         camera->transform->position = rge::vec3(0,0,0);
 		camera->transform->rotation = rge::quaternion::euler(0, 0, 0);
@@ -36,7 +42,7 @@ public:
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
 
 		material->diffuse = rge::color(1, 0, 1);
-        //material->texture = rge::texture::read_from_disk("tests/test.bmp");
+        // material->texture = rge::texture::read_from_disk("tests/test.bmp");
 
         model_verts.push_back(rge::vec3(-1,0,0));
         model_verts.push_back(rge::vec3(0,2,0));
@@ -55,64 +61,36 @@ public:
         model_uvs.push_back(rge::vec2(1,0));
     }
 
-    bool on_command(const std::string& cmd) override {
-        if(cmd == "print") {
-            rge::log::info("Render to file.");
-            
-			renderer->clear(rge::color(0.4F, 0.4F, 0.4F));
-
-			renderer->draw(
-				rge::mat4::trs(rge::vec3(0, 0, 2), rge::quaternion::euler(0, 45 * DEG_2_RAD, 0), rge::vec3(3, 1, 1)),
-				model_verts,
-				model_tris,
-				model_norms,
-				model_uvs,
-				*material
-			);
-			
-            /*
-            rge::vec4 r_v1 = rge::vec4(4, 4, 0.0F, 0.0F);
-			rge::vec4 r_v2 = rge::vec4(14, 12, 0.0F, 0.0F);
-			rge::vec4 r_v3 = rge::vec4(12, 4, 0.0F, 0.0F);
-			rge::vec3 w_v1 = rge::vec3(-1, 0, 5);
-			rge::vec3 w_v2 = rge::vec3(0, 2, 5);
-			rge::vec3 w_v3 = rge::vec3(1, 0, 5);
-			rge::vec3 w_n1 = rge::vec3(0, 0, -1);
-			rge::vec3 w_n2 = rge::vec3(0, 0, -1);
-			rge::vec3 w_n3 = rge::vec3(0, 0, -1);
-			rge::vec2 t_uv1 = rge::vec2(0.0F, 0.0F);
-			rge::vec2 t_uv2 = rge::vec2(0.5F, 1.0F);
-			rge::vec2 t_uv3 = rge::vec2(1.0F, 0.0F);
-			renderer->draw_interpolated_triangle(
-				r_v1, r_v2, r_v3,
-				w_v1, w_v2, w_v3,
-				w_n1, w_n2, w_n3,
-				t_uv1, t_uv2, t_uv3,
-				*material
-			);
-            */
-
-			render->get_frame_buffer()->write_to_disk("tests/render.bmp");
-            return true;
-        }
-		return false;
-    }
+	void on_update(float delta_time) override {
+		counter += delta_time;
+		if(counter > 1)
+			counter = 0;
+	}
 
     void on_render() override {
-        
+		renderer->clear(rge::color(0.4F, 0.4F, 0.4F));
+
+		renderer->draw(
+			rge::mat4::trs(rge::vec3(0, 0, 2), rge::quaternion::euler(0, counter * 45 * DEG_2_RAD, 0), rge::vec3(3, 1, 1)),
+			model_verts,
+			model_tris,
+			model_norms,
+			model_uvs,
+			*material
+		);
+
+		/* TODO: Implement rge::renderer2d
+		int width, height;
+		get_window()->get_size(width, height);
+		get_window()->get_compositor()->draw(*render, rge::rect(0, 0, width, height));
+		*/
     }
-    
 };
 
-int main(int argc, char** argv) {
-    std::thread* thread;
-    game* gm = new game();
-    
-	if(gm->init() != rge::OK)
-		goto error_quit;
 
-	if(gm->start(false, &thread) != rge::OK)
-		goto error_quit;
+int main(int argc, char** argv) {
+    game* gm = new game();
+	gm->create(false);
 
     while(gm->get_is_running()) {
         std::string cmd;
@@ -127,11 +105,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    thread->join();
+	gm->wait_for_exit();
+	delete gm;
     return 0;
-
-error_quit:
-	if(gm) delete gm;
-	printf("RGE crashed!\n");
-	return 1;
 }

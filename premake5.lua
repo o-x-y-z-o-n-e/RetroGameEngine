@@ -44,6 +44,7 @@ project "example"
 		defines "SYS_WINDOWS"
 		staticruntime "On"
 		systemversion "latest"
+		entrypoint "mainCRTStartup"
 	
 	filter "system:macosx"
 		defines "SYS_MACOSX"
