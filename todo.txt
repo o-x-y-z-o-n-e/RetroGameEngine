@@ -1,4 +1,3 @@
-2d renderer
 input
 better logging
 fix quaternions + camera view + perspective matrix

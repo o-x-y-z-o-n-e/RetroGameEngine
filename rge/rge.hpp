@@ -251,7 +251,8 @@ struct quaternion {
 
 	static quaternion identity() { return quaternion(); }
 	static quaternion look(const vec3& forward, const vec3& up);
-	static quaternion euler(float yaw, float pitch, float roll);
+	static quaternion yaw_pitch_roll(float yaw, float pitch, float roll);
+	static quaternion euler(float x, float y, float z);
 
 	vec3 operator * (const vec3& rhs) const;
 };
@@ -1109,7 +1110,7 @@ quaternion quaternion::look(const vec3& forward, const vec3& up) {
 	return q;
 }
 
-quaternion quaternion::euler(float yaw, float pitch, float roll) {
+quaternion quaternion::yaw_pitch_roll(float yaw, float pitch, float roll) {
 	float half_roll = roll * 0.5f;
 	float half_pitch = pitch * 0.5f;
 	float half_yaw = yaw * 0.5f;
@@ -1126,6 +1127,14 @@ quaternion quaternion::euler(float yaw, float pitch, float roll) {
 		(sin_yaw * cos_pitch * cos_roll) - (cos_yaw * sin_pitch * sin_roll),
 		(cos_yaw * cos_pitch * sin_roll) - (sin_yaw * sin_pitch * cos_roll),
 		(cos_yaw * cos_pitch * cos_roll) + (sin_yaw * sin_pitch * sin_roll)
+	);
+}
+
+quaternion quaternion::euler(float x, float y, float z) {
+	// TODO
+
+	return quaternion(
+		0,0,0,1
 	);
 }
 
@@ -2189,7 +2198,7 @@ void renderer2d::draw(const texture& texture, const rect& dest) {
 		for(x = x_min; x <= x_max; x++) {
 			vec2 p(x + 0.5F, y + 0.5F);
 			if(p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y) {
-				ptr = x + (y * target->get_height());
+				ptr = x + (y * target->get_width());
 				u = math::inverse_lerp(min.x, max.x, p.x);
 				v = math::inverse_lerp(min.y, max.y, p.y);
 
@@ -2669,6 +2678,7 @@ static void create_frame() {
 
 	SelectObject(device_context, frame.bitmap);
 
+	// Resize the main render target that will be used to contain "in-progress" window frames.
 	if(core->get_window() != nullptr)
 		core->get_window()->get_render_target()->resize(width, height);
 }
@@ -2772,7 +2782,7 @@ static void create(rge::engine* e) {
 		height = 600;
 		has_focus = true;
 
-		ZeroMemory(&config, sizeof(WNDCLASSW)); // Clear the window class structure
+		ZeroMemory(&config, sizeof(WNDCLASSW)); // Clear the window class structure.
 		config.lpszClassName = CLASS_NAME;
 		config.hInstance = GetModuleHandle(NULL);
 		config.lpfnWndProc = on_event;
@@ -2823,7 +2833,7 @@ static void create(rge::engine* e) {
 }
 
 static void set_title(const char* title) {
-	// TODO: Fix memory leak. Free LPWSTR
+	// TODO: Fix memory leak. Free LPWSTR.
 	LPWSTR wString;
 	MultiByteToWideChar(CP_ACP, 0, title, -1, wString, 512);
 
