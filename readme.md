@@ -23,9 +23,9 @@ This project is inspired by:
 The entire project is a single header-only library. Just drop the 'rge.hpp' file your project directory. No external dependencies required.
 
 Startup code example:
-```
+```C++
 #define RGE_IMPL
-#include <rge/rge.hpp>
+#include <rge.hpp>
 
 class game : public rge::engine {
 public:

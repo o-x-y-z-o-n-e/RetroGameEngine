@@ -36,13 +36,11 @@ project "example"
 
     files {
         "%{prj.location}/rge/rge.hpp",
-        "%{prj.location}/rge/ecs.hpp",
-        "%{prj.location}/rge/gl.hpp",
 		"%{prj.location}/example.cpp"
     }
 
     includedirs {
-        "%{prj.location}/",
+        "%{prj.location}/include/",
         "%{prj.location}/vendor/"
     }
 	
