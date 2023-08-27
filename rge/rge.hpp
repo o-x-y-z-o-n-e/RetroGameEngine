@@ -1463,7 +1463,7 @@ void log::info(const char* msg, ...) {
     std::va_list args;
     va_start(args, msg);
     #ifdef SYS_WINDOWS
-	vsprintf_s(buffer, log::BUFFER_SIZE, format, args);
+	vsprintf_s(buffer, log::BUFFER_SIZE, msg, args);
 	#else
 	vsprintf(buffer, msg, args);
 	#endif
@@ -1476,7 +1476,7 @@ void log::warning(const char* msg, ...) {
     std::va_list args;
     va_start(args, msg);
     #ifdef SYS_WINDOWS
-	vsprintf_s(buffer, log::BUFFER_SIZE, format, args);
+	vsprintf_s(buffer, log::BUFFER_SIZE, msg, args);
 	#else
 	vsprintf(buffer, msg, args);
 	#endif
@@ -1489,7 +1489,7 @@ void log::error(const char* msg, ...) {
     std::va_list args;
     va_start(args, msg);
     #ifdef SYS_WINDOWS
-	vsprintf_s(buffer, log::BUFFER_SIZE, format, args);
+	vsprintf_s(buffer, log::BUFFER_SIZE, msg, args);
 	#else
 	vsprintf(buffer, msg, args);
 	#endif

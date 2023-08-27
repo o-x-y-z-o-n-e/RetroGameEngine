@@ -3,4 +3,13 @@ obj loading
 fix quaternions + camera view + perspective matrix
 opengl
 multithreaded command queue
-mac osx window
+
+renderer::software_2d
+renderer::software_3d
+renderer::opengl_1_0
+renderer::opengl_3_3
+
+platform::windows
+platform::macosx
+platform::linux
+platform::emscripten
