@@ -1,15 +1,23 @@
-input
-obj loading
-fix quaternions + camera view + perspective matrix
-opengl
-multithreaded command queue
+==CURRENT==
+	windows + opengl_1_0
+	windows + software_gl
+	macosx + opengl_1_0
+	macosx + software_gl
+	linux + opengl_1_0
+	linux + software_gl
 
-renderer::software_2d
-renderer::software_3d
-renderer::opengl_1_0
-renderer::opengl_3_3
+	engine-level input system
+	windows input
+	macosx input
+	linux input
+	
+	obj loading
+	fix quaternions + camera view + perspective matrix
+	multithreaded command queue
+==CURRENT==
 
-platform::windows
-platform::macosx
-platform::linux
-platform::emscripten
+==FUTURE==
+	entity component system
+	physics
+	audio
+==FUTURE==

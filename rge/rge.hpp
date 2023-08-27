@@ -4,10 +4,13 @@
    License: N/A
 */
 
+
 #define RGE_VERSION 0001
+
 
 #ifndef RGE_API
 #define RGE_API
+
 
 #include <cstdint>
 #include <cstdarg>
@@ -21,10 +24,13 @@
 #include <vector>
 #include <memory>
 
+
 #define ptr(T) std::shared_ptr<T>
 #define alloc(T) std::make_shared<T>
 
+
 namespace rge {
+
 
 struct rect;
 struct vec2;
@@ -42,17 +48,21 @@ class texture;
 class material;
 class render_target;
 class renderer;
-class software_2d;
-class software_3d;
-class window;
+class platform;
 
-enum result { FAIL = 0, OK = 1 };
+
+enum result {
+	FAIL = 0,
+	OK = 1
+};
+
 
 enum class light_mode {
 	DIRECTIONAL,
 	POINT,
 	SPOT
 };
+
 
 #pragma region /* rge::key */
 //********************************************//
@@ -368,7 +378,7 @@ namespace log {
 class engine {
 public:
 	engine();
-	virtual ~engine();
+	~engine();
 
 public:
 	void create(bool wait_until_exit = true);
@@ -377,7 +387,8 @@ public:
 	void wait_for_exit();
 	int get_frame_rate() const;
 	bool get_is_running() const;
-	window* get_window() const;
+	platform* get_platform() const;
+	renderer* get_renderer() const;
 
 public:
 	float update_interval;
@@ -385,15 +396,16 @@ public:
 	float render_interval;
 
 protected:
-	virtual void on_init();
-	virtual bool on_command(const std::string& cmd);
-	virtual void on_start();
-	virtual void on_update(float delta_time);
-	virtual void on_physics(float delta_time);
-	virtual void on_render();
-	virtual void on_exit();
+	virtual void on_init() {}
+	virtual bool on_command(const std::string& cmd) { return false; }
+	virtual void on_start() {}
+	virtual void on_update(float delta_time) {}
+	virtual void on_physics(float delta_time) {}
+	virtual void on_render() {}
+	virtual void on_exit() {}
 
 private:
+	void configure();
 	void procedure();
 	rge::result init();
 	rge::result start();
@@ -404,7 +416,8 @@ private:
 	bool is_running;
 	std::thread thread;
 	bool multi_threaded;
-	window* app_window;
+	platform* platform_impl;
+	renderer* renderer_impl;
 	float update_counter;
 	float physics_counter;
 	float render_counter;
@@ -667,161 +680,210 @@ private:
 #pragma endregion
 
 
+#pragma region /* rge::platform */
+//********************************************//
+//* Base Platform Class                      *//
+//********************************************//
+class platform {
+public:
+	virtual rge::result init(rge::engine* engine) = 0;
+	virtual rge::result create_window() = 0;
+	virtual void set_window_title(const char* title) = 0;
+	virtual void poll_events() = 0;
+	virtual void refresh_window() = 0;
+
+protected:
+	platform() {}
+};
+//********************************************//
+//* Base Platform Class                      *//
+//********************************************//
+#pragma endregion
+
+
 #pragma region /* rge::renderer */
 //********************************************//
-//* Renderer class.                          *//
+//* Base Renderer class                      *//
 //********************************************//
 class renderer {
 public:
-	renderer();
-	virtual ~renderer();
-
-public:
-	rge::result set_target(render_target* target);
-	render_target* get_target() const;
-	void clear(color background);
-
-protected:
-	render_target* target;
-};
-//********************************************//
-//* Renderer class.                          *//
-//********************************************//
-#pragma endregion
-
-
-#pragma region /* rge::renderer_2d */
-//********************************************//
-//* Software Renderer 2D class.              *//
-//********************************************//
-class software_2d : public renderer {
-public:
-	software_2d();
-	virtual ~software_2d();
-
-public:
-	void draw(const texture& texture, const rect& dest);
-	void draw(const render_target& render, const rect& dest);
-	void draw(const texture& texture, const rect& dest, const rect& src);
-	void draw(const render_target& render, const rect& dest, const rect& src);
-};
-//********************************************//
-//* Software Renderer 2D class.              *//
-//********************************************//
-#pragma endregion
-
-
-#pragma region /* rge::renderer_3d */
-//********************************************//
-//* Software Renderer 3D class.              *//
-//********************************************//
-class software_3d : public renderer {
-public:
-	software_3d();
-	virtual ~software_3d();
-
-public:
 	void set_camera(camera* camera);
 	void set_ambience(const color& ambient_color);
-	rge::result draw(
+	rge::result set_target(render_target* target);
+	render_target* get_target() const;
+
+public:
+	virtual rge::result init(platform* platform) = 0;
+	virtual void clear(color background) = 0;
+	virtual void display() = 0;
+	virtual rge::result draw(
 		const mat4& model_to_world,
 		const std::vector<vec3>& vertices,
 		const std::vector<int>& triangles,
 		const std::vector<vec3>& normals,
 		const std::vector<vec2>& uvs,
 		const material& material
-	);
+	) = 0;
+	virtual void draw(
+		const texture& texture,
+		const rect& dest,
+		const rect& src
+	) = 0;
+
+	void draw(const texture& texture, const rect& dest) {
+		draw(
+			texture,
+			dest,
+			rge::rect(
+				0,
+				0,
+				float(texture.get_width()),
+				float(texture.get_height())
+			)
+		);
+	}
 
 public:
-	void rasterize_triangle(
-		const vec4& r_v1, // <- render_target coords
-		const vec4& r_v2, // <- ^^^
-		const vec4& r_v3, // <- ^^^
-		const vec3& w_v1, // <- world vertices
-		const vec3& w_v2, // <- ^^^
-		const vec3& w_v3, // <- ^^^
-		const vec3& w_n1, // <- world normals
-		const vec3& w_n2, // <- ^^^
-		const vec3& w_n3, // <- ^^^
-		const vec2& t_uv1, // <- texture coords
-		const vec2& t_uv2, // <- ^^^
-		const vec2& t_uv3, // <- ^^^
-		const material& material
-	);
+	virtual void on_window_resize(int width, int height) {}
 
-private:
-	static float edge_func(const vec2& a, const vec2& b, const vec2& c);
-	static vec4 project_world_vertex(const vec3& vertex, const mat4& projection);
-	static color calculate_blinn_phong(
-		const vec3& position,
-		const vec3& normal,
-		const color& diffuse,
-		const color& specular,
-		const color& ambient,
-		float shininess,
-		const vec3& camera_position,
-		const std::vector<light*>& lights
-	);
+protected:
+	renderer();
 
-private:
-	camera* world_camera;
-	std::vector<light*> lights;
-	color ambience;
+protected:
+	camera* input_camera;
+	render_target* output_render;
+	color ambient_color;
 };
 //********************************************//
-//* Software Renderer 3D class.              *//
+//* Base Renderer class                      *//
 //********************************************//
 #pragma endregion
 
-
-#pragma region /* rge::window */
-//********************************************//
-//* Window class.                            *//
-//********************************************//
-class window {
-public:
-	static window* create(engine* core);
-	rge::result set_size(int width, int height);
-	void get_size(int& width, int& height) const;
-	void poll_events();
-	void refresh();
-	render_target* get_render_target() const;
-	software_2d* get_compositor() const;
-
-private:
-	window(engine* core);
-
-private:
-	static window* instance;
-	engine* core;
-	render_target* target;
-	software_2d* compositor;
-};
-//********************************************//
-//* Window class.                            *//
-//********************************************//
-#pragma endregion
 
 } /* namespace rge */
 
+
 #endif /* RGE_API */
+
 
 #ifdef RGE_IMPL
 #undef RGE_IMPL
 
+
 // Forward declaration of the user main() function.
 int main(int argc, char** argv);
 
+
+#pragma region /* System Configuration Check */
+//********************************************//
+//* System Configuration Check               *//
+//********************************************//
+#ifdef SYS_WINDOWS
+#ifdef RGE_PLATFORM_SET
+#error Multiple platforms set!
+#endif
+#define RGE_PLATFORM_SET
+#endif
+
+#ifdef SYS_LINUX
+#ifdef RGE_PLATFORM_SET
+#error Multiple platforms set!
+#endif
+#define RGE_PLATFORM_SET
+#endif
+
+#ifdef SYS_MACOSX
+#ifdef RGE_PLATFORM_SET
+#error Multiple platforms set!
+#endif
+#define RGE_PLATFORM_SET
+#endif
+
+#ifdef SYS_SOFTWARE_GL
+#ifdef RGE_RENDERER_SET
+#error Multiple renderers set!
+#endif
+#define RGE_RENDERER_SET
+#endif
+
+#ifdef SYS_OPENGL_1_0
+#ifdef RGE_RENDERER_SET
+#error Multiple renderers set!
+#endif
+#define RGE_RENDERER_SET
+#endif
+//********************************************//
+//* System Configuration Check               *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* Platform Dependancies */
+//********************************************//
+//* Platform Dependancies                    *//
+//********************************************//
 #ifdef SYS_WINDOWS
 #include <windows.h>
+class windows;
 #endif /* SYS_WINDOWS */
+
+#ifdef SYS_LINUX
+class linux;
+#endif /* SYS_LINUX */
 
 #ifdef SYS_MACOSX
 #include <objc/runtime.h>
 #include <objc/message.h>
 #include <Carbon/Carbon.h>
+class macosx;
+#endif /* SYS_MACOSX */
+//********************************************//
+//* Platform Dependancies                    *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* Renderer Dependancies */
+//********************************************//
+//* Renderer Dependancies                    *//
+//********************************************//
+#ifdef SYS_SOFTWARE_GL
+class software_gl;
+#endif /* SYS_SOFTWARE_GL */
+
+#ifdef SYS_OPENGL_1_0
+#ifdef SYS_WINDOWS
+
+#include <dwmapi.h>
+#include <GL/gl.h>
+
+#pragma comment(lib, "dwmapi.lib")
+
+typedef HDC gl_device_context_t;
+typedef HGLRC gl_render_context_t;
+
+#endif /* SYS_WINDOWS */
+
+#ifdef SYS_LINUX
+
+#endif /* SYS_LINUX */
+
+#ifdef SYS_MACOSX
+
 #endif /* SYS_MACOSX */
 
+class opengl_1_0;
+#endif /* SYS_OPENGL_1_0 */
+//********************************************//
+//* Renderer Dependancies                    *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* Extra Feature Dependancies */
+//********************************************//
+//* Extra Feature Dependancies               *//
+//********************************************//
 #ifdef RGE_USE_STB_IMAGE_WRITE
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
@@ -831,10 +893,17 @@ int main(int argc, char** argv);
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #endif /* RGE_USE_STB_IMAGE */
+//********************************************//
+//* Extra Feature Dependancies               *//
+//********************************************//
+#pragma endregion
+
 
 #define LOG_MISSING_DEP(OP, LIB) rge::log::error("Operation '"#OP"' failed! Dependancy not installed: "#LIB);
 
+
 namespace rge {
+
 
 #pragma region /* rge::rect */
 //********************************************//
@@ -1520,12 +1589,16 @@ engine::engine() {
 	frame_rate = 0;
 	time_stamp_1 = std::chrono::system_clock::now();
 	time_stamp_2 = std::chrono::system_clock::now();
-	app_window = nullptr;
+	platform_impl = nullptr;
+	renderer_impl = nullptr;
 	multi_threaded = false;
+
+	configure();
 }
 
 engine::~engine() {
-	delete app_window;
+	delete renderer_impl;
+	delete platform_impl;
 }
 
 void engine::create(bool wait_until_exit) {
@@ -1552,12 +1625,23 @@ rge::result engine::init() {
 
 	log::info("Initialising RGE...");
 
-	app_window = window::create(this);
-	if(app_window == nullptr) {
-		log::error("Could not assign window to this instance of RGE!");
+	if(platform_impl == nullptr || renderer_impl == nullptr) return rge::FAIL;
+
+	if(platform_impl->init(this) != rge::OK) {
+		log::error("Failed to initialise platform module!");
 		return rge::FAIL;
 	}
-	
+
+	if(platform_impl->create_window() != rge::OK) {
+		log::error("Failed to create window!");
+		return rge::FAIL;
+	}
+
+	if(renderer_impl->init(platform_impl) != rge::OK) {
+		log::error("Failed to initialise renderer module!");
+		return rge::FAIL;
+	}
+
 	on_init();
 	has_init = true;
 	return rge::OK;
@@ -1581,7 +1665,7 @@ rge::result engine::start() {
 
 void engine::loop() {
 	while(is_running) {
-		app_window->poll_events();
+		platform_impl->poll_events();
 
 		// Calculate the elapsed time since last frame.
 		time_stamp_2 = std::chrono::system_clock::now();
@@ -1607,7 +1691,7 @@ void engine::loop() {
 		render_counter += delta_time;
 		if(render_counter > render_interval) {
 			on_render();
-			app_window->refresh();
+			renderer_impl->display();
 			render_counter = 0;
 		}
 		
@@ -1618,8 +1702,6 @@ void engine::loop() {
 			frame_timer -= 1.0F;
 			frame_rate = frame_counter;
 			frame_counter = 0;
-			
-			//std::cout << "fps: " << frame_counter << std::endl;
 		}
 	}
 }
@@ -1632,6 +1714,8 @@ rge::result engine::command(const std::string& cmd) {
 		exit();
 	} else if(cmd == "rge_version") {
 		log::info("RGE VERSION: 0.00.1");
+	} else if(cmd == "fps") {
+		rge::log::info("fps: %d", frame_rate);
 	} else {
 		return rge::FAIL;
 	}
@@ -1658,22 +1742,18 @@ bool engine::get_is_running() const {
 	return is_running;
 }
 
-window* engine::get_window() const {
-	return app_window;
+platform* engine::get_platform() const {
+	return platform_impl;
+}
+
+renderer* engine::get_renderer() const {
+	return renderer_impl;
 }
 
 void engine::wait_for_exit() {
 	if(multi_threaded)
 		thread.join();
 }
-
-void engine::on_update(float delta_time) {}
-void engine::on_physics(float delta_time) {}
-void engine::on_render() {}
-void engine::on_init() {}
-bool engine::on_command(const std::string& cmd) { return false; }
-void engine::on_start() {}
-void engine::on_exit() {}
 //********************************************//
 //* Core Engine class.                       *//
 //********************************************//
@@ -2160,29 +2240,25 @@ texture* render_target::get_depth_buffer() const {
 //* Renderer class.                          *//
 //********************************************//
 renderer::renderer() {
-	target = nullptr;
+	input_camera = nullptr;
+	output_render = nullptr;
 }
 
-renderer::~renderer() {
+void renderer::set_camera(camera* camera) {
+	input_camera = camera;
+}
 
+void renderer::set_ambience(const color& ambient_color) {
+	this->ambient_color = ambient_color;
 }
 
 rge::result renderer::set_target(render_target* target) {
-	this->target = target;
+	output_render = target;
 	return rge::OK;
 }
 
 render_target* renderer::get_target() const {
-	return target;
-}
-
-void renderer::clear(color background) {
-	color* frame_buffer = target->get_frame_buffer()->get_data();
-	color* depth_buffer = target->get_depth_buffer()->get_data();
-	for(int i = 0; i < target->get_width() * target->get_height(); i++) {
-		frame_buffer[i] = background;
-		depth_buffer[i] = color(1,0,0,0);
-	}
+	return output_render;
 }
 //********************************************//
 //* Renderer class.                          *//
@@ -2190,898 +2266,795 @@ void renderer::clear(color background) {
 #pragma endregion
 
 
-#pragma region /* rge::renderer2d */
+#pragma region /* rge::windows */
 //********************************************//
-//* Software Renderer 2D class.              *//
+//* Windows platform class.                  *//
 //********************************************//
-software_2d::software_2d() : renderer() {
-
-}
-
-software_2d::~software_2d() {
-
-}
-
-void software_2d::draw(const texture& texture, const rect& dest) {
-	if(!texture.get_on_cpu()) return;
-
-	int x, y, ptr;
-	float u, v;
-
-	vec2 min = dest.get_min();
-	vec3 max = dest.get_max();
-	
-	int x_min = (int)(min.x);
-	int y_min = (int)(min.y);
-	int x_max = (int)(max.x);
-	int y_max = (int)(max.y);
-
-	if(x_min < 0) x_min = 0;
-	if(y_min < 0) y_min = 0;
-	if(x_max > target->get_width()) x_max = target->get_width();
-	if(y_max > target->get_height()) y_max = target->get_height();
-
-	color* input_buffer = texture.get_data();
-	color* frame_buffer = target->get_frame_buffer()->get_data();
-
-	for(y = y_min; y <= y_max; y++) {
-		for(x = x_min; x <= x_max; x++) {
-			vec2 p(x + 0.5F, y + 0.5F);
-			if(p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y) {
-				ptr = x + (y * target->get_width());
-				u = math::inverse_lerp(min.x, max.x, p.x);
-				v = math::inverse_lerp(min.y, max.y, p.y);
-
-				frame_buffer[ptr] = texture.sample(u, v);
-			}
-		}
-	}
-}
-
-void software_2d::draw(const render_target& render, const rect& dest) {
-	draw(*render.get_frame_buffer(), dest);
-}
-
-void software_2d::draw(const texture& texture, const rect& dest, const rect& src) {
-	if(!texture.get_on_cpu()) return;
-	// TODO
-}
-
-void software_2d::draw(const render_target& render, const rect& dest, const rect& src) {
-	draw(*render.get_frame_buffer(), dest, src);
-}
-//********************************************//
-//* Software Renderer 2D class.              *//
-//********************************************//
-#pragma endregion
-
-
-#pragma region /* rge::renderer3d */
-//********************************************//
-//* Software Renderer 3D class.              *//
-//********************************************//
-software_3d::software_3d() : renderer() {
-	world_camera = nullptr;
-}
-
-software_3d::~software_3d() {
-
-}
-
-void software_3d::set_camera(camera* camera) {
-	this->world_camera = camera;
-}
-
-void software_3d::set_ambience(const color& ambient_color) {
-	ambience = ambient_color;
-}
-
-rge::result software_3d::draw(
-	const mat4& model_to_world,
-	const std::vector<vec3>& vertices,
-	const std::vector<int>& triangles,
-	const std::vector<vec3>& normals,
-	const std::vector<vec2>& uvs,
-	const material& material)
-{
-	if(world_camera == nullptr || target == nullptr) return rge::FAIL;
-	
-	int i;
-	vec3 world_v1;
-	vec3 world_v2;
-	vec3 world_v3;
-	vec3 world_n1;
-	vec3 world_n2;
-	vec3 world_n3;
-	vec4 proj_v1;
-	vec4 proj_v2;
-	vec4 proj_v3;
-	vec3 proj_tri_normal;
-	vec3 proj_tri_center;
-	vec2 normalized_v1;
-	vec2 normalized_v2;
-	vec2 normalized_v3;
-	vec4 texturespace_v1;
-	vec4 texturespace_v2;
-	vec4 texturespace_v3;
-	vec3 camera_position = world_camera->transform != nullptr ? world_camera->transform->get_global_position() : vec3();
-	mat4 world_to_projection = world_camera->get_projection_matrix() * world_camera->get_view_matrix();
-
-	float w = (float)get_target()->get_width();
-	float h = (float)get_target()->get_height();
-
-	// Loop through each of the triplets of triangle indices.
-	for(i = 0; i < triangles.size(); i += 3) {
-		// Transform model vertices to world vertices.
-		world_v1 = model_to_world.multiply_point_3x4(vertices[triangles[i]]);
-		world_v2 = model_to_world.multiply_point_3x4(vertices[triangles[i+1]]);
-		world_v3 = model_to_world.multiply_point_3x4(vertices[triangles[i+2]]);
-		
-		// Transform model normals to world normals.
-		world_n1 = model_to_world.multiply_vector(normals[triangles[i]]);
-		world_n2 = model_to_world.multiply_vector(normals[triangles[i+1]]);
-		world_n2 = model_to_world.multiply_vector(normals[triangles[i+2]]);
-
-		// Get the projected vertices that make up the triangle based
-		// on these indices.
-		proj_v1 = project_world_vertex(world_v1, world_to_projection);
-		proj_v2 = project_world_vertex(world_v2, world_to_projection);
-		proj_v3 = project_world_vertex(world_v3, world_to_projection);
-
-		// Cheap hack: convert camera space z from [-1, 1] to [0, 1]
-		// proj_v1.z /= 2.0F;
-		// proj_v1.z += 0.5F;
-		// proj_v2.z /= 2.0F;
-		// proj_v2.z += 0.5F;
-		// proj_v3.z /= 2.0F;
-		// proj_v3.z += 0.5F;
-
-		// NOTE: Debugging
-		// printf("p1x: %f, p1y: %f, p1z: %f\n", proj_v1.x, proj_v1.y, proj_v1.z);
-		// printf("p2x: %f, p2y: %f, p2z: %f\n", proj_v2.x, proj_v2.y, proj_v2.z);
-		// printf("p3x: %f, p3y: %f, p3z: %f\n", proj_v3.x, proj_v3.y, proj_v3.z);
-
-		if(/* Check if all three projected vertices are within homogeneous clip bounds. */
-			proj_v1.x >= -1 && proj_v1.x <= 1 && proj_v1.y >= -1 && proj_v1.y <= 1 &&
-			proj_v2.x >= -1 && proj_v2.x <= 1 && proj_v2.y >= -1 && proj_v2.y <= 1 &&
-			proj_v3.x >= -1 && proj_v3.x <= 1 && proj_v3.y >= -1 && proj_v3.y <= 1
-		) {
-			// NOTE: Debugging
-			// printf("inside bounds\n");
-
-			// Calculate the normal of the projected triangle from the cross
-		    // product of two of its edges.
-			proj_tri_normal = vec3::cross(proj_v2 - proj_v1, proj_v3 - proj_v1);
-
-			// Calculate the centre of the projected triangle.
-			proj_tri_center = (proj_v1 + proj_v2 + proj_v3) / 3;
-
-			// NOTE: Debugging
-			// printf("cx: %f\n", camera_position.x);
-			// printf("cy: %f\n", camera_position.y);
-			// printf("cz: %f\n", camera_position.z);
-			// printf("nx: %f\n", proj_tri_normal.x);
-			// printf("ny: %f\n", proj_tri_normal.y);
-			// printf("nz: %f\n", proj_tri_normal.z);
-			// printf("ax: %f\n", proj_tri_center.x);
-			// printf("ay: %f\n", proj_tri_center.y);
-			// printf("az: %f\n", proj_tri_center.z);
-
-			// Check the dot project of the projected triangle normal and
-			// the camera to triangle centre vector - if the dot product is
-			// <=0, the normal and vector point at each other, and the triangle
-			// must be facing the camera, so we should render it. If the dot
-			// product is >0, the are facing the same direction, therefore
-			// the triangle is facing away from the camera - don't render it.
-			float d = vec3::dot(proj_tri_normal, proj_tri_center - camera_position);
-
-			// NOTE: Debugging
-			// printf("d: %f\n", d);
-
-			if(d >= 0) {
-				// Normalize our projected vertices so that they are in the range
-				// Between 0 and 1 (instead of -1 and 1).
-				normalized_v1 = vec2((proj_v1.x + 1) / 2.0F, (proj_v1.y + 1) / 2.0F);
-				normalized_v2 = vec2((proj_v2.x + 1) / 2.0F, (proj_v2.y + 1) / 2.0F);
-				normalized_v3 = vec2((proj_v3.x + 1) / 2.0F, (proj_v3.y + 1) / 2.0F);
-
-				// Multiply our normalized vertex positions by the render target size
-				// to get their position in texture space (or if we were rendering
-				// to the screen - screen space).
-				texturespace_v1 = vec4(normalized_v1.x * w, normalized_v1.y * h, proj_v1.z, proj_v1.w);
-				texturespace_v2 = vec4(normalized_v2.x * w, normalized_v2.y * h, proj_v2.z, proj_v2.w);
-				texturespace_v3 = vec4(normalized_v3.x * w, normalized_v3.y * h, proj_v3.z, proj_v3.w);
-
-				// Draw the triangle interpolated between the three vertices,
-				// using the colours calculated for these vertices based
-				// on the triangle indices.
-				rasterize_triangle(
-					texturespace_v1,
-					texturespace_v2,
-					texturespace_v3,
-					world_v1,
-					world_v2,
-					world_v3,
-					world_n1,
-					world_n2,
-					world_n3,
-					uvs[triangles[i]],
-					uvs[triangles[i+1]],
-					uvs[triangles[i+2]],
-					material
-				);
-			}
-		}
-	}
-
-	return rge::OK;
-}
-
-void software_3d::rasterize_triangle(
-	const vec4& r_v1,
-	const vec4& r_v2,
-	const vec4& r_v3,
-	const vec3& w_v1,
-	const vec3& w_v2,
-	const vec3& w_v3,
-	const vec3& w_n1,
-	const vec3& w_n2,
-	const vec3& w_n3,
-	const vec2& t_uv1,
-	const vec2& t_uv2,
-	const vec2& t_uv3,
-	const material& material
-) {
-	int x, y;
-	int ptr;
-	float denom;
-	float weight_v1, weight_v2, weight_v3;
-	float depth;
-	vec3 v;
-	vec3 n;
-	vec2 uv;
-	color diffuse;
-	color source;
-	color destination;
-	vec3 camera_position = world_camera->transform != nullptr ? world_camera->transform->get_global_position() : vec3();
-	color* frame_buffer = target->get_frame_buffer()->get_data();
-	color* depth_buffer = target->get_depth_buffer()->get_data();
-
-	// Calculate the bounding rectangle of the triangle based on the
-	// three vertices.
-	int x_min = (int)fminf(r_v1.x, fminf(r_v2.x, r_v3.x));
-	int x_max = (int)fmaxf(r_v1.x, fmaxf(r_v2.x, r_v3.x));
-	int y_min = (int)fminf(r_v1.y, fminf(r_v2.y, r_v3.y));
-	int y_max = (int)fmaxf(r_v1.y, fmaxf(r_v2.y, r_v3.y));
-
-	// Cull the bounding rect to the size of the texture we're rendering to.
-	if(x_min < 0) x_min = 0;
-	if(x_max > target->get_width()) x_max = target->get_width();
-	if(y_min < 0) y_min = 0;
-	if(y_max > target->get_height()) y_max = target->get_height();
-
-	// NOTE: Debugging
-	// printf("xmin:%d\n", x_min);
-	// printf("xmax:%d\n", x_max);
-	// printf("ymin:%d\n", y_min);
-	// printf("ymax:%d\n", y_max);
-
-	// TODO: Delete
-	// vec2 v0(r_v1.x, r_v1.y);
-	// vec2 v1(r_v2.x, r_v2.y);
-	// vec2 v2(r_v3.x, r_v3.y);
-	// vec2 e0 = v1 - v0;
-	// vec2 e1 = v2 - v1;
-	// vec2 e2 = v0 - v2;
-
-	// Loop through every pixel in the bounding rect.
-	for(y = y_min; y <= y_max; y++) {
-		for(x = x_min; x <= x_max; x++) {
-			vec2 p(x + 0.5F, y + 0.5F);
-			
-			// TODO: Delete
-			// vec2 v0_to_p = p - v0;
-			// vec2 v1_to_p = p - v1;
-			// vec2 v2_to_p = p - v2;
-			// float v0v1p = vec2::cross(e0, v0_to_p);
-			// float v1v2p = vec2::cross(e1, v1_to_p);
-			// float v2v0p = vec2::cross(e2, v2_to_p);
-
-			// Calculate the weights w1, w2 and w3 for the barycentric
-			// coordinates based on the positions of the three vertices.
-			denom = (r_v2.y - r_v3.y) * (r_v1.x - r_v3.x) + (r_v3.x - r_v2.x) * (r_v1.y - r_v3.y);
-			weight_v1 = ((r_v2.y - r_v3.y) * (p.x - r_v3.x) + (r_v3.x - r_v2.x) * (p.y - r_v3.y)) / denom;
-			weight_v2 = ((r_v3.y - r_v1.y) * (p.x - r_v3.x) + (r_v1.x - r_v3.x) * (p.y - r_v3.y)) / denom;
-			weight_v3 = 1.0F - weight_v1 - weight_v2;
-
-			// TODO: Delete
-			// float e1 = (ps.x-r_v1.x)*(r_v2.y-r_v1.y)-(ps.y-r_v1.y)*(r_v2.x-r_v1.x);
-			// float e2 = (ps.x-r_v2.x)*(r_v3.y-r_v2.y)-(ps.y-r_v2.y)*(r_v3.x-r_v2.x);
-			// float e3 = (ps.x-r_v3.x)*(r_v1.y-r_v3.y)-(ps.y-r_v3.y)*(r_v1.x-r_v3.x);
-			
-			// TODO: Delete
-			// float w0 = edge_func(v1, v2, p);
-			// float w1 = edge_func(v2, v0, p);
-			// float w2 = edge_func(v0, v1, p);
-
-			// If w1, w2 and w3 are >= 0, we are inside the triangle (or
-			// on an edge, but either way, render the pixel).
-			if(weight_v1 >= 0.0F && weight_v2 >= 0.0F && weight_v3 >= 0.0F) {
-				// Calculate the position in our buffer based on our x and y values.
-				ptr = x + (y * get_target()->get_width());
-
-				// NOTE: Debugging
-				// printf("ptr: %d, x: %d, y: %d\n", ptr, x, y);
-				
-				// Calculate the depth value of this pixel.
-				depth = r_v1.z * weight_v1 + r_v2.z * weight_v2 + r_v3.z * weight_v3;
-
-				// If the depth value is less than what is currently in the
-				// depth buffer for this pixel.
-				if(depth < depth_buffer[ptr].r) {
-					// Calculate the world position for this pixel.
-					v = w_v1 * weight_v1 + w_v2 * weight_v2 + w_v3 * weight_v3;
-
-					// Calculate the world normal for this pixel.
-					n = w_n1 * weight_v1 + w_n2 * weight_v2 + w_n3 * weight_v3;
-
-					// Calculate the UV coordinate for this pixel.
-					uv = t_uv1 * weight_v1 + t_uv2 * weight_v2 + t_uv3 * weight_v3;
-
-					// Base diffuse color from material.
-					diffuse = material.diffuse;
-
-					// Sample material texture.
-					if(material.texture != nullptr)
-						diffuse *= material.texture->sample(uv.x, uv.y);
-
-					// Calculate the pixel colour based on the weighted vertex colours.
-					source = calculate_blinn_phong(
-						v,
-						n,
-						diffuse,
-						material.specular,
-						ambience,
-						material.shininess,
-						camera_position,
-						lights
-					);
-
-					// Match alpha to diffuse.
-					source.a = diffuse.a;
-
-					// Write color to render target.
-					frame_buffer[ptr] = diffuse;
-
-					// Update the depth buffer with this depth value.
-					depth_buffer[ptr].r = depth;
-				}
-			}
-		}
-	}
-}
-
-float software_3d::edge_func(const vec2& a, const vec2& b, const vec2& c) {
-	return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
-}
-
-vec4 software_3d::project_world_vertex(const vec3& v, const mat4& world_to_projection) {
-	vec4 hpv = world_to_projection * vec4(v.x, v.y, v.z, 1);
-	return vec4(hpv.x / hpv.w, hpv.y / hpv.w, hpv.z / hpv.w, hpv.w);
-}
-
-color software_3d::calculate_blinn_phong(
-	const vec3& position,
-	const vec3& normal,
-	const color& diffuse,
-	const color& specular,
-	const color& ambient,
-	float shininess,
-	const vec3& camera_position,
-	const std::vector<light*>& lights
-) {
-	int i;
-	color diffuse_sum = color(0, 0, 0);
-	color specular_sum = color(0, 0, 0);
-	float light_w;
-	vec3 light_pos;
-	color light_color;
-	float attenuation;
-	vec3 normal_direction = vec3::normalize(normal);
-	vec3 view_direction = vec3::normalize(camera_position - position);
-	vec3 vert_to_light;
-	float vert_to_light_mag;
-	vec3 light_direction;
-	color diffuse_reflection;
-	color specular_reflection;
-	color ambient_lighting = ambient * diffuse;
-	light* light;
-
-	// Loop through each light source.
-	for(i = 0; i < lights.size(); ++i) {
-		light = lights[i];
-
-		if(light->transform == nullptr)
-			continue;
-
-		// Calculate the light position and colour based on the light properties
-		// light_w is set to 0 if the light is directional, and 1 otherwise.
-		if(light->type == light_mode::DIRECTIONAL) {
-			light_pos = light->transform->get_global_backward();
-			light_w = 0.0F;
-			light_color = light->tint * light->intensity;
-			attenuation = 1.0F;
-		} else {
-			light_pos = light->transform->get_global_position();
-			light_w = 1.0F;
-
-			// For non direcitonal lights, we'll figure out the light
-			// color per pixel, based on the distance from the light
-			// to the pixel.
-			light_color = color(0, 0, 0);
-
-			// Calculate the distance from the light to the pixel, and 1/distance.
-			vert_to_light = light_pos - position;
-			vert_to_light_mag = vert_to_light.magnitude();
-
-			attenuation = 1.0F / vert_to_light_mag;
-
-			// Calculate the colour based on the distance and light range.
-			if(vert_to_light_mag < light->range)
-				light_color *= light->intensity;
-		}
-
-		// Calculate light direction.
-		light_direction = light_pos - (position * light_w);
-
-		// Calculate diffuse lighting.
-		diffuse_reflection = light_color * diffuse * fmaxf(0, vec3::dot(normal_direction, view_direction)) * attenuation;
-
-		// Calculate Specular reflection if the normal is pointing in the
-		// lights direction.
-		if(vec3::dot(normal_direction, light_direction) < 0.0) {
-			specular_reflection = color(0, 0, 0);
-		} else {
-			// Calculate the specular colour using Blinn-Phong lighting
-			specular_reflection = light_color * specular * powf(fmaxf(0.0F, vec3::dot(normal_direction, vec3::normalize(light_direction + view_direction))), shininess * 128) * attenuation;
-		}
-
-		diffuse_sum += diffuse_reflection;
-		specular_sum += specular_reflection;
-	}
-
-	// The final color for this pixel is the sum of the ambient, diffuse and specular.
-	return ambient_lighting + diffuse_sum + specular_sum;
-}
-//********************************************//
-//* Software Renderer 3D class.              *//
-//********************************************//
-#pragma endregion
-
-
-#pragma region /* rge::platform::window */
-//********************************************//
-//* Platform window implementation.          *//
-//********************************************//
-namespace platform {
-namespace window {
 #ifdef SYS_WINDOWS
-
-static HINSTANCE instance;
-static int cmdShow;
-const wchar_t CLASS_NAME[] = L"Sample Window";
-const wchar_t TITLE[] = L"Testing 123";
-static WNDCLASSW config = {0};
-static HWND handle;
-static HDC device_context;
-static int width, height;
-static bool has_focus;
-static rge::engine* core;
-struct {
-	BITMAPINFO bitmap_info;
-	HBITMAP bitmap;
-	uint8_t* buffer;
-} static frame;
+#pragma comment(lib, "user32.lib")		// Visual Studio Only
+#pragma comment(lib, "gdi32.lib")		// For other Windows Compilers please add
+#pragma comment(lib, "opengl32.lib")	// these libs to your linker input
 
 // Real win32 entry point for release mode (DesktopApp).
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
 	// TODO: Get entry parameters.
 
-	platform::window::instance = hInstance;
-	platform::window::cmdShow = nCmdShow;
-
 	return main(0, nullptr);
 }
 
-static void create_frame() {
-	frame.bitmap_info.bmiHeader.biWidth = width;
-	frame.bitmap_info.bmiHeader.biHeight = height;
+class windows : public platform {
+public:
+	const LPCWSTR CLASS_NAME = L"RETRO_GAME_ENGINE_CLASS";
+	const LPCWSTR WINDOW_NAME = L"RETRO_GAME_ENGINE_WINDOW";
+	WNDCLASS config;
+	HWND handle;
+	static engine* engine_instance;
 
-	if(frame.bitmap) {
-		DeleteObject(frame.bitmap);
+	windows() {
+
 	}
 
-	uint8_t** ptr = &frame.buffer;
-	frame.bitmap = CreateDIBSection(NULL, &frame.bitmap_info, DIB_RGB_COLORS, (void**)ptr, 0, 0);
-	if(frame.bitmap == NULL)
-		return;
+public:
+	rge::result init(rge::engine* engine) override {
+		this->engine_instance = engine;
 
-	SelectObject(device_context, frame.bitmap);
-
-	// Resize the main render target that will be used to contain "in-progress" window frames.
-	if(core->get_window() != nullptr)
-		core->get_window()->get_render_target()->resize(width, height);
-}
-
-static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-	switch(msg) {
-		case WM_CLOSE:
-		{
-			core->exit();
-			break;
-		}
-
-		case WM_DESTROY:
-		{
-			PostQuitMessage(0);
-			break;
-		}
-		case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			HDC hdc = BeginPaint(hwnd, &ps);
-
-			if(wParam == 1) {
-				// Clears screen.
-				BitBlt(hdc, 0, 0, width, height, 0, 0, 0, BLACKNESS);
-			} else {
-				// Copies frame buffer to GDI.
-				//int w = frame.viewport.width * frame.viewport.scale;
-				//int h = frame.viewport.height * frame.viewport.scale;
-
-				StretchBlt(
-					hdc,
-					0,
-					height,
-					width,
-					-height,
-					device_context,
-					0,
-					0,
-					width,
-					height,
-					SRCCOPY
-				);
-			}
-
-			EndPaint(hwnd, &ps);
-			break;
-		}
-		
-		case WM_SIZE:
-		{
-			width = LOWORD(lParam);
-			height = HIWORD(lParam);
-			create_frame();
-			// rge::log::info("New window dimensions [%u, %u]", width, height);
-
-			InvalidateRect(handle, NULL, FALSE);
-			SendMessage(handle, WM_PAINT, 1, 0);
-			break;
-		}
-
-		case WM_KILLFOCUS:
-			has_focus = false;
-			// TODO: rge_input_flush_all();
-			break;
-
-		case WM_SETFOCUS:
-			has_focus = true;
-			break;
-
-		case WM_KEYUP:
-		case WM_KEYDOWN:
-			if(has_focus) {
-				bool key_is_down, key_was_down;
-				key_is_down = ((lParam & (1 << 31)) == 0);
-				key_was_down = ((lParam & (1 << 30)) != 0);
-
-				if(key_is_down != key_was_down) {
-					// TODO: uint8_t key = rge_system_parse_key((uint8_t)wParam);
-					// TODO: rge_input_key_set_state(key, key_is_down);
-				}
-			}
-			break;
-			
-		default:
-		{
-			return DefWindowProc(hwnd, msg, wParam, lParam);
-		}
-	}
-
-	return 0;
-}
-
-static void create(rge::engine* e) {
-	core = e;
-
-	if(handle != NULL) {
-		rge::log::error("Window already exists!");
-	} else {
-		width = 800; // TODO: User custom window starting dimensions.
-		height = 600;
-		has_focus = true;
-
-		ZeroMemory(&config, sizeof(WNDCLASSW)); // Clear the window class structure.
-		config.lpszClassName = CLASS_NAME;
-		config.hInstance = GetModuleHandle(NULL);
-		config.lpfnWndProc = on_event;
-		config.hCursor = LoadCursor(NULL, IDC_ARROW);
-		config.hbrBackground = (HBRUSH)COLOR_WINDOW;
+		ZeroMemory(&config, sizeof(WNDCLASS));
 		config.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-		config.style = 0;
+		config.hCursor = LoadCursor(NULL, IDC_ARROW);
+		config.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+		config.hInstance = GetModuleHandle(nullptr);
+		config.lpfnWndProc = on_event;
 		config.cbClsExtra = 0;
 		config.cbWndExtra = 0;
-		config.lpszMenuName = NULL;
+		config.lpszMenuName = nullptr;
+		config.hbrBackground = nullptr;
+		config.lpszClassName = CLASS_NAME;
+
+		if(!RegisterClass(&config)) {
+			rge::log::error("Failed to register platform class (winapi).");
+			return rge::FAIL;
+		}
+
+		// TODO: Key mapping
 		
+		return rge::OK;
+	}
 
-		if(RegisterClass(&config)) {
-			SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+	rge::result create_window() override {
+		DWORD style_ex = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+		DWORD style = WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_THICKFRAME;
 
-			device_context = CreateCompatibleDC(0);
+		int width = 800; // TODO: Temp
+		int height = 600;
+		RECT rWndRect = { 0, 0, width, height };
+		AdjustWindowRectEx(&rWndRect, style, FALSE, style_ex);
+		width = rWndRect.right - rWndRect.left;
+		height = rWndRect.bottom - rWndRect.top;
 
-			frame.bitmap_info.bmiHeader.biSize = sizeof(frame.bitmap_info.bmiHeader);
-			frame.bitmap_info.bmiHeader.biPlanes = 1;
-			frame.bitmap_info.bmiHeader.biBitCount = 32;
-			frame.bitmap_info.bmiHeader.biCompression = BI_RGB;
-			
-			handle = CreateWindow(
-				CLASS_NAME,
-				TITLE,
-				WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-				CW_USEDEFAULT,
-				CW_USEDEFAULT,
-				width,
-				height,
-				NULL,
-				NULL,
-				NULL,
-				NULL
-			);
-			
-		} else {
-			rge::log::error("Window registration failed!");
+		handle = CreateWindowEx(
+			style_ex,
+			CLASS_NAME,
+			WINDOW_NAME,
+			style,
+			CW_USEDEFAULT,
+			CW_USEDEFAULT,
+			width,
+			height,
+			nullptr,
+			nullptr,
+			config.hInstance,
+			0
+		);
+
+		if(handle == nullptr) {
+			rge::log::error("Failed to create window (winapi).");
+			return rge::FAIL;
 		}
 
-		if(handle == NULL) {
-			rge::log::error("Window creation failed!");
-		} else {
-			// TODO: swap with create_frame();
-			SendMessage(handle, WM_SIZE, 0, (width)+(height << 16));
+		return rge::OK;
+	}
+
+	void set_window_title(const char* title) override {
+		// TODO
+	}
+
+	void poll_events() override {
+		MSG msg;
+
+		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
 		}
 	}
-}
 
-static void set_title(const char* title) {
-	// TODO: Fix memory leak. Free LPWSTR.
-	LPWSTR wString;
-	MultiByteToWideChar(CP_ACP, 0, title, -1, wString, 512);
-
-	SetWindowText(handle, wString);
-}
-
-static void poll_events() {
-	MSG msg;
-
-	while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+	void refresh_window() override {
+		// TODO
 	}
-}
 
-static void close() {
-	if(handle != NULL) {
-		DeleteObject(frame.bitmap);
-		DestroyWindow(handle);
-		width = 0;
-		height = 0;
-		core = nullptr;
-		handle = nullptr;
-		device_context = nullptr;
+	static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+		switch(msg) {
+			case WM_CLOSE: {
+				engine_instance->exit();
+				break;
+			}
+
+			case WM_DESTROY: {
+				PostQuitMessage(0);
+				DestroyWindow(hwnd);
+				break;
+			}
+
+			case WM_SIZE: {
+				engine_instance->get_renderer()->on_window_resize(LOWORD(lParam), HIWORD(lParam));
+				break;
+			}
+
+			default:
+			{
+				return DefWindowProc(hwnd, msg, wParam, lParam);
+			}
+		}
+
+		return 0;
 	}
-}
 
-static void refresh() {
-	InvalidateRect(handle, NULL, FALSE);
-	UpdateWindow(handle);
-}
+};
 
-#elif SYS_LINUX
+engine* windows::engine_instance = nullptr;
 
-static int width, height;
-static engine* core;
-
-static void create(rge::engine* e) {
-
-}
-
-static void create_frame(int w, int h) {
-
-}
-
-#elif SYS_MACOSX
-
-#define cls objc_getClass
-#define sel sel_getUid
-#define msg ((id (*)(id, SEL, ...))objc_msgSend)
-#define cls_msg ((id (*)(Class, SEL, ...))objc_msgSend)
-
-// poor man's bindings!
-typedef enum NSApplicationActivationPolicy {
-    NSApplicationActivationPolicyRegular   = 0,
-    NSApplicationActivationPolicyAccessory = 1,
-    NSApplicationActivationPolicyERROR     = 2,
-} NSApplicationActivationPolicy;
-
-typedef enum NSWindowStyleMask {
-    NSWindowStyleMaskBorderless     = 0,
-    NSWindowStyleMaskTitled         = 1 << 0,
-    NSWindowStyleMaskClosable       = 1 << 1,
-    NSWindowStyleMaskMiniaturizable = 1 << 2,
-    NSWindowStyleMaskResizable      = 1 << 3,
-} NSWindowStyleMask;
-
-typedef enum NSBackingStoreType {
-    NSBackingStoreBuffered = 2,
-} NSBackingStoreType;
-
-static int width, height;
-struct {
-	uint8_t* buffer;
-} static frame;
-static engine* core;
-static id app;
-static id wnd;
-static id con;
-static CGContextRef gc;
-
-static void create_frame() {
-	CGContextRelease(gc);
-
-    CGColorSpaceRef rgb = CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
-    gc = CGBitmapContextCreate(NULL, width, height, 8, 0, rgb, kCGImageByteOrder32Big | kCGImageAlphaPremultipliedLast);
-    CGColorSpaceRelease(rgb);
-
-    size_t pitch = CGBitmapContextGetBytesPerRow(gc);
-    frame.buffer = (uint8_t*)CGBitmapContextGetData(gc);
-
-	if(core->get_window() != nullptr)
-		core->get_window()->get_render_target()->resize(width, height);
-}
-
-static void create(rge::engine* e) {
-	// id app = [NSApplication sharedApplication];
-    app = cls_msg(cls("NSApplication"), sel("sharedApplication"));
-
-    // [app setActivationPolicy:NSApplicationActivationPolicyRegular];
-    msg(app, sel("setActivationPolicy:"), NSApplicationActivationPolicyRegular);
-
-	msg(app, sel("finishLaunching"));
-
-	width = 800;
-	height = 600;
-    struct CGRect frame_rect = {0, 0, (CGFloat)width, (CGFloat)height};
-
-    // id wnd = [[NSWindow alloc] initWithContentRect:frame_rect styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
-    wnd = msg(
-		cls_msg(cls("NSWindow"), sel("alloc")),
-        sel("initWithContentRect:styleMask:backing:defer:"),
-        frame_rect,
-        NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable,
-        NSBackingStoreBuffered,
-        false
-	);
-
-	con = msg(
-		cls_msg(cls("NSWindowController"), sel("alloc")),
-		sel("initWithWindow:"),
-		wnd
-	);
-	msg(con, sel("autorelease"));
-
-    msg(wnd, sel("setTitle:"), cls_msg(cls("NSString"), sel("stringWithUTF8String:"), "Pure C App"));
-
-    // [wnd makeKeyAndOrderFront:nil];
-    msg(wnd, sel("makeKeyAndOrderFront:"), nil);
-
-    // [app activateIgnoringOtherApps:YES];
-    msg(app, sel("activateIgnoringOtherApps:"), true);
-
-    msg(app, sel("run"));
-
-	create_frame();
-}
-
-static void poll_events() {
-
-}
-
-static void refresh() {
-	CGImageRef image = CGBitmapContextCreateImage(gc);
-	// TODO
-    // window.contentView.wantsLayer = YES;
-    // window.contentView.layer.contents = (__bridge id)image;
-    CGImageRelease(image);
-}
-
-#endif
-} /* namesapce window */
-} /* namespace platform */
+#endif /* SYS_WINDOWS */
 //********************************************//
-//* Platform window implementation.          *//
+//* Windows platform class.                  *//
 //********************************************//
 #pragma endregion
 
 
-#pragma region /* rge::window */
+#pragma region /* rge::linux */
 //********************************************//
-//* Window class.                            *//
+//* Linux platform class.                    *//
 //********************************************//
-window* window::instance = nullptr;
+#ifdef SYS_LINUX
+class linux : public platform {
 
-window* window::create(engine* core) {
-	if(instance != nullptr)
-		return core == instance->core ? instance : nullptr;
-
-	instance = new window(core);
-	platform::window::create(core);
-	instance->target->resize(platform::window::width, platform::window::height);
-
-	return instance;
-}
-
-rge::result window::set_size(int width, int height) {
-	if(width < 1) return rge::FAIL;
-	if(height < 1) return rge::FAIL;
-
-	// TODO
-
-	return rge::OK;
-}
-
-void window::get_size(int& width, int& height) const {
-	width = platform::window::width;
-	height = platform::window::height;
-}
-
-void window::poll_events() {
-	platform::window::poll_events();
-}
-
-void window::refresh() {
-	uint8_t* buffer = platform::window::frame.buffer;
-	target->get_frame_buffer()->dump_to_raw_buffer(buffer);
-	platform::window::refresh();
-}
-
-render_target* window::get_render_target() const {
-	return target;
-}
-
-software_2d* window::get_compositor() const {
-	return compositor;
-}
-
-window::window(engine* core) {
-	this->core = core;
-	this->target = new render_target();
-	this->compositor = new software_2d();
-	this->compositor->set_target(this->target);
-}
+};
+#endif /* SYS_LINUX */
 //********************************************//
-//* Window class.                            *//
+//* Linux platform class.                    *//
 //********************************************//
 #pragma endregion
+
+
+#pragma region /* rge::macosx */
+//********************************************//
+//* MacOS X platform class.                  *//
+//********************************************//
+#ifdef SYS_MACOSX
+class macosx : public platform {
+
+};
+#endif /* SYS_MACOSX */
+//********************************************//
+//* MacOS X platform class.                  *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::software_gl */
+//********************************************//
+//* Software Renderer                        *//
+//********************************************//
+#ifdef SYS_SOFTWARE_GL
+class software_gl : public renderer {
+private:
+	std::vector<light*> lights; // TODO: Move to rge::renderer.
+
+
+public:
+	software_gl() : renderer() {
+
+	}
+
+public:
+	rge::result init(platform* platform) override {
+		return rge::OK;
+	}
+
+	void clear(color background) override {
+		color* frame_buffer = output_render->get_frame_buffer()->get_data();
+		color* depth_buffer = output_render->get_depth_buffer()->get_data();
+		for(int i = 0; i < output_render->get_width() * output_render->get_height(); i++) {
+			frame_buffer[i] = background;
+			depth_buffer[i] = color(1, 0, 0, 0);
+		}
+	}
+
+	void display() override {
+		#ifdef SYS_WINDOWS
+		uint8_t* buffer;
+		// TODO: output_render->get_depth_buffer()->dump_to_raw_buffer(buffer);
+		#endif
+	}
+
+	rge::result draw(
+		const mat4& model_to_world,
+		const std::vector<vec3>& vertices,
+		const std::vector<int>& triangles,
+		const std::vector<vec3>& normals,
+		const std::vector<vec2>& uvs,
+		const material& material
+	) override {
+		if(input_camera == nullptr || output_render == nullptr) return rge::FAIL;
+
+		int i;
+		vec3 world_v1;
+		vec3 world_v2;
+		vec3 world_v3;
+		vec3 world_n1;
+		vec3 world_n2;
+		vec3 world_n3;
+		vec4 proj_v1;
+		vec4 proj_v2;
+		vec4 proj_v3;
+		vec3 proj_tri_normal;
+		vec3 proj_tri_center;
+		vec2 normalized_v1;
+		vec2 normalized_v2;
+		vec2 normalized_v3;
+		vec4 texturespace_v1;
+		vec4 texturespace_v2;
+		vec4 texturespace_v3;
+		vec3 camera_position = input_camera->transform != nullptr ? input_camera->transform->get_global_position() : vec3();
+		mat4 world_to_projection = input_camera->get_projection_matrix() * input_camera->get_view_matrix();
+
+		float w = (float)get_target()->get_width();
+		float h = (float)get_target()->get_height();
+
+		// Loop through each of the triplets of triangle indices.
+		for(i = 0; i < triangles.size(); i += 3) {
+			// Transform model vertices to world vertices.
+			world_v1 = model_to_world.multiply_point_3x4(vertices[triangles[i]]);
+			world_v2 = model_to_world.multiply_point_3x4(vertices[triangles[i + 1]]);
+			world_v3 = model_to_world.multiply_point_3x4(vertices[triangles[i + 2]]);
+
+			// Transform model normals to world normals.
+			world_n1 = model_to_world.multiply_vector(normals[triangles[i]]);
+			world_n2 = model_to_world.multiply_vector(normals[triangles[i + 1]]);
+			world_n2 = model_to_world.multiply_vector(normals[triangles[i + 2]]);
+
+			// Get the projected vertices that make up the triangle based
+			// on these indices.
+			proj_v1 = project_world_vertex(world_v1, world_to_projection);
+			proj_v2 = project_world_vertex(world_v2, world_to_projection);
+			proj_v3 = project_world_vertex(world_v3, world_to_projection);
+
+			// Cheap hack: convert camera space z from [-1, 1] to [0, 1]
+			// proj_v1.z /= 2.0F;
+			// proj_v1.z += 0.5F;
+			// proj_v2.z /= 2.0F;
+			// proj_v2.z += 0.5F;
+			// proj_v3.z /= 2.0F;
+			// proj_v3.z += 0.5F;
+
+			// NOTE: Debugging
+			// printf("p1x: %f, p1y: %f, p1z: %f\n", proj_v1.x, proj_v1.y, proj_v1.z);
+			// printf("p2x: %f, p2y: %f, p2z: %f\n", proj_v2.x, proj_v2.y, proj_v2.z);
+			// printf("p3x: %f, p3y: %f, p3z: %f\n", proj_v3.x, proj_v3.y, proj_v3.z);
+
+			if(/* Check if all three projected vertices are within homogeneous clip bounds. */
+			   proj_v1.x >= -1 && proj_v1.x <= 1 && proj_v1.y >= -1 && proj_v1.y <= 1 &&
+			   proj_v2.x >= -1 && proj_v2.x <= 1 && proj_v2.y >= -1 && proj_v2.y <= 1 &&
+			   proj_v3.x >= -1 && proj_v3.x <= 1 && proj_v3.y >= -1 && proj_v3.y <= 1
+			   ) {
+				// NOTE: Debugging
+				// printf("inside bounds\n");
+
+				// Calculate the normal of the projected triangle from the cross
+				// product of two of its edges.
+				proj_tri_normal = vec3::cross(proj_v2 - proj_v1, proj_v3 - proj_v1);
+
+				// Calculate the centre of the projected triangle.
+				proj_tri_center = (proj_v1 + proj_v2 + proj_v3) / 3;
+
+				// NOTE: Debugging
+				// printf("cx: %f\n", camera_position.x);
+				// printf("cy: %f\n", camera_position.y);
+				// printf("cz: %f\n", camera_position.z);
+				// printf("nx: %f\n", proj_tri_normal.x);
+				// printf("ny: %f\n", proj_tri_normal.y);
+				// printf("nz: %f\n", proj_tri_normal.z);
+				// printf("ax: %f\n", proj_tri_center.x);
+				// printf("ay: %f\n", proj_tri_center.y);
+				// printf("az: %f\n", proj_tri_center.z);
+
+				// Check the dot project of the projected triangle normal and
+				// the camera to triangle centre vector - if the dot product is
+				// <=0, the normal and vector point at each other, and the triangle
+				// must be facing the camera, so we should render it. If the dot
+				// product is >0, the are facing the same direction, therefore
+				// the triangle is facing away from the camera - don't render it.
+				float d = vec3::dot(proj_tri_normal, proj_tri_center - camera_position);
+
+				// NOTE: Debugging
+				// printf("d: %f\n", d);
+
+				if(d >= 0) {
+					// Normalize our projected vertices so that they are in the range
+					// Between 0 and 1 (instead of -1 and 1).
+					normalized_v1 = vec2((proj_v1.x + 1) / 2.0F, (proj_v1.y + 1) / 2.0F);
+					normalized_v2 = vec2((proj_v2.x + 1) / 2.0F, (proj_v2.y + 1) / 2.0F);
+					normalized_v3 = vec2((proj_v3.x + 1) / 2.0F, (proj_v3.y + 1) / 2.0F);
+
+					// Multiply our normalized vertex positions by the render target size
+					// to get their position in texture space (or if we were rendering
+					// to the screen - screen space).
+					texturespace_v1 = vec4(normalized_v1.x * w, normalized_v1.y * h, proj_v1.z, proj_v1.w);
+					texturespace_v2 = vec4(normalized_v2.x * w, normalized_v2.y * h, proj_v2.z, proj_v2.w);
+					texturespace_v3 = vec4(normalized_v3.x * w, normalized_v3.y * h, proj_v3.z, proj_v3.w);
+
+					// Draw the triangle interpolated between the three vertices,
+					// using the colours calculated for these vertices based
+					// on the triangle indices.
+					rasterize_triangle(
+						texturespace_v1,
+						texturespace_v2,
+						texturespace_v3,
+						world_v1,
+						world_v2,
+						world_v3,
+						world_n1,
+						world_n2,
+						world_n3,
+						uvs[triangles[i]],
+						uvs[triangles[i + 1]],
+						uvs[triangles[i + 2]],
+						material
+					);
+				}
+			}
+		}
+
+		return rge::OK;
+	}
+
+	void draw(const texture& texture, const rect& dest, const rect& src) override {
+		if(!texture.get_on_cpu()) return;
+
+		int x, y, ptr;
+		float u, v;
+
+		vec2 min = dest.get_min();
+		vec3 max = dest.get_max();
+
+		int x_min = (int)(min.x);
+		int y_min = (int)(min.y);
+		int x_max = (int)(max.x);
+		int y_max = (int)(max.y);
+
+		if(x_min < 0) x_min = 0;
+		if(y_min < 0) y_min = 0;
+		if(x_max > output_render->get_width()) x_max = output_render->get_width();
+		if(y_max > output_render->get_height()) y_max = output_render->get_height();
+
+		color* input_buffer = texture.get_data();
+		color* frame_buffer = output_render->get_frame_buffer()->get_data();
+
+		for(y = y_min; y <= y_max; y++) {
+			for(x = x_min; x <= x_max; x++) {
+				vec2 p(x + 0.5F, y + 0.5F);
+				if(p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y) {
+					ptr = x + (y * output_render->get_width());
+					u = math::inverse_lerp(min.x, max.x, p.x);
+					v = math::inverse_lerp(min.y, max.y, p.y);
+
+					frame_buffer[ptr] = texture.sample(u, v);
+				}
+			}
+		}
+	}
+
+private:
+	void rasterize_triangle(
+		const vec4& r_v1, // <- render_target coords
+		const vec4& r_v2, // <- ^^^
+		const vec4& r_v3, // <- ^^^
+		const vec3& w_v1, // <- world vertices
+		const vec3& w_v2, // <- ^^^
+		const vec3& w_v3, // <- ^^^
+		const vec3& w_n1, // <- world normals
+		const vec3& w_n2, // <- ^^^
+		const vec3& w_n3, // <- ^^^
+		const vec2& t_uv1, // <- texture coords
+		const vec2& t_uv2, // <- ^^^
+		const vec2& t_uv3, // <- ^^^
+		const material& material
+	) {
+		int x, y;
+		int ptr;
+		float denom;
+		float weight_v1, weight_v2, weight_v3;
+		float depth;
+		vec3 v;
+		vec3 n;
+		vec2 uv;
+		color diffuse;
+		color source;
+		color destination;
+		vec3 camera_position = input_camera->transform != nullptr ? input_camera->transform->get_global_position() : vec3();
+		color* frame_buffer = output_render->get_frame_buffer()->get_data();
+		color* depth_buffer = output_render->get_depth_buffer()->get_data();
+
+		// Calculate the bounding rectangle of the triangle based on the
+		// three vertices.
+		int x_min = (int)fminf(r_v1.x, fminf(r_v2.x, r_v3.x));
+		int x_max = (int)fmaxf(r_v1.x, fmaxf(r_v2.x, r_v3.x));
+		int y_min = (int)fminf(r_v1.y, fminf(r_v2.y, r_v3.y));
+		int y_max = (int)fmaxf(r_v1.y, fmaxf(r_v2.y, r_v3.y));
+
+		// Cull the bounding rect to the size of the texture we're rendering to.
+		if(x_min < 0) x_min = 0;
+		if(x_max > output_render->get_width()) x_max = output_render->get_width();
+		if(y_min < 0) y_min = 0;
+		if(y_max > output_render->get_height()) y_max = output_render->get_height();
+
+		// NOTE: Debugging
+		// printf("xmin:%d\n", x_min);
+		// printf("xmax:%d\n", x_max);
+		// printf("ymin:%d\n", y_min);
+		// printf("ymax:%d\n", y_max);
+
+		// TODO: Delete
+		// vec2 v0(r_v1.x, r_v1.y);
+		// vec2 v1(r_v2.x, r_v2.y);
+		// vec2 v2(r_v3.x, r_v3.y);
+		// vec2 e0 = v1 - v0;
+		// vec2 e1 = v2 - v1;
+		// vec2 e2 = v0 - v2;
+
+		// Loop through every pixel in the bounding rect.
+		for(y = y_min; y <= y_max; y++) {
+			for(x = x_min; x <= x_max; x++) {
+				vec2 p(x + 0.5F, y + 0.5F);
+
+				// TODO: Delete
+				// vec2 v0_to_p = p - v0;
+				// vec2 v1_to_p = p - v1;
+				// vec2 v2_to_p = p - v2;
+				// float v0v1p = vec2::cross(e0, v0_to_p);
+				// float v1v2p = vec2::cross(e1, v1_to_p);
+				// float v2v0p = vec2::cross(e2, v2_to_p);
+
+				// Calculate the weights w1, w2 and w3 for the barycentric
+				// coordinates based on the positions of the three vertices.
+				denom = (r_v2.y - r_v3.y) * (r_v1.x - r_v3.x) + (r_v3.x - r_v2.x) * (r_v1.y - r_v3.y);
+				weight_v1 = ((r_v2.y - r_v3.y) * (p.x - r_v3.x) + (r_v3.x - r_v2.x) * (p.y - r_v3.y)) / denom;
+				weight_v2 = ((r_v3.y - r_v1.y) * (p.x - r_v3.x) + (r_v1.x - r_v3.x) * (p.y - r_v3.y)) / denom;
+				weight_v3 = 1.0F - weight_v1 - weight_v2;
+
+				// TODO: Delete
+				// float e1 = (ps.x-r_v1.x)*(r_v2.y-r_v1.y)-(ps.y-r_v1.y)*(r_v2.x-r_v1.x);
+				// float e2 = (ps.x-r_v2.x)*(r_v3.y-r_v2.y)-(ps.y-r_v2.y)*(r_v3.x-r_v2.x);
+				// float e3 = (ps.x-r_v3.x)*(r_v1.y-r_v3.y)-(ps.y-r_v3.y)*(r_v1.x-r_v3.x);
+
+				// TODO: Delete
+				// float w0 = edge_func(v1, v2, p);
+				// float w1 = edge_func(v2, v0, p);
+				// float w2 = edge_func(v0, v1, p);
+
+				// If w1, w2 and w3 are >= 0, we are inside the triangle (or
+				// on an edge, but either way, render the pixel).
+				if(weight_v1 >= 0.0F && weight_v2 >= 0.0F && weight_v3 >= 0.0F) {
+					// Calculate the position in our buffer based on our x and y values.
+					ptr = x + (y * get_target()->get_width());
+
+					// NOTE: Debugging
+					// printf("ptr: %d, x: %d, y: %d\n", ptr, x, y);
+
+					// Calculate the depth value of this pixel.
+					depth = r_v1.z * weight_v1 + r_v2.z * weight_v2 + r_v3.z * weight_v3;
+
+					// If the depth value is less than what is currently in the
+					// depth buffer for this pixel.
+					if(depth < depth_buffer[ptr].r) {
+						// Calculate the world position for this pixel.
+						v = w_v1 * weight_v1 + w_v2 * weight_v2 + w_v3 * weight_v3;
+
+						// Calculate the world normal for this pixel.
+						n = w_n1 * weight_v1 + w_n2 * weight_v2 + w_n3 * weight_v3;
+
+						// Calculate the UV coordinate for this pixel.
+						uv = t_uv1 * weight_v1 + t_uv2 * weight_v2 + t_uv3 * weight_v3;
+
+						// Base diffuse color from material.
+						diffuse = material.diffuse;
+
+						// Sample material texture.
+						if(material.texture != nullptr)
+							diffuse *= material.texture->sample(uv.x, uv.y);
+
+						// Calculate the pixel colour based on the weighted vertex colours.
+						source = calculate_blinn_phong(
+							v,
+							n,
+							diffuse,
+							material.specular,
+							ambient_color,
+							material.shininess,
+							camera_position,
+							lights
+						);
+
+						// Match alpha to diffuse.
+						source.a = diffuse.a;
+
+						// Write color to render target.
+						frame_buffer[ptr] = diffuse;
+
+						// Update the depth buffer with this depth value.
+						depth_buffer[ptr].r = depth;
+					}
+				}
+			}
+		}
+	}
+
+	static float edge_func(const vec2& a, const vec2& b, const vec2& c) {
+		return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
+	}
+
+	static vec4 project_world_vertex(const vec3& v, const mat4& world_to_projection) {
+		vec4 hpv = world_to_projection * vec4(v.x, v.y, v.z, 1);
+		return vec4(hpv.x / hpv.w, hpv.y / hpv.w, hpv.z / hpv.w, hpv.w);
+	}
+
+	static color calculate_blinn_phong(
+		const vec3& position,
+		const vec3& normal,
+		const color& diffuse,
+		const color& specular,
+		const color& ambient,
+		float shininess,
+		const vec3& camera_position,
+		const std::vector<light*>& lights
+	) {
+		int i;
+		color diffuse_sum = color(0, 0, 0);
+		color specular_sum = color(0, 0, 0);
+		float light_w;
+		vec3 light_pos;
+		color light_color;
+		float attenuation;
+		vec3 normal_direction = vec3::normalize(normal);
+		vec3 view_direction = vec3::normalize(camera_position - position);
+		vec3 vert_to_light;
+		float vert_to_light_mag;
+		vec3 light_direction;
+		color diffuse_reflection;
+		color specular_reflection;
+		color ambient_lighting = ambient * diffuse;
+		light* light;
+
+		// Loop through each light source.
+		for(i = 0; i < lights.size(); ++i) {
+			light = lights[i];
+
+			if(light->transform == nullptr)
+				continue;
+
+			// Calculate the light position and colour based on the light properties
+			// light_w is set to 0 if the light is directional, and 1 otherwise.
+			if(light->type == light_mode::DIRECTIONAL) {
+				light_pos = light->transform->get_global_backward();
+				light_w = 0.0F;
+				light_color = light->tint * light->intensity;
+				attenuation = 1.0F;
+			} else {
+				light_pos = light->transform->get_global_position();
+				light_w = 1.0F;
+
+				// For non direcitonal lights, we'll figure out the light
+				// color per pixel, based on the distance from the light
+				// to the pixel.
+				light_color = color(0, 0, 0);
+
+				// Calculate the distance from the light to the pixel, and 1/distance.
+				vert_to_light = light_pos - position;
+				vert_to_light_mag = vert_to_light.magnitude();
+
+				attenuation = 1.0F / vert_to_light_mag;
+
+				// Calculate the colour based on the distance and light range.
+				if(vert_to_light_mag < light->range)
+					light_color *= light->intensity;
+			}
+
+			// Calculate light direction.
+			light_direction = light_pos - (position * light_w);
+
+			// Calculate diffuse lighting.
+			diffuse_reflection = light_color * diffuse * fmaxf(0, vec3::dot(normal_direction, view_direction)) * attenuation;
+
+			// Calculate Specular reflection if the normal is pointing in the
+			// lights direction.
+			if(vec3::dot(normal_direction, light_direction) < 0.0) {
+				specular_reflection = color(0, 0, 0);
+			} else {
+				// Calculate the specular colour using Blinn-Phong lighting
+				specular_reflection = light_color * specular * powf(fmaxf(0.0F, vec3::dot(normal_direction, vec3::normalize(light_direction + view_direction))), shininess * 128) * attenuation;
+			}
+
+			diffuse_sum += diffuse_reflection;
+			specular_sum += specular_reflection;
+		}
+
+		// The final color for this pixel is the sum of the ambient, diffuse and specular.
+		return ambient_lighting + diffuse_sum + specular_sum;
+	}
+
+
+};
+#endif /* SYS_SOFTWARE_GL */
+//********************************************//
+//* Software Renderer                        *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::opengl_1_0 */
+//********************************************//
+//* OpenGL 1.0 Renderer.                     *//
+//********************************************//
+#ifdef SYS_OPENGL_1_0
+class opengl_1_0 : public rge::renderer {
+
+private:
+	#ifdef SYS_WINDOWS
+	gl_device_context_t device = 0;
+	gl_render_context_t render = 0;
+	#endif
+
+public:
+	opengl_1_0() {
+
+	}
+
+	rge::result init(platform* platform) override {
+		#ifdef SYS_WINDOWS
+		windows* winapi = (windows*)platform;
+		device = GetDC(winapi->handle);
+		PIXELFORMATDESCRIPTOR pfd = {
+			sizeof(PIXELFORMATDESCRIPTOR), 1,
+			PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+			PFD_TYPE_RGBA, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			PFD_MAIN_PLANE, 0, 0, 0, 0
+		};
+
+		int pf = 0;
+		if(!(pf = ChoosePixelFormat(device, &pfd)))
+			return rge::FAIL;
+		SetPixelFormat(device, pf, &pfd);
+
+		if(!(render = wglCreateContext(device)))
+			return rge::FAIL;
+		wglMakeCurrent(device, render);
+
+		// Remove Frame cap
+		/*
+		wglSwapInterval = (wglSwapInterval_t*)wglGetProcAddress("wglSwapIntervalEXT");
+		if(wglSwapInterval && !bVSYNC) wglSwapInterval(0);
+		bSync = false;
+		*/
+		#endif
+
+		#ifdef SYS_LINUX
+		
+		#endif
+		
+		#ifdef SYS_MACOSX
+		
+		#endif
+
+		return rge::OK;
+	}
+
+	void clear(color background) override {
+		glClearColor(
+			float(background.r),
+			float(background.g),
+			float(background.b),
+			float(background.a)
+		);
+
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		// TODO: Clear depth.
+		// if(bDepth) glClear(GL_DEPTH_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+	}
+
+	void display() override {
+		#ifdef SYS_WINDOWS
+		SwapBuffers(device);
+		// if(bSync) DwmFlush();
+		#endif
+
+		#ifdef SYS_LINUX
+		// TODO
+		// X11::glXSwapBuffers(olc_Display, *olc_Window);
+		#endif
+
+		#ifdef SYS_MACOSX
+		// TODO
+		// glutSwapBuffers();
+		#endif
+	}
+
+	rge::result draw(
+		const mat4& model_to_world,
+		const std::vector<vec3>& vertices,
+		const std::vector<int>& triangles,
+		const std::vector<vec3>& normals,
+		const std::vector<vec2>& uvs,
+		const material& material
+	) override {
+		// TODO
+		return rge::OK;
+	}
+
+	void draw(const texture& texture, const rect& dest, const rect& src) override {
+		GLfloat vertices[] = {
+			-1, -1,  0,  // bottom left corner
+			-1,  1,  0,  // top left corner
+			 1,  1,  0,  // top right corner
+			 1, -1,  0   // bottom right corner
+		};
+
+		GLubyte indices[] = {
+			0, 1, 2, // first triangle (bottom left - top left - top right)
+			0, 2, 3  // second triangle (bottom left - top right - bottom right)
+		};
+
+		glColor3b(120, 156, 35);
+		glVertexPointer(3, GL_FLOAT, 0, vertices);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
+	}
+};
+#endif /* SYS_OPENGL_1_0 */
+//********************************************//
+//* OpenGL 1.0 Renderer.                     *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* Engine Configuration */
+//********************************************//
+//* Engine Configuration                     *//
+//********************************************//
+void engine::configure() {
+	#ifdef SYS_WINDOWS
+	platform_impl = new windows();
+	#endif
+
+	#ifdef SYS_LINUX
+	plaftrom_impl = new linux();
+	#endif
+
+	#ifdef SYS_MACOSX
+	platform_impl = new macosx();
+	#endif
+
+	#ifdef SYS_SOFTWARE_GL
+	renderer_impl = new software_gl();
+	#endif
+
+	#ifdef SYS_OPENGL_1_0
+	renderer_impl = new opengl_1_0();
+	#endif
+}
+//********************************************//
+//* Engine Configuration                     *//
+//********************************************//
+#pragma endregion
+
 
 } /* namespace rge */
 

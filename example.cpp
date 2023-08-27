@@ -1,8 +1,8 @@
 #define RGE_IMPL
 #define RGE_USE_STB_IMAGE_WRITE
 #define RGE_USE_STB_IMAGE
+#define SYS_OPENGL_1_0
 #include <rge/rge.hpp>
-#include <rge/ecs.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -44,7 +44,6 @@ static model_t* load_obj(const char* fname) {
 	std::string line;
 	std::vector<std::string> comps;
 	std::vector<std::string> face_comps;
-	std::string::size_type prev_pos, pos;
 	while(std::getline(fp_in, line)) {
 		comps.clear();
 		comps = str_split(line, ' ');
@@ -100,9 +99,8 @@ class game : public rge::engine {
 
 private:
     ptr(rge::material) material;
+	rge::renderer* renderer;
     rge::camera* camera;
-    rge::software_3d* renderer;
-    rge::render_target* render;
 	model_t* model;
 
 	float counter;
@@ -110,47 +108,27 @@ private:
 public:
     game() : rge::engine() {
         material = alloc(rge::material)();
-		render = nullptr;
 		camera = new rge::camera();
-        renderer = new rge::software_3d();
+		model = nullptr;
 		counter = 0;
     }
 
     void on_init() override {
-		model = load_obj("tests/cube.obj");
+		renderer = get_renderer();
 
-		// render = get_window()->get_render_target();
-		render = new rge::render_target(320, 200);
+		//model = load_obj("tests/cube.obj");
 
         // camera->set_perspective(60, 1.6F, 1.0F, 1000.0F);
 		camera->set_orthographic(-16, 16, 10, -10, 0.0F, 100.0F);
 		camera->transform->position = rge::vec3(0, 0, -10);
 		camera->transform->rotation = rge::quaternion::identity();
 
-        renderer->set_target(render);
+        // renderer->set_target(render);
         renderer->set_camera(camera);
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
 
 		material->diffuse = rge::color(1, 0, 1);
-        // material->texture = rge::texture::read_from_disk("tests/test.bmp");
-
-		/*
-        model_verts.push_back(rge::vec3(-1,0,0));
-        model_verts.push_back(rge::vec3(0,2,0));
-        model_verts.push_back(rge::vec3(1,0,0));
-
-        model_tris.push_back(0);
-        model_tris.push_back(1);
-        model_tris.push_back(2);
-
-        model_norms.push_back(rge::vec3(0,0,1));
-        model_norms.push_back(rge::vec3(0,0,1));
-        model_norms.push_back(rge::vec3(0,0,1));
-
-        model_uvs.push_back(rge::vec2(0,0));
-        model_uvs.push_back(rge::vec2(0.5F,1));
-        model_uvs.push_back(rge::vec2(1,0));
-		*/
+        material->texture = rge::texture::read_from_disk("tests/test.bmp");
     }
 
 	void on_update(float delta_time) override {
@@ -163,20 +141,20 @@ public:
 	}
 
     void on_render() override {
-		renderer->clear(rge::color(0.4F, 0.4F, 0.4F));
+		renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
+		
+		renderer->draw(*material->texture, rge::rect(0, 0, 16, 16));
 
-		renderer->draw(
-			rge::mat4::trs(rge::vec3(0, 0, 0), rge::quaternion::yaw_pitch_roll(0, 0, 0), rge::vec3(1, 1, 1)),
-			model->vertices,
-			model->triangles,
-			model->normals,
-			model->uvs,
-			*material
-		);
-
-		int width, height;
-		get_window()->get_size(width, height);
-		get_window()->get_compositor()->draw(*render, rge::rect(0, 0, width, height));
+		if(model) {
+			renderer->draw(
+				rge::mat4::trs(rge::vec3(0, 0, 0), rge::quaternion::yaw_pitch_roll(0, 0, 0), rge::vec3(1, 1, 1)),
+				model->vertices,
+				model->triangles,
+				model->normals,
+				model->uvs,
+				*material
+			);
+		}
     }
 };
 
