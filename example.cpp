@@ -1,8 +1,7 @@
 #define RGE_IMPL
 #define RGE_USE_STB_IMAGE_WRITE
 #define RGE_USE_STB_IMAGE
-#define SYS_OPENGL_1_0
-#include <rge.hpp>
+#include "rge.hpp"
 
 #include <iostream>
 #include <fstream>

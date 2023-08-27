@@ -56,7 +56,8 @@ project "example"
         linkoptions {
             "-F /Library/Frameworks",
             "-framework Cocoa",
-            "-framework Foundation"
+            "-framework GLUT",
+            "-framework OpenGL"
         }
 	
 	filter "system:linux"

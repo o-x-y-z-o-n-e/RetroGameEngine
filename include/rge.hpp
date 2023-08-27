@@ -714,6 +714,9 @@ public:
 	virtual void poll_events() = 0;
 	virtual void refresh_window() = 0;
 
+public:
+	virtual ~platform() {}
+
 protected:
 	platform() {}
 };
@@ -767,6 +770,9 @@ public:
 
 public:
 	virtual void on_window_resize(int width, int height) {}
+
+public:
+	virtual ~renderer() {}
 
 protected:
 	renderer();
@@ -862,9 +868,11 @@ class linux;
 #endif /* SYS_LINUX */
 
 #ifdef SYS_MACOSX
+#define GL_SILENCE_DEPRECATION
+#include <GLUT/glut.h>
 #include <objc/runtime.h>
 #include <objc/message.h>
-#include <Carbon/Carbon.h>
+#include <objc/NSObjCRuntime.h>
 class macosx;
 #endif /* SYS_MACOSX */
 //********************************************//
@@ -899,7 +907,9 @@ typedef HGLRC gl_render_context_t;
 #endif /* SYS_LINUX */
 
 #ifdef SYS_MACOSX
-
+#include <OpenGL/OpenGL.h>
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
 #endif /* SYS_MACOSX */
 
 class opengl_1_0;
@@ -2272,6 +2282,7 @@ texture* render_target::get_depth_buffer() const {
 renderer::renderer() {
 	input_camera = nullptr;
 	output_render = nullptr;
+	ambient_color = color(0,0,0);
 }
 
 void renderer::set_camera(camera* camera) {
@@ -2460,7 +2471,66 @@ class linux : public platform {
 //********************************************//
 #ifdef SYS_MACOSX
 class macosx : public platform {
+private:
+	int window_width;
+	int window_height;
 
+public:
+	macosx() {
+		window_width = 0;
+		window_height = 0;
+	}
+
+	rge::result init(rge::engine* engine) override {
+		Class GLUTViewClass = objc_getClass("GLUTView");
+
+		// SEL scrollWheelSel = sel_registerName("scrollWheel:");
+		// bool resultAddMethod = class_addMethod(GLUTViewClass, scrollWheelSel, (IMP)scrollWheelUpdate, "v@:@");
+		// assert(resultAddMethod);
+
+		int argc = 0;
+		char* argv[1] = { (char*)"" };
+		glutInit(&argc, argv);
+		glutInitWindowPosition(0, 0);
+		glutInitWindowSize(512, 512);
+		glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGBA);
+
+		// TODO: Key mapping
+		
+		return rge::OK;
+	}
+
+	rge::result create_window() override {
+		// Creates the window and the OpenGL context for it.
+		glutCreateWindow("OneLoneCoder.com - Pixel Game Engine");
+		glEnable(GL_TEXTURE_2D); // Turn on texturing.
+		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+		if(false) {
+			window_width = glutGet(GLUT_SCREEN_WIDTH);
+			window_height = glutGet(GLUT_SCREEN_HEIGHT);
+			glutFullScreen();
+		} else {
+			if(window_width > glutGet(GLUT_SCREEN_WIDTH) || window_height > glutGet(GLUT_SCREEN_HEIGHT)) {
+				rge::log::error("The specified window dimensions do not fit on your screen.");
+				return rge::FAIL;
+			}
+			glutReshapeWindow(window_width, window_height - 1);
+		}
+		return rge::OK;
+	}
+
+	void set_window_title(const char* title) override {
+		glutSetWindowTitle(title);
+	}
+
+	void poll_events() override {
+		// TODO
+	}
+
+	void refresh_window() override {
+		// TODO
+	}
 };
 #endif /* SYS_MACOSX */
 //********************************************//
