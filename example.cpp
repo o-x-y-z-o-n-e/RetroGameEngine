@@ -101,7 +101,7 @@ class game : public rge::engine {
 private:
     ptr(rge::material) material;
     rge::camera* camera;
-    rge::renderer3d* renderer;
+    rge::software_3d* renderer;
     rge::render_target* render;
 	model_t* model;
 
@@ -112,7 +112,7 @@ public:
         material = alloc(rge::material)();
 		render = nullptr;
 		camera = new rge::camera();
-        renderer = new rge::renderer3d();
+        renderer = new rge::software_3d();
 		counter = 0;
     }
 

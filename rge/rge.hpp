@@ -42,8 +42,8 @@ class texture;
 class material;
 class render_target;
 class renderer;
-class renderer2d;
-class renderer3d;
+class software_2d;
+class software_3d;
 class window;
 
 enum result { FAIL = 0, OK = 1 };
@@ -690,14 +690,14 @@ protected:
 #pragma endregion
 
 
-#pragma region /* rge::renderer2d */
+#pragma region /* rge::renderer_2d */
 //********************************************//
 //* Software Renderer 2D class.              *//
 //********************************************//
-class renderer2d : public renderer {
+class software_2d : public renderer {
 public:
-	renderer2d();
-	virtual ~renderer2d();
+	software_2d();
+	virtual ~software_2d();
 
 public:
 	void draw(const texture& texture, const rect& dest);
@@ -711,14 +711,14 @@ public:
 #pragma endregion
 
 
-#pragma region /* rge::renderer3d */
+#pragma region /* rge::renderer_3d */
 //********************************************//
 //* Software Renderer 3D class.              *//
 //********************************************//
-class renderer3d : public renderer {
+class software_3d : public renderer {
 public:
-	renderer3d();
-	virtual ~renderer3d();
+	software_3d();
+	virtual ~software_3d();
 
 public:
 	void set_camera(camera* camera);
@@ -786,7 +786,7 @@ public:
 	void poll_events();
 	void refresh();
 	render_target* get_render_target() const;
-	renderer2d* get_compositor() const;
+	software_2d* get_compositor() const;
 
 private:
 	window(engine* core);
@@ -795,7 +795,7 @@ private:
 	static window* instance;
 	engine* core;
 	render_target* target;
-	renderer2d* compositor;
+	software_2d* compositor;
 };
 //********************************************//
 //* Window class.                            *//
@@ -2194,15 +2194,15 @@ void renderer::clear(color background) {
 //********************************************//
 //* Software Renderer 2D class.              *//
 //********************************************//
-renderer2d::renderer2d() : renderer() {
+software_2d::software_2d() : renderer() {
 
 }
 
-renderer2d::~renderer2d() {
+software_2d::~software_2d() {
 
 }
 
-void renderer2d::draw(const texture& texture, const rect& dest) {
+void software_2d::draw(const texture& texture, const rect& dest) {
 	if(!texture.get_on_cpu()) return;
 
 	int x, y, ptr;
@@ -2238,16 +2238,16 @@ void renderer2d::draw(const texture& texture, const rect& dest) {
 	}
 }
 
-void renderer2d::draw(const render_target& render, const rect& dest) {
+void software_2d::draw(const render_target& render, const rect& dest) {
 	draw(*render.get_frame_buffer(), dest);
 }
 
-void renderer2d::draw(const texture& texture, const rect& dest, const rect& src) {
+void software_2d::draw(const texture& texture, const rect& dest, const rect& src) {
 	if(!texture.get_on_cpu()) return;
 	// TODO
 }
 
-void renderer2d::draw(const render_target& render, const rect& dest, const rect& src) {
+void software_2d::draw(const render_target& render, const rect& dest, const rect& src) {
 	draw(*render.get_frame_buffer(), dest, src);
 }
 //********************************************//
@@ -2260,23 +2260,23 @@ void renderer2d::draw(const render_target& render, const rect& dest, const rect&
 //********************************************//
 //* Software Renderer 3D class.              *//
 //********************************************//
-renderer3d::renderer3d() : renderer() {
+software_3d::software_3d() : renderer() {
 	world_camera = nullptr;
 }
 
-renderer3d::~renderer3d() {
+software_3d::~software_3d() {
 
 }
 
-void renderer3d::set_camera(camera* camera) {
+void software_3d::set_camera(camera* camera) {
 	this->world_camera = camera;
 }
 
-void renderer3d::set_ambience(const color& ambient_color) {
+void software_3d::set_ambience(const color& ambient_color) {
 	ambience = ambient_color;
 }
 
-rge::result renderer3d::draw(
+rge::result software_3d::draw(
 	const mat4& model_to_world,
 	const std::vector<vec3>& vertices,
 	const std::vector<int>& triangles,
@@ -2417,7 +2417,7 @@ rge::result renderer3d::draw(
 	return rge::OK;
 }
 
-void renderer3d::rasterize_triangle(
+void software_3d::rasterize_triangle(
 	const vec4& r_v1,
 	const vec4& r_v2,
 	const vec4& r_v3,
@@ -2561,16 +2561,16 @@ void renderer3d::rasterize_triangle(
 	}
 }
 
-float renderer3d::edge_func(const vec2& a, const vec2& b, const vec2& c) {
+float software_3d::edge_func(const vec2& a, const vec2& b, const vec2& c) {
 	return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
 }
 
-vec4 renderer3d::project_world_vertex(const vec3& v, const mat4& world_to_projection) {
+vec4 software_3d::project_world_vertex(const vec3& v, const mat4& world_to_projection) {
 	vec4 hpv = world_to_projection * vec4(v.x, v.y, v.z, 1);
 	return vec4(hpv.x / hpv.w, hpv.y / hpv.w, hpv.z / hpv.w, hpv.w);
 }
 
-color renderer3d::calculate_blinn_phong(
+color software_3d::calculate_blinn_phong(
 	const vec3& position,
 	const vec3& normal,
 	const color& diffuse,
@@ -3068,14 +3068,14 @@ render_target* window::get_render_target() const {
 	return target;
 }
 
-renderer2d* window::get_compositor() const {
+software_2d* window::get_compositor() const {
 	return compositor;
 }
 
 window::window(engine* core) {
 	this->core = core;
 	this->target = new render_target();
-	this->compositor = new renderer2d();
+	this->compositor = new software_2d();
 	this->compositor->set_target(this->target);
 }
 //********************************************//
