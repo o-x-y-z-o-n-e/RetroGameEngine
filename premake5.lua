@@ -5,12 +5,15 @@ workspace "retro_game_engine"
     }
 	
 	filter "system:windows"
+        defines "SYS_WINDOWS"
 		architecture "x86_64"
 	
 	filter "system:macosx"
+        defines "SYS_MACOSX"
 		architecture "arm64"
     
     filter "system:linux"
+        defines "SYS_LINUX"
 		architecture "x86_64"
         toolset "clang"
 		
@@ -24,6 +27,9 @@ project "example"
     language "C++"
     cppdialect "C++11"
     location "./"
+
+    -- defines "SYS_SOFTWARE_GL"
+    defines "SYS_OPENGL_1_0"
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("tmp/" .. outputdir .. "/%{prj.name}")
@@ -41,13 +47,11 @@ project "example"
     }
 	
 	filter "system:windows"
-		defines "SYS_WINDOWS"
 		staticruntime "On"
 		systemversion "latest"
 		entrypoint "mainCRTStartup"
 	
 	filter "system:macosx"
-		defines "SYS_MACOSX"
         buildoptions {
             "-F /Library/Frameworks"
         }
@@ -58,7 +62,6 @@ project "example"
         }
 	
 	filter "system:linux"
-		defines "SYS_LINUX"
 		links {
             "m"
         }

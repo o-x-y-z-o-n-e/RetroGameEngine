@@ -799,6 +799,10 @@ int main(int argc, char** argv);
 #define RGE_PLATFORM_SET
 #endif
 
+#ifndef RGE_PLATFORM_SET
+#error No platform set!
+#endif
+
 #ifdef SYS_SOFTWARE_GL
 #ifdef RGE_RENDERER_SET
 #error Multiple renderers set!
@@ -811,6 +815,10 @@ int main(int argc, char** argv);
 #error Multiple renderers set!
 #endif
 #define RGE_RENDERER_SET
+#endif
+
+#ifndef RGE_RENDERER_SET
+#error No renderer set!
 #endif
 //********************************************//
 //* System Configuration Check               *//
