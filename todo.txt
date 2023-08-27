@@ -1,5 +1,5 @@
 input
-better logging
+obj loading
 fix quaternions + camera view + perspective matrix
 opengl
 multithreaded command queue

@@ -10,6 +10,7 @@
 #define RGE_API
 
 #include <cstdint>
+#include <cstdarg>
 #include <cmath>
 #include <cstring>
 #include <string>
@@ -350,9 +351,9 @@ namespace math {
 //* Logging Module.                          *//
 //********************************************//
 namespace log {
-	void info(const std::string& msg);
-	void warning(const std::string& msg);
-	void error(const std::string& msg);
+	void info(const char* msg, ...);
+	void warning(const char* msg, ...);
+	void error(const char* msg, ...);
 }
 //********************************************//
 //* Logging Module.                          *//
@@ -1455,15 +1456,44 @@ float math::inverse_lerp(float a, float b, float v) {
 //********************************************//
 //* Logging Module.                          *//
 //********************************************//
-void log::info(const std::string& msg) {
-	std::cout << "[INFO] " << msg << std::endl;
+namespace log { const int BUFFER_SIZE = 512; }
+
+void log::info(const char* msg, ...) {
+	char buffer[log::BUFFER_SIZE];
+    std::va_list args;
+    va_start(args, msg);
+    #ifdef SYS_WINDOWS
+	vsprintf_s(buffer, log::BUFFER_SIZE, format, args);
+	#else
+	vsprintf(buffer, msg, args);
+	#endif
+    va_end(args);
+	std::cout << "[INFO] " << buffer << std::endl;
 }
 
-void log::warning(const std::string& msg) {
+void log::warning(const char* msg, ...) {
+	char buffer[log::BUFFER_SIZE];
+    std::va_list args;
+    va_start(args, msg);
+    #ifdef SYS_WINDOWS
+	vsprintf_s(buffer, log::BUFFER_SIZE, format, args);
+	#else
+	vsprintf(buffer, msg, args);
+	#endif
+    va_end(args);
 	std::cout << "[WARNING] " << msg << std::endl;
 }
 
-void log::error(const std::string& msg) {
+void log::error(const char* msg, ...) {
+	char buffer[log::BUFFER_SIZE];
+    std::va_list args;
+    va_start(args, msg);
+    #ifdef SYS_WINDOWS
+	vsprintf_s(buffer, log::BUFFER_SIZE, format, args);
+	#else
+	vsprintf(buffer, msg, args);
+	#endif
+    va_end(args);
 	std::cout << "[ERROR] " << msg << std::endl;
 }
 //********************************************//
