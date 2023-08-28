@@ -3118,8 +3118,8 @@ public:
 		#endif
 
 		#ifdef SYS_MACOSX
-		// TODO
-		// glutSwapBuffers();
+		glFlush();
+		glutSwapBuffers();
 		#endif
 	}
 
