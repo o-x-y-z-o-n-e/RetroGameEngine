@@ -901,17 +901,13 @@ class software_gl;
 
 #ifdef SYS_OPENGL_1_0
 #ifdef SYS_WINDOWS
-
 #include <dwmapi.h>
 #include <GL/gl.h>
-
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "opengl32.lib")
-
 typedef HDC gl_device_context_t;
 typedef HGLRC gl_render_context_t;
-
 #endif /* SYS_WINDOWS */
 
 #ifdef SYS_LINUX
@@ -928,6 +924,17 @@ class opengl_1_0;
 #endif /* SYS_OPENGL_1_0 */
 
 #ifdef SYS_OPENGL_3_3
+#ifdef SYS_WINDOWS
+#include <dwmapi.h>
+#include <GL/gl.h>
+#pragma comment(lib, "dwmapi.lib")
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "opengl32.lib")
+typedef HDC gl_device_context_t;
+typedef HGLRC gl_render_context_t;
+#define OPENGL_LOAD(t, n) (t*)wglGetProcAddress(#n)
+#define CALLSTYLE __stdcall
+#endif /* SYS_WINDOWS */
 
 class opengl_3_3;
 #endif /* SYS_OPENGL_3_3 */
@@ -3195,7 +3202,67 @@ public:
 //* OpenGL 3.3 Renderer                      *//
 //********************************************//
 #ifdef SYS_OPENGL_3_3
+typedef char GLchar;
+typedef ptrdiff_t GLsizeiptr;
+typedef GLuint CALLSTYLE locCreateShader_t(GLenum type);
+typedef GLuint CALLSTYLE locCreateProgram_t(void);
+typedef void CALLSTYLE locDeleteShader_t(GLuint shader);
+typedef void CALLSTYLE locCompileShader_t(GLuint shader);
+typedef void CALLSTYLE locLinkProgram_t(GLuint program);
+typedef void CALLSTYLE locDeleteProgram_t(GLuint program);
+typedef void CALLSTYLE locAttachShader_t(GLuint program, GLuint shader);
+typedef void CALLSTYLE locBindBuffer_t(GLenum target, GLuint buffer);
+typedef void CALLSTYLE locBufferData_t(GLenum target, GLsizeiptr size, const void* data, GLenum usage);
+typedef void CALLSTYLE locGenBuffers_t(GLsizei n, GLuint* buffers);
+typedef void CALLSTYLE locVertexAttribPointer_t(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer);
+typedef void CALLSTYLE locEnableVertexAttribArray_t(GLuint index);
+typedef void CALLSTYLE locUseProgram_t(GLuint program);
+typedef void CALLSTYLE locBindVertexArray_t(GLuint array);
+typedef void CALLSTYLE locGenVertexArrays_t(GLsizei n, GLuint* arrays);
+typedef void CALLSTYLE locGetShaderInfoLog_t(GLuint shader, GLsizei bufSize, GLsizei* length, GLchar* infoLog);
+typedef GLint CALLSTYLE locGetUniformLocation_t(GLuint program, const GLchar* name);
+typedef void CALLSTYLE locUniform1f_t(GLint location, GLfloat v0);
+typedef void CALLSTYLE locUniform1i_t(GLint location, GLint v0);
+typedef void CALLSTYLE locUniform2fv_t(GLint location, GLsizei count, const GLfloat* value);
+typedef void CALLSTYLE locActiveTexture_t(GLenum texture);
+typedef void CALLSTYLE locGenFrameBuffers_t(GLsizei n, GLuint* ids);
+typedef void CALLSTYLE locBindFrameBuffer_t(GLenum target, GLuint fb);
+typedef GLenum CALLSTYLE locCheckFrameBufferStatus_t(GLenum target);
+typedef void CALLSTYLE locDeleteFrameBuffers_t(GLsizei n, const GLuint* fbs);
+typedef void CALLSTYLE locFrameBufferTexture2D_t(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+typedef void CALLSTYLE locDrawBuffers_t(GLsizei n, const GLenum* bufs);
+typedef void CALLSTYLE locBlendFuncSeparate_t(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+#ifdef SYS_WINDOWS
+typedef void CALLSTYLE locSwapInterval_t(GLsizei n);
+#endif /* SYS_WINDOWS */
+
 class opengl_3_3 : public rge::renderer {
+private:
+	#ifdef SYS_WINDOWS
+	gl_device_context_t device = 0;
+	gl_render_context_t render = 0;
+	#endif
+
+	/*
+	locCreateShader_t* glCreateShader = nullptr;
+	locShaderSource_t* glShaderSource = nullptr;
+	locCompileShader_t* glCompileShader = nullptr;
+	locDeleteShader_t* glDeleteShader = nullptr;
+	locCreateProgram_t* glCreateProgram = nullptr;
+	locDeleteProgram_t* glDeleteProgram = nullptr;
+	locLinkProgram_t* glLinkProgram = nullptr;
+	locAttachShader_t* glAttachShader = nullptr;
+	*/
+	locBindBuffer_t* glBindBuffer = nullptr;
+	locBufferData_t* glBufferData = nullptr;
+	locGenBuffers_t* glGenBuffers = nullptr;
+	locVertexAttribPointer_t* glVertexAttribPointer = nullptr;
+	locEnableVertexAttribArray_t* glEnableVertexAttribArray = nullptr;
+	locUseProgram_t* glUseProgram = nullptr;
+	locBindVertexArray_t* glBindVertexArray = nullptr;
+	locGenVertexArrays_t* glGenVertexArrays = nullptr;
+	locSwapInterval_t* glSwapInterval = nullptr;
+	locGetShaderInfoLog_t* glGetShaderInfoLog = nullptr;
 
 public:
 	opengl_3_3() {
@@ -3204,7 +3271,30 @@ public:
 
 	rge::result init(platform* platform) override {
 		#ifdef SYS_WINDOWS
-				
+		windows* winapi = (windows*)platform;
+		device = GetDC(winapi->handle);
+		PIXELFORMATDESCRIPTOR pfd = {
+			sizeof(PIXELFORMATDESCRIPTOR), 1,
+			PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+			PFD_TYPE_RGBA, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			PFD_MAIN_PLANE, 0, 0, 0, 0
+		};
+
+		int pf = 0;
+		if(!(pf = ChoosePixelFormat(device, &pfd)))
+			return rge::FAIL;
+		SetPixelFormat(device, pf, &pfd);
+
+		if(!(render = wglCreateContext(device)))
+			return rge::FAIL;
+		wglMakeCurrent(device, render);
+
+		// Remove Frame cap
+		/*
+		wglSwapInterval = (wglSwapInterval_t*)wglGetProcAddress("wglSwapIntervalEXT");
+		if(wglSwapInterval && !bVSYNC) wglSwapInterval(0);
+		bSync = false;
+		*/
 		#endif
 		
 		#ifdef SYS_LINUX
@@ -3214,6 +3304,14 @@ public:
 		#ifdef SYS_MACOSX
 		
 		#endif
+
+		glBindBuffer = OPENGL_LOAD(locBindBuffer_t, glBindBuffer);
+		glBufferData = OPENGL_LOAD(locBufferData_t, glBufferData);
+		glGenBuffers = OPENGL_LOAD(locGenBuffers_t, glGenBuffers);
+		glVertexAttribPointer = OPENGL_LOAD(locVertexAttribPointer_t, glVertexAttribPointer);
+		glEnableVertexAttribArray = OPENGL_LOAD(locEnableVertexAttribArray_t, glEnableVertexAttribArray);
+		glUseProgram = OPENGL_LOAD(locUseProgram_t, glUseProgram);
+		glGetShaderInfoLog = OPENGL_LOAD(locGetShaderInfoLog_t, glGetShaderInfoLog);
 
 		return rge::OK;
 	}
@@ -3228,7 +3326,18 @@ public:
 	}
 
 	void clear(color background) override {
-		// TODO
+		glClearColor(
+			float(background.r),
+			float(background.g),
+			float(background.b),
+			float(background.a)
+		);
+
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		// TODO: Clear depth.
+		// if(bDepth) glClear(GL_DEPTH_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
 	}
 
 	static void convert_matrix(GLfloat* gl, const mat4& m) {
@@ -3237,7 +3346,9 @@ public:
 
 	void display() override {
 		#ifdef SYS_WINDOWS
-				
+		glFlush();
+		SwapBuffers(device);
+		// if(bSync) DwmFlush();
 		#endif
 		
 		#ifdef SYS_LINUX
@@ -3267,8 +3378,7 @@ public:
 	}
 
 	void on_window_resized(int width, int height) override {
-		// TODO
-		// glViewport(0, 0, width, height);
+		glViewport(0, 0, width, height);
 	}
 };
 #endif /* SYS_OPENGL_3_3 */
