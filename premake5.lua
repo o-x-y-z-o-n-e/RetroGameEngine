@@ -30,12 +30,13 @@ project "example"
 
     -- defines "SYS_SOFTWARE_GL"
     defines "SYS_OPENGL_1_0"
+    -- defines "SYS_OPENGL_3_3"
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("tmp/" .. outputdir .. "/%{prj.name}")
 
     files {
-        "%{prj.location}/rge/rge.hpp",
+        "%{prj.location}/include/rge.hpp",
 		"%{prj.location}/example.cpp"
     }
 

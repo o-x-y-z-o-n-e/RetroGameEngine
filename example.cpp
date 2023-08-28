@@ -94,6 +94,28 @@ static model_t* load_obj(const char* fname) {
 	return mdl;
 }
 
+static model_t* load_triangle() {
+	model_t* mdl = new model_t;
+
+	mdl->vertices.push_back(rge::vec3(-1, -1, 0));
+	mdl->vertices.push_back(rge::vec3(0, 1, 0));
+	mdl->vertices.push_back(rge::vec3(1, -1, 0));
+
+	mdl->normals.push_back(rge::vec3(0, 0, 1));
+	mdl->normals.push_back(rge::vec3(0, 0, 1));
+	mdl->normals.push_back(rge::vec3(0, 0, 1));
+
+	mdl->triangles.push_back(0);
+	mdl->triangles.push_back(1);
+	mdl->triangles.push_back(2);
+
+	mdl->uvs.push_back(rge::vec2(0, 0));
+	mdl->uvs.push_back(rge::vec2(0.5F, 1.0F));
+	mdl->uvs.push_back(rge::vec2(1, 0));
+
+	return mdl;
+}
+
 class game : public rge::engine {
 
 private:
@@ -101,6 +123,7 @@ private:
 	rge::renderer* renderer;
     rge::camera* camera;
 	model_t* model;
+	model_t* triangle;
 
 	float counter;
 
@@ -116,10 +139,11 @@ public:
 		renderer = get_renderer();
 
 		//model = load_obj("tests/cube.obj");
+		triangle = load_triangle();
 
         // camera->set_perspective(60, 1.6F, 1.0F, 1000.0F);
 		camera->set_orthographic(-16, 16, 10, -10, 0.0F, 100.0F);
-		camera->transform->position = rge::vec3(0, 0, -10);
+		camera->transform->position = rge::vec3(0, 0, 0);
 		camera->transform->rotation = rge::quaternion::identity();
 
         // renderer->set_target(render);
@@ -142,15 +166,15 @@ public:
     void on_render() override {
 		renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
 		
-		renderer->draw(*material->texture, rge::rect(0, 0, 16, 16));
+		// renderer->draw(*material->texture, rge::rect(0, 0, 16, 16));
 
-		if(model) {
+		if(triangle) {
 			renderer->draw(
-				rge::mat4::trs(rge::vec3(0, 0, 0), rge::quaternion::yaw_pitch_roll(0, 0, 0), rge::vec3(1, 1, 1)),
-				model->vertices,
-				model->triangles,
-				model->normals,
-				model->uvs,
+				rge::mat4::trs(rge::vec3(0, 0, 2), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
+				triangle->vertices,
+				triangle->triangles,
+				triangle->normals,
+				triangle->uvs,
 				*material
 			);
 		}

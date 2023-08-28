@@ -1,5 +1,5 @@
 ==CURRENT==
-	windows + opengl_1_0
+	[windows & opengl_1_0] + texture render
 	windows + software_gl
 	macosx + opengl_1_0
 	macosx + software_gl

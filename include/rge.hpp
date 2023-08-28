@@ -739,6 +739,8 @@ public:
 
 public:
 	virtual rge::result init(platform* platform) = 0;
+	virtual render_target* create_render_target(int width, int height) = 0;
+	virtual void free_render_target(render_target* target) = 0;
 	virtual void clear(color background) = 0;
 	virtual void display() = 0;
 	virtual rge::result draw(
@@ -769,7 +771,7 @@ public:
 	}
 
 public:
-	virtual void on_window_resize(int width, int height) {}
+	virtual void on_window_resized(int width, int height) {}
 
 public:
 	virtual ~renderer() {}
@@ -839,6 +841,13 @@ int main(int argc, char** argv);
 #endif
 
 #ifdef SYS_OPENGL_1_0
+#ifdef RGE_RENDERER_SET
+#error Multiple renderers set!
+#endif
+#define RGE_RENDERER_SET
+#endif
+
+#ifdef SYS_OPENGL_3_3
 #ifdef RGE_RENDERER_SET
 #error Multiple renderers set!
 #endif
@@ -917,6 +926,11 @@ typedef HGLRC gl_render_context_t;
 
 class opengl_1_0;
 #endif /* SYS_OPENGL_1_0 */
+
+#ifdef SYS_OPENGL_3_3
+
+class opengl_3_3;
+#endif /* SYS_OPENGL_3_3 */
 //********************************************//
 //* Renderer Dependancies                    *//
 //********************************************//
@@ -2013,13 +2027,13 @@ void camera::set_orthographic(float left_plane, float right_plane, float top_pla
 	projection = mat4::zero();
 	projection.m[0][0] = 2.0F / (right_plane - left_plane);
 	projection.m[1][1] = 2.0F / (top_plane - bottom_plane);
-	projection.m[2][2] = 1.0F / (far_plane - near_plane);
-	// projection.m[2][2] = 2.0F / (far_plane - near_plane);
+	// projection.m[2][2] = 1.0F / (far_plane - near_plane);
+	projection.m[2][2] = 2.0F / (far_plane - near_plane);
 
 	projection.m[0][3] = -((right_plane + left_plane) / (right_plane - left_plane));
 	projection.m[1][3] = -((top_plane + bottom_plane) / (top_plane - bottom_plane));
-	projection.m[2][3] = near_plane / (near_plane - far_plane);
-	// projection.m[2][3] = -((far_plane + near_plane) / (far_plane - near_plane));
+	// projection.m[2][3] = near_plane / (near_plane - far_plane);
+	projection.m[2][3] = -((far_plane + near_plane) / (far_plane - near_plane));
 
 	projection.m[3][3] = 1.0F;
 }
@@ -2425,7 +2439,7 @@ public:
 			}
 
 			case WM_SIZE: {
-				engine_instance->get_renderer()->on_window_resize(LOWORD(lParam), HIWORD(lParam));
+				engine_instance->get_renderer()->on_window_resized(LOWORD(lParam), HIWORD(lParam)); // TODO: Change to proper event propagation.
 				break;
 			}
 
@@ -2627,12 +2641,12 @@ public:
 			proj_v3 = project_world_vertex(world_v3, world_to_projection);
 
 			// Cheap hack: convert camera space z from [-1, 1] to [0, 1]
-			// proj_v1.z /= 2.0F;
-			// proj_v1.z += 0.5F;
-			// proj_v2.z /= 2.0F;
-			// proj_v2.z += 0.5F;
-			// proj_v3.z /= 2.0F;
-			// proj_v3.z += 0.5F;
+			proj_v1.z /= 2.0F;
+			proj_v1.z += 0.5F;
+			proj_v2.z /= 2.0F;
+			proj_v2.z += 0.5F;
+			proj_v3.z /= 2.0F;
+			proj_v3.z += 0.5F;
 
 			// NOTE: Debugging
 			// printf("p1x: %f, p1y: %f, p1z: %f\n", proj_v1.x, proj_v1.y, proj_v1.z);
@@ -3000,11 +3014,10 @@ private:
 
 #pragma region /* rge::opengl_1_0 */
 //********************************************//
-//* OpenGL 1.0 Renderer.                     *//
+//* OpenGL 1.0 Renderer                      *//
 //********************************************//
 #ifdef SYS_OPENGL_1_0
 class opengl_1_0 : public rge::renderer {
-
 private:
 	#ifdef SYS_WINDOWS
 	gl_device_context_t device = 0;
@@ -3055,6 +3068,17 @@ public:
 		return rge::OK;
 	}
 
+	render_target* create_render_target(int width, int height) override {
+		// NOT: Feature not supported.
+		rge::log::error("Render targets not supported with OpenGL 1.0!");
+		return nullptr;
+	}
+
+	void free_render_target(render_target* target) override {
+		// NOT: Feature not supported.
+		rge::log::error("Render targets not supported with OpenGL 1.0!");
+	}
+
 	void clear(color background) override {
 		glClearColor(
 			float(background.r),
@@ -3070,8 +3094,13 @@ public:
 		glClear(GL_DEPTH_BUFFER_BIT);
 	}
 
+	static void convert_matrix(GLfloat* gl, const mat4& m) {
+		for(int i = 0; i < 16; ++i) gl[i] = m.m[i % 4][i / 4];
+	}
+
 	void display() override {
 		#ifdef SYS_WINDOWS
+		glFlush();
 		SwapBuffers(device);
 		// if(bSync) DwmFlush();
 		#endif
@@ -3095,7 +3124,40 @@ public:
 		const std::vector<vec2>& uvs,
 		const material& material
 	) override {
-		// TODO
+		int i;
+		int v;
+		vec3 vertex;
+		vec3 normal;
+		GLfloat gl_m[16];
+		
+		convert_matrix(gl_m, input_camera->get_view_matrix());
+		glMatrixMode(GL_MODELVIEW);
+		glLoadMatrixf(gl_m);
+
+		convert_matrix(gl_m, input_camera->get_projection_matrix());
+		glMatrixMode(GL_PROJECTION);
+		glLoadMatrixf(gl_m);
+
+		glBegin(GL_TRIANGLES);
+		for(i = 0; i < triangles.size(); i++) {
+			v = triangles[i];
+
+			if(v < vertices.size()) {
+				vertex = model_to_world.multiply_point_3x4(vertices[v]);
+				glVertex3f(vertex.x, vertex.y, vertex.z);
+			}
+
+			if(v < normals.size()) {
+				normal = model_to_world.multiply_vector(normals[v]);
+				glNormal3f(normal.x, normal.y, normal.z);
+			}
+
+			if(v < uvs.size()) {
+				glTexCoord2f(uvs[v].x, uvs[v].y);
+			}
+		}
+		glEnd();
+
 		return rge::OK;
 	}
 
@@ -3116,10 +3178,102 @@ public:
 		glVertexPointer(3, GL_FLOAT, 0, vertices);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
 	}
+
+	void on_window_resized(int width, int height) override {
+		glViewport(0, 0, width, height);
+	}
 };
 #endif /* SYS_OPENGL_1_0 */
 //********************************************//
-//* OpenGL 1.0 Renderer.                     *//
+//* OpenGL 1.0 Renderer                      *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::opengl_3_3 */
+//********************************************//
+//* OpenGL 3.3 Renderer                      *//
+//********************************************//
+#ifdef SYS_OPENGL_3_3
+class opengl_3_3 : public rge::renderer {
+
+public:
+	opengl_3_3() {
+
+	}
+
+	rge::result init(platform* platform) override {
+		#ifdef SYS_WINDOWS
+				
+		#endif
+		
+		#ifdef SYS_LINUX
+		
+		#endif
+		
+		#ifdef SYS_MACOSX
+		
+		#endif
+
+		return rge::OK;
+	}
+
+	render_target* create_render_target(int width, int height) override {
+		// TODO
+		return nullptr;
+	}
+
+	void free_render_target(render_target* target) override {
+		// TODO
+	}
+
+	void clear(color background) override {
+		// TODO
+	}
+
+	static void convert_matrix(GLfloat* gl, const mat4& m) {
+		for(int i = 0; i < 16; ++i) gl[i] = m.m[i % 4][i / 4];
+	}
+
+	void display() override {
+		#ifdef SYS_WINDOWS
+				
+		#endif
+		
+		#ifdef SYS_LINUX
+		
+		#endif
+		
+		#ifdef SYS_MACOSX
+		
+		#endif
+	}
+
+	rge::result draw(
+		const mat4& model_to_world,
+		const std::vector<vec3>& vertices,
+		const std::vector<int>& triangles,
+		const std::vector<vec3>& normals,
+		const std::vector<vec2>& uvs,
+		const material& material
+	) override {
+		// TODO
+
+		return rge::OK;
+	}
+
+	void draw(const texture& texture, const rect& dest, const rect& src) override {
+		// TODO
+	}
+
+	void on_window_resized(int width, int height) override {
+		// TODO
+		// glViewport(0, 0, width, height);
+	}
+};
+#endif /* SYS_OPENGL_3_3 */
+//********************************************//
+//* OpenGL 3.3 Renderer                      *//
 //********************************************//
 #pragma endregion
 
@@ -3147,6 +3301,14 @@ void engine::configure() {
 
 	#ifdef SYS_OPENGL_1_0
 	renderer_impl = new opengl_1_0();
+	#endif
+
+	#ifdef SYS_OPENGL_2_1
+	renderer_impl = new opengl_2_1();
+	#endif
+
+	#ifdef SYS_OPENGL_3_3
+	renderer_impl = new opengl_3_3();
 	#endif
 }
 //********************************************//
