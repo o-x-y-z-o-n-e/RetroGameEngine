@@ -860,6 +860,7 @@ int main(int argc, char** argv);
 //********************************************//
 #ifdef SYS_WINDOWS
 #include <windows.h>
+#pragma comment(lib, "user32.lib")
 class windows;
 #endif /* SYS_WINDOWS */
 
@@ -896,6 +897,8 @@ class software_gl;
 #include <GL/gl.h>
 
 #pragma comment(lib, "dwmapi.lib")
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "opengl32.lib")
 
 typedef HDC gl_device_context_t;
 typedef HGLRC gl_render_context_t;
@@ -2312,10 +2315,6 @@ render_target* renderer::get_target() const {
 //* Windows platform class.                  *//
 //********************************************//
 #ifdef SYS_WINDOWS
-#pragma comment(lib, "user32.lib")		// Visual Studio Only
-#pragma comment(lib, "gdi32.lib")		// For other Windows Compilers please add
-#pragma comment(lib, "opengl32.lib")	// these libs to your linker input
-
 // Real win32 entry point for release mode (DesktopApp).
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
 	// TODO: Get entry parameters.

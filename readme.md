@@ -69,6 +69,8 @@ Premake generates a Visual Studio 2022 solution.
 Under root run 'scripts/gen_window.bat'. Then open 'retro_game_engine.sln'.
 You can build the engine & all example projects within VS.
 
+### MacOS
+Make sure to link Cocoa & GLUT if you are targeting the macosx platform. In addition, if selecting the opengl 1.0 renderer,also link OpenGL
 
 ## Extra Included Projects
 ### Example Project
