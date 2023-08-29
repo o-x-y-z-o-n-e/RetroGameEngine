@@ -2362,6 +2362,10 @@ public:
 	const LPCWSTR WINDOW_NAME = L"RETRO_GAME_ENGINE_WINDOW";
 	WNDCLASS config;
 	HWND handle;
+
+	int window_width;
+	int window_height;
+
 	static engine* engine_instance;
 
 	windows() {
@@ -2442,7 +2446,9 @@ public:
 	}
 
 	void refresh_window() override {
+		#ifdef SYS_SOFTWARE_GL
 		// TODO
+		#endif /* SYS_SOFTWARE_GL */
 	}
 
 	static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -2459,7 +2465,10 @@ public:
 			}
 
 			case WM_SIZE: {
-				engine_instance->get_renderer()->on_window_resized(LOWORD(lParam), HIWORD(lParam)); // TODO: Change to proper event propagation.
+				create_frame(LOWORD(lParam), HIWORD(lParam));
+
+				// TODO: Change to proper event propagation.
+				engine_instance->get_renderer()->on_window_resized(window_width, window_height);
 				break;
 			}
 
@@ -2470,6 +2479,14 @@ public:
 		}
 
 		return 0;
+	}
+
+	void create_frame(int width, int height) {
+		window_width = width;
+		window_height = height;
+		#ifdef SYS_SOFTWARE_GL
+		// TODO
+		#endif /* SYS_SOFTWARE_GL */
 	}
 
 };
@@ -2580,11 +2597,15 @@ public:
 class software_gl : public renderer {
 private:
 	std::vector<light*> lights; // TODO: Move to rge::renderer.
+	render_target* output_window;
 
+	render_tareget* get_real_target() {
+		return output_render != nullptr ? output_render : output_window;
+	}
 
 public:
 	software_gl() : renderer() {
-
+		output_window = new render_target();
 	}
 
 public:
@@ -2592,10 +2613,14 @@ public:
 		return rge::OK;
 	}
 
+	void on_window_resized(int width, int height) override {
+		output_window->resize(width, height);
+	}
+
 	void clear(color background) override {
-		color* frame_buffer = output_render->get_frame_buffer()->get_data();
-		color* depth_buffer = output_render->get_depth_buffer()->get_data();
-		for(int i = 0; i < output_render->get_width() * output_render->get_height(); i++) {
+		color* frame_buffer = get_real_target()->get_frame_buffer()->get_data();
+		color* depth_buffer = get_real_target()->get_depth_buffer()->get_data();
+		for(int i = 0; i < get_real_target()->get_width() * get_real_target()->get_height(); i++) {
 			frame_buffer[i] = background;
 			depth_buffer[i] = color(1, 0, 0, 0);
 		}
@@ -2603,8 +2628,8 @@ public:
 
 	void display() override {
 		#ifdef SYS_WINDOWS
-		uint8_t* buffer;
-		// TODO: output_render->get_depth_buffer()->dump_to_raw_buffer(buffer);
+		uint8_t* buffer; // TODO: Hook to winapi.
+		output_window->get_frame_buffer()->dump_to_raw_buffer(buffer);
 		#endif
 	}
 
@@ -2639,8 +2664,8 @@ public:
 		vec3 camera_position = input_camera->transform != nullptr ? input_camera->transform->get_global_position() : vec3();
 		mat4 world_to_projection = input_camera->get_projection_matrix() * input_camera->get_view_matrix();
 
-		float w = (float)get_target()->get_width();
-		float h = (float)get_target()->get_height();
+		float w = (float)get_real_target()->get_width();
+		float h = (float)get_real_target()->get_height();
 
 		// Loop through each of the triplets of triangle indices.
 		for(i = 0; i < triangles.size(); i += 3) {
@@ -2750,39 +2775,17 @@ public:
 	}
 
 	void draw(const texture& texture, const rect& dest, const rect& src) override {
-		if(!texture.get_on_cpu()) return;
-
-		int x, y, ptr;
-		float u, v;
-
-		vec2 min = dest.get_min();
-		vec3 max = dest.get_max();
-
-		int x_min = (int)(min.x);
-		int y_min = (int)(min.y);
-		int x_max = (int)(max.x);
-		int y_max = (int)(max.y);
-
-		if(x_min < 0) x_min = 0;
-		if(y_min < 0) y_min = 0;
-		if(x_max > output_render->get_width()) x_max = output_render->get_width();
-		if(y_max > output_render->get_height()) y_max = output_render->get_height();
-
-		color* input_buffer = texture.get_data();
-		color* frame_buffer = output_render->get_frame_buffer()->get_data();
-
-		for(y = y_min; y <= y_max; y++) {
-			for(x = x_min; x <= x_max; x++) {
-				vec2 p(x + 0.5F, y + 0.5F);
-				if(p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y) {
-					ptr = x + (y * output_render->get_width());
-					u = math::inverse_lerp(min.x, max.x, p.x);
-					v = math::inverse_lerp(min.y, max.y, p.y);
-
-					frame_buffer[ptr] = texture.sample(u, v);
-				}
-			}
-		}
+		draw(
+			texture,
+			int(dest.x * get_real_target()->get_width()),
+			int(dest.y * get_real_target()->get_height()),
+			int(dest.width * get_real_target()->get_width()),
+			int(dest.height * get_real_target()->get_height()),
+			int(src.x * get_real_target()->get_width()),
+			int(src.y * get_real_target()->get_height()),
+			int(src.width * get_real_target()->get_width()),
+			int(src.height * get_real_target()->get_height())
+		);
 	}
 
 	void draw(
@@ -2796,7 +2799,41 @@ public:
 		int src_width,
 		int src_height
 	) override {
-		// TODO
+		if(!texture.get_on_cpu()) return;
+
+		int x, y, ptr;
+		float u, v;
+		float ut, vt;
+
+		int wt = get_real_target()->width;
+		int ht = get_real_target()->height;
+
+		int x_min = dest_x;
+		int y_min = dest_y;
+		int x_max = dest_x + dest_width;
+		int y_max = dest_y + dest_height;
+
+		color* input_buffer = texture.get_data();
+		color* frame_buffer = get_real_target()->get_frame_buffer()->get_data();
+
+		if(x_min < 0) x_min = 0;
+		if(y_min < 0) y_min = 0;
+		if(x_max > wt) x_max = wt;
+		if(y_max > ht) y_max = ht;
+
+		for(y = y_min; y <= y_max; y++) {
+			for(x = x_min; x <= x_max; x++) {
+				if(x >= x_min && x < x_max && y >= y_min && y < y_max) {
+					ptr = x + (y * wt);
+					u = math::inverse_lerp(x_min, x_max, x);
+					v = math::inverse_lerp(y_min, y_max, y);
+					ut = math::lerp(src_x, src_x + src_width, u) / wt;
+					vt = math::lerp(src_y, src_y + src_height, u) / ht;
+					
+					frame_buffer[ptr] = texture.sample(ut, vt);
+				}
+			}
+		}
 	}
 
 private:
@@ -2827,8 +2864,8 @@ private:
 		color source;
 		color destination;
 		vec3 camera_position = input_camera->transform != nullptr ? input_camera->transform->get_global_position() : vec3();
-		color* frame_buffer = output_render->get_frame_buffer()->get_data();
-		color* depth_buffer = output_render->get_depth_buffer()->get_data();
+		color* frame_buffer = get_real_target()->get_frame_buffer()->get_data();
+		color* depth_buffer = get_real_target()->get_depth_buffer()->get_data();
 
 		// Calculate the bounding rectangle of the triangle based on the
 		// three vertices.
@@ -2839,9 +2876,9 @@ private:
 
 		// Cull the bounding rect to the size of the texture we're rendering to.
 		if(x_min < 0) x_min = 0;
-		if(x_max > output_render->get_width()) x_max = output_render->get_width();
+		if(x_max > get_real_target()->get_width()) x_max = get_real_target()->get_width();
 		if(y_min < 0) y_min = 0;
-		if(y_max > output_render->get_height()) y_max = output_render->get_height();
+		if(y_max > get_real_target()->get_height()) y_max = get_real_target()->get_height();
 
 		// NOTE: Debugging
 		// printf("xmin:%d\n", x_min);
@@ -2891,7 +2928,7 @@ private:
 				// on an edge, but either way, render the pixel).
 				if(weight_v1 >= 0.0F && weight_v2 >= 0.0F && weight_v3 >= 0.0F) {
 					// Calculate the position in our buffer based on our x and y values.
-					ptr = x + (y * get_target()->get_width());
+					ptr = x + (y * get_real_target()->get_width());
 
 					// NOTE: Debugging
 					// printf("ptr: %d, x: %d, y: %d\n", ptr, x, y);
@@ -3057,6 +3094,9 @@ private:
 	gl_device_context_t device = 0;
 	gl_render_context_t render = 0;
 	#endif
+
+	int window_width;
+	int window_height;
 
 public:
 	opengl_1_0() {
@@ -3243,6 +3283,8 @@ public:
 	}
 
 	void on_window_resized(int width, int height) override {
+		window_width = width;
+		window_height = height;
 		glViewport(0, 0, width, height);
 	}
 };
