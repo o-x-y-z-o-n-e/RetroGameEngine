@@ -751,26 +751,39 @@ public:
 		const std::vector<vec2>& uvs,
 		const material& material
 	) = 0;
+
+	// Draw 2D texture onto cmaera space.
 	virtual void draw(
 		const texture& texture,
 		const rect& dest,
 		const rect& src
 	) = 0;
 
+	// Draw 2D texture onto viewport space.
+	virtual void draw(
+		const texture& texture,
+		int dest_x,
+		int dest_y,
+		int dest_width,
+		int dest_height,
+		int src_x,
+		int src_y,
+		int src_width,
+		int src_height
+	) = 0;
+
+public: // Inline macro functions.
+	// Draw 2D texture onto cmaera space.
 	void draw(const texture& texture, const rect& dest) {
-		draw(
-			texture,
-			dest,
-			rge::rect(
-				0,
-				0,
-				float(texture.get_width()),
-				float(texture.get_height())
-			)
-		);
+		draw(texture, dest, rge::rect(0, 0, 1, 1));
 	}
 
-public:
+	// Draw 2D texture onto viewport space.
+	void draw(const texture& texture, int dest_x, int dest_y, int dest_width, int dest_height) {
+		draw(texture, dest_x, dest_y, dest_width, dest_height, 0, 0, texture.get_width(), texture.get_height());
+	}
+
+public: // Events handlers.
 	virtual void on_window_resized(int width, int height) {}
 
 public:
@@ -2772,6 +2785,20 @@ public:
 		}
 	}
 
+	void draw(
+		const texture& texture,
+		int dest_x,
+		int dest_y,
+		int dest_width,
+		int dest_height,
+		int src_x,
+		int src_y,
+		int src_width,
+		int src_height
+	) override {
+		// TODO
+	}
+
 private:
 	void rasterize_triangle(
 		const vec4& r_v1, // <- render_target coords
@@ -3169,21 +3196,50 @@ public:
 	}
 
 	void draw(const texture& texture, const rect& dest, const rect& src) override {
-		GLfloat vertices[] = {
-			-1, -1,  0,  // bottom left corner
-			-1,  1,  0,  // top left corner
-			 1,  1,  0,  // top right corner
-			 1, -1,  0   // bottom right corner
-		};
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
 
-		GLubyte indices[] = {
-			0, 1, 2, // first triangle (bottom left - top left - top right)
-			0, 2, 3  // second triangle (bottom left - top right - bottom right)
-		};
+		float d_min_x = (dest.x * 2) - 1;
+		float d_min_y =	(dest.y * 2) - 1;
+		float d_max_x = d_min_x + (dest.w * 2);
+		float d_max_y = d_min_y + (dest.h * 2);
 
-		glColor3b(120, 156, 35);
-		glVertexPointer(3, GL_FLOAT, 0, vertices);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
+		glBegin(GL_QUADS);
+
+		glVertex3f(d_min_x, d_min_y, 0);
+		glNormal3f(0, 0, -1);
+		glTexCoord2f(src.x, src.y);
+
+		glVertex3f(d_max_x, d_min_y, 0);
+		glNormal3f(0, 0, -1);
+		glTexCoord2f(src.x + src.w, src.y);
+
+		glVertex3f(d_max_x, d_max_y, 0);
+		glNormal3f(0, 0, -1);
+		glTexCoord2f(src.x + src.w, src.y + src.h);
+
+		glVertex3f(d_min_x, d_max_y, 0);
+		glNormal3f(0, 0, -1);
+		glTexCoord2f(src.x, src.y + src.h);
+
+		glEnd();
+	}
+
+	void draw(
+		const texture& texture,
+		int dest_x,
+		int dest_y,
+		int dest_width,
+		int dest_height,
+		int src_x,
+		int src_y,
+		int src_width,
+		int src_height
+	) override {
+		// TODO
 	}
 
 	void on_window_resized(int width, int height) override {
@@ -3374,6 +3430,20 @@ public:
 	}
 
 	void draw(const texture& texture, const rect& dest, const rect& src) override {
+		// TODO
+	}
+
+	void draw(
+		const texture& texture,
+		int dest_x,
+		int dest_y,
+		int dest_width,
+		int dest_height,
+		int src_x,
+		int src_y,
+		int src_width,
+		int src_height
+	) override {
 		// TODO
 	}
 
