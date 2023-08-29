@@ -166,7 +166,7 @@ public:
     void on_render() override {
 		renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
 		
-		// renderer->draw(*material->texture, rge::rect(0, 0, 16, 16));
+		renderer->draw(*material->texture, rge::rect(0, 0, 0.25F, 0.25F));
 
 		if(triangle) {
 			renderer->draw(
