@@ -119,7 +119,7 @@ static model_t* load_triangle() {
 class game : public rge::engine {
 
 private:
-    ptr(rge::material) material;
+    rge::material* material;
 	rge::renderer* renderer;
     rge::camera* camera;
 	model_t* model;
@@ -129,7 +129,7 @@ private:
 
 public:
     game() : rge::engine() {
-        material = alloc(rge::material)();
+        material = new rge::material();
 		camera = new rge::camera();
 		model = nullptr;
 		counter = 0;
@@ -179,6 +179,11 @@ public:
 			);
 		}
     }
+
+	bool on_window_close_requested(const rge::window_close_requested_event& e) override {
+		rge::log::info("Cancelled exit()");
+		return true;
+	}
 };
 
 

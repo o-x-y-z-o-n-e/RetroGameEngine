@@ -44,12 +44,10 @@ SOFTWARE.
 #include <iostream>
 #include <functional>
 #include <vector>
+#include <queue>
 #include <memory>
 
-
-#define ptr(T) std::shared_ptr<T>
-#define alloc(T) std::make_shared<T>
-
+#define RGE_BIND_EVENT_HANDLER(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
 namespace rge {
 
@@ -61,8 +59,20 @@ struct vec4;
 struct quaternion;
 struct mat4;
 struct color;
-class engine;
 class event;
+class window_close_requested_event;
+class window_moved_event;
+class window_resized_event;
+class window_focused_event;
+class window_unfocused_event;
+class key_event;
+class key_pressed_event;
+class key_released_event;
+class mouse_pressed_event;
+class mouse_released_event;
+class mouse_moved_event;
+class mouse_scrolled_event;
+class engine;
 class transform;
 class camera;
 class light;
@@ -393,6 +403,119 @@ namespace log {
 #pragma endregion
 
 
+#pragma region /* rge::event */
+//********************************************//
+//* Event class                              *//
+//********************************************//
+enum class event_type {
+	NONE = 0,
+	WINDOW_CLOSE_REQUESTED, WINDOW_MOVED, WINDOW_RESIZED, WINDOW_FOCUSED, WINDOW_UNFOCUSED,
+	KEY_PRESSED, KEY_RELEASED,
+	MOUSE_PRESSED, MOUSE_RELEASED, MOUSE_MOVED, MOUSE_SCROLLED
+};
+#define EVENT_ENUM_TYPE(type) public:\
+static event_type get_static_type() { return event_type::type; } \
+virtual event_type get_event_type() const override { return get_static_type(); }
+class event {
+protected: // Abstract class.
+	event() {}
+
+public:
+	virtual event_type get_event_type() const = 0;
+};
+//********************************************//
+//* Event class                              *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::window_event */
+//********************************************//
+//* Window events                            *//
+//********************************************//
+class window_close_requested_event : public event {
+	EVENT_ENUM_TYPE(WINDOW_CLOSE_REQUESTED)
+};
+//----------------------------------------------
+class window_moved_event : public event {
+	EVENT_ENUM_TYPE(WINDOW_MOVED)
+public:
+	int x, y;
+};
+//----------------------------------------------
+class window_resized_event : public event {
+	EVENT_ENUM_TYPE(WINDOW_RESIZED)
+public:
+	int width, height;
+};
+//----------------------------------------------
+class window_focused_event : public event {
+	EVENT_ENUM_TYPE(WINDOW_FOCUSED)
+};
+//----------------------------------------------
+class window_unfocused_event : public event {
+	EVENT_ENUM_TYPE(WINDOW_UNFOCUSED)
+};
+//********************************************//
+//* Window events                            *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::key_event */
+//********************************************//
+//* Key events                               *//
+//********************************************//
+class key_pressed_event : public event {
+	EVENT_ENUM_TYPE(KEY_PRESSED)
+public:
+	rge::key::code key_code;
+};
+//----------------------------------------------
+class key_released_event : public event {
+	EVENT_ENUM_TYPE(KEY_RELEASED)
+public:
+	rge::key::code key_code;
+};
+//********************************************//
+//* Key events                               *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::mouse_event */
+//********************************************//
+//* Mouse events                             *//
+//********************************************//
+class mouse_pressed_event : public event {
+	EVENT_ENUM_TYPE(MOUSE_PRESSED)
+public:
+	int button;
+};
+//----------------------------------------------
+class mouse_released_event : public event {
+	EVENT_ENUM_TYPE(MOUSE_RELEASED)
+public:
+	int button;
+};
+//----------------------------------------------
+class mouse_moved_event : public event {
+	EVENT_ENUM_TYPE(MOUSE_MOVED)
+public:
+	int x, y;
+};
+//----------------------------------------------
+class mouse_scrolled_event : public event {
+	EVENT_ENUM_TYPE(MOUSE_SCROLLED)
+public:
+	int scroll;
+};
+//********************************************//
+//* Mouse events                             *//
+//********************************************//
+#pragma endregion
+
+
 #pragma region /* rge::engine */
 //********************************************//
 //* Core Engine class.                       *//
@@ -406,6 +529,7 @@ public:
 	void create(bool wait_until_exit = true);
 	rge::result exit();
 	rge::result command(const std::string& cmd);
+	void post_event(const event& e);
 	void wait_for_exit();
 	int get_frame_rate() const;
 	bool get_is_running() const;
@@ -425,6 +549,7 @@ protected:
 	virtual void on_physics(float delta_time) {}
 	virtual void on_render() {}
 	virtual void on_exit() {}
+	virtual bool on_window_close_requested(const window_close_requested_event& e);
 
 private:
 	void configure();
@@ -432,7 +557,7 @@ private:
 	rge::result init();
 	rge::result start();
 	void loop();
-
+	
 private:
 	bool has_init;
 	bool is_running;
@@ -440,6 +565,7 @@ private:
 	bool multi_threaded;
 	platform* platform_impl;
 	renderer* renderer_impl;
+	class event_manager* events_impl;
 	float update_counter;
 	float physics_counter;
 	float render_counter;
@@ -450,65 +576,6 @@ private:
 };
 //********************************************//
 //* Core Engine class.                       *//
-//********************************************//
-#pragma endregion
-
-
-#pragma region /* rge::event */
-//********************************************//
-//* Event class.                             *//
-//********************************************//
-enum class event_type {
-	NONE = 0,
-	WINDOW_CLOSE_REQUESTED, WINDOW_MOVED, WINDOW_RESIZED, WINDOW_FOCUSED, WINDOW_UNFOCUSED,
-	KEY_PRESSED, KEY_RELEASED,
-	MOUSE_PRESSED, MOUSE_RELEASED, MOUSE_MOVED, MOUSE_SCROLLED
-};
-//----------------------------------------------
-#define EVENT_ENUM_TYPE(type) public:\
-static event_type get_static_type() { return event_type::type; } \
-virtual event_type get_event_type() const override { return get_static_type(); } \
-//----------------------------------------------
-class event {
-public:
-	event();
-
-public:
-	template<typename T>
-	bool dispatch(std::function<bool(const T&)> func) {
-		if(get_event_type() == T::get_static_type()) {
-			handled |= func(static_cast<const T&>(*this));
-			return true;
-		}
-		return false;
-	}
-	bool get_handled() const;
-	virtual event_type get_event_type() const = 0;
-
-
-private:
-	bool handled;
-};
-//----------------------------------------------
-class key_event : public event {
-protected: // Abstract class.
-	key_event(key::code key_code);
-
-public:
-	key::code get_key_code() const;
-
-protected:
-	key::code key_code;
-};
-//----------------------------------------------
-class key_pressed_event : public key_event {
-public:
-	key_pressed_event(key::code key_code);
-
-	EVENT_ENUM_TYPE(KEY_PRESSED)
-};
-//********************************************//
-//* Event class.                             *//
 //********************************************//
 #pragma endregion
 
@@ -602,7 +669,7 @@ public:
 	float intensity;
 	float range;
 	light_mode type;
-	ptr(transform) transform;
+	transform* transform;
 };
 //********************************************//
 //* Light class.                             *//
@@ -632,7 +699,7 @@ public:
 
 	// NOTE: TESTING FUNCTION
 	rge::result write_to_disk(const std::string& path) const;
-	static ptr(texture) read_from_disk(const std::string& path);
+	static texture* read_from_disk(const std::string& path);
 
 public:
 	void allocate_cpu();
@@ -662,7 +729,7 @@ public:
 	~material();
 
 public:
-	ptr(texture) texture;
+	texture* texture;
 	color diffuse;
 	color specular;
 	float shininess;
@@ -792,7 +859,7 @@ public: // Inline macro functions.
 	}
 
 public: // Events handlers.
-	virtual void on_window_resized(int width, int height) {}
+	virtual bool on_window_resized(const window_resized_event& e) { return false; }
 
 public:
 	virtual ~renderer() {}
@@ -891,6 +958,7 @@ int main(int argc, char** argv);
 #ifdef SYS_WINDOWS
 #include <windows.h>
 #pragma comment(lib, "user32.lib")
+#undef MOUSE_MOVED // Annoying general #define name taking over possible names bs.
 class windows;
 #endif /* SYS_WINDOWS */
 
@@ -1656,6 +1724,132 @@ void log::error(const char* msg, ...) {
 #pragma endregion
 
 
+#pragma region /* rge::event_dispatcher */
+//********************************************//
+//* Event dispatcher                         *//
+//********************************************//
+template<typename T>
+class event_dispatcher {
+public:
+	std::queue<T> queue;
+	std::vector<std::function<bool(const T&)>> handlers;
+
+public:
+	void process() {
+		while(queue.size() > 0) {
+			dispatch(queue.front());
+			queue.pop();
+		}
+	}
+
+	void dispatch(const T& e) {
+		std::function<bool(const T&)> handler;
+		for(std::vector<std::function<bool(const T&)>>::iterator it = handlers.begin(); it != handlers.end(); it++) {
+			handler = (*it);
+
+			if(handler(e)) break;
+		}
+	}
+
+	bool add_event(const event& e) {
+		if(e.get_event_type() != T::get_static_type())
+			return false;
+
+		queue.push(static_cast<const T&>(e));
+
+		return true;
+	}
+
+	void add_handler(std::function<bool(const T&)> handler) {
+		handlers.push_back(handler);
+	}
+
+	event_type get_event_type() {
+		return T::get_static_type();
+	}
+};
+//********************************************//
+//* Event dispatcher                         *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::event_manager */
+//********************************************//
+//* Event manager class                      *//
+//********************************************//
+class event_manager {
+public:
+	event_dispatcher<window_close_requested_event> on_window_close_requested;
+	event_dispatcher<window_moved_event> on_window_moved;
+	event_dispatcher<window_resized_event> on_window_resized;
+	event_dispatcher<window_focused_event> on_window_focused;
+	event_dispatcher<window_unfocused_event> on_window_unfocused;
+	event_dispatcher<key_pressed_event> on_key_pressed;
+	event_dispatcher<key_released_event> on_key_released;
+	event_dispatcher<mouse_pressed_event> on_mouse_pressed;
+	event_dispatcher<mouse_released_event> on_mouse_released;
+	event_dispatcher<mouse_moved_event> on_mouse_moved;
+	event_dispatcher<mouse_scrolled_event> on_mouse_scrolled;
+
+public:
+	bool post(const rge::event& e) {
+		switch(e.get_event_type()) {
+			case event_type::WINDOW_CLOSE_REQUESTED:
+				return on_window_close_requested.add_event(e);
+
+			case event_type::WINDOW_MOVED:
+				return on_window_moved.add_event(e);
+
+			case event_type::WINDOW_RESIZED:
+				return on_window_resized.add_event(e);
+
+			case event_type::WINDOW_FOCUSED:
+				return on_window_focused.add_event(e);
+
+			case event_type::WINDOW_UNFOCUSED:
+				return on_window_unfocused.add_event(e);
+
+			case event_type::KEY_PRESSED:
+				return on_key_pressed.add_event(e);
+
+			case event_type::KEY_RELEASED:
+				return on_key_released.add_event(e);
+
+			case event_type::MOUSE_PRESSED:
+				return on_mouse_pressed.add_event(e);
+
+			case event_type::MOUSE_RELEASED:
+				return on_mouse_released.add_event(e);
+
+			case event_type::MOUSE_MOVED:
+				return on_mouse_moved.add_event(e);
+
+			case event_type::MOUSE_SCROLLED:
+				return on_mouse_scrolled.add_event(e);
+		}
+	}
+
+	void process() {
+		on_window_close_requested.process();
+		on_window_moved.process();
+		on_window_resized.process();
+		on_window_focused.process();
+		on_window_unfocused.process();
+		on_key_pressed.process();
+		on_key_released.process();
+		on_mouse_pressed.process();
+		on_mouse_released.process();
+		on_mouse_moved.process();
+		on_mouse_scrolled.process();
+	}
+};
+//********************************************//
+//* Event manager class                      *//
+//********************************************//
+#pragma endregion
+
+
 #pragma region /* rge::engine */
 //********************************************//
 //* Core Engine class.                       *//
@@ -1677,6 +1871,7 @@ engine::engine() {
 	platform_impl = nullptr;
 	renderer_impl = nullptr;
 	multi_threaded = false;
+	events_impl = new event_manager();
 
 	configure();
 }
@@ -1727,6 +1922,9 @@ rge::result engine::init() {
 		return rge::FAIL;
 	}
 
+	events_impl->on_window_close_requested.add_handler(RGE_BIND_EVENT_HANDLER(on_window_close_requested));
+	events_impl->on_window_resized.add_handler(RGE_BIND_EVENT_HANDLER(renderer_impl->on_window_resized));
+
 	on_init();
 	has_init = true;
 	return rge::OK;
@@ -1750,7 +1948,12 @@ rge::result engine::start() {
 
 void engine::loop() {
 	while(is_running) {
+		// Handle all events.
 		platform_impl->poll_events();
+		events_impl->process();
+
+		// In case exit() was called during event handling.
+		if(!is_running) break; 
 
 		// Calculate the elapsed time since last frame.
 		time_stamp_2 = std::chrono::system_clock::now();
@@ -1792,6 +1995,11 @@ void engine::loop() {
 	}
 }
 
+bool engine::on_window_close_requested(const window_close_requested_event& e) {
+	exit();
+	return true;
+}
+
 rge::result engine::command(const std::string& cmd) {
 	if(on_command(cmd))
 		return rge::OK;
@@ -1807,6 +2015,10 @@ rge::result engine::command(const std::string& cmd) {
 	}
 	
 	return rge::OK;
+}
+
+void engine::post_event(const event& e) {
+	events_impl->post(e);
 }
 
 rge::result engine::exit() {
@@ -1842,35 +2054,6 @@ void engine::wait_for_exit() {
 }
 //********************************************//
 //* Core Engine class.                       *//
-//********************************************//
-#pragma endregion
-
-
-#pragma region /* rge::event */
-//********************************************//
-//* Event class.                             *//
-//********************************************//
-event::event() {
-	handled = false;
-}
-
-bool event::get_handled() const {
-	return handled;
-}
-//----------------------------------------------
-key_event::key_event(key::code key_code) : event() {
-	this->key_code = key_code;
-}
-
-key::code key_event::get_key_code() const {
-	return key_code;
-}
-//----------------------------------------------
-key_pressed_event::key_pressed_event(key::code key_code) : key_event(key_code) {
-
-}
-//********************************************//
-//* Event class.                             *//
 //********************************************//
 #pragma endregion
 
@@ -2104,6 +2287,8 @@ texture::texture(int width, int height) {
 	on_cpu = false;
 	on_gpu = false;
 	data = nullptr;
+
+	handle = 0;
 }
 
 texture::~texture() {
@@ -2184,7 +2369,7 @@ rge::result texture::write_to_disk(const std::string& path) const {
 	#endif
 }
 
-ptr(texture) texture::read_from_disk(const std::string& path) {
+texture* texture::read_from_disk(const std::string& path) {
 	// TODO: Check if file exists.
 
 	#ifdef RGE_USE_STB_IMAGE
@@ -2198,7 +2383,7 @@ ptr(texture) texture::read_from_disk(const std::string& path) {
 		return nullptr;
 	}
 
-	ptr(texture) tex = alloc(texture)(w, h);
+	texture* tex = new texture(w, h);
 	color* tex_data = tex->get_data();
 	color c;
 	for(i = 0; i < w * h; ++i) {
@@ -2480,7 +2665,7 @@ public:
 			return rge::FAIL;
 		}
 
-		SendMessage(handle, WM_SIZE, 0, (window_width) + (window_height << 16));
+		//SendMessage(handle, WM_SIZE, 0, (window_width) + (window_height << 16));
 
 		has_window = true;
 		return rge::OK;
@@ -2536,7 +2721,8 @@ public:
 	static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		switch(msg) {
 			case WM_CLOSE: {
-				engine_instance->exit();
+				window_close_requested_event e;
+				engine_instance->post_event(e);
 				break;
 			}
 
@@ -2547,13 +2733,12 @@ public:
 			}
 
 			case WM_SIZE: {
-				windows_instance->create_frame(LOWORD(lParam), HIWORD(lParam));
+				window_resized_event e;
+				e.width = LOWORD(lParam);
+				e.height = HIWORD(lParam);
 
-				// TODO: Change to proper event propagation.
-				engine_instance->get_renderer()->on_window_resized(
-					windows_instance->window_width,
-					windows_instance->window_height
-				);
+				windows_instance->create_frame(e.width, e.height);
+				engine_instance->post_event(e);
 				break;
 			}
 
@@ -2730,8 +2915,9 @@ public:
 		delete texture;
 	}
 
-	void on_window_resized(int width, int height) override {
-		output_window->resize(width, height);
+	bool on_window_resized(const window_resized_event& e) override {
+		output_window->resize(e.width, e.height);
+		return true;
 	}
 
 	void clear(color background) override {
@@ -3406,10 +3592,11 @@ public:
 		// TODO
 	}
 
-	void on_window_resized(int width, int height) override {
-		window_width = width;
-		window_height = height;
-		glViewport(0, 0, width, height);
+	bool on_window_resized(const window_resized_event& e) override {
+		window_width = e.width;
+		window_height = e.height;
+		glViewport(0, 0, window_width, window_height);
+		return true;
 	}
 };
 #endif /* SYS_OPENGL_1_0 */
@@ -3621,8 +3808,11 @@ public:
 		// TODO
 	}
 
-	void on_window_resized(int width, int height) override {
-		glViewport(0, 0, width, height);
+	bool on_window_resized(const window_resized_event& e) override {
+		window_width = e.width;
+		window_height = e.height;
+		glViewport(0, 0, window_width, window_height);
+		return true;
 	}
 };
 #endif /* SYS_OPENGL_3_3 */
@@ -3655,10 +3845,6 @@ void engine::configure() {
 
 	#ifdef SYS_OPENGL_1_0
 	renderer_impl = new opengl_1_0();
-	#endif
-
-	#ifdef SYS_OPENGL_2_1
-	renderer_impl = new opengl_2_1();
 	#endif
 
 	#ifdef SYS_OPENGL_3_3
