@@ -151,7 +151,7 @@ public:
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
 
 		material->diffuse = rge::color(1, 0, 1);
-        material->texture = rge::texture::read_from_disk("tests/test.bmp");
+        //material->texture = rge::texture::read_from_disk("tests/test.bmp");
     }
 
 	void on_update(float delta_time) override {

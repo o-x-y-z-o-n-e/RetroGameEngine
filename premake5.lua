@@ -28,8 +28,8 @@ project "example"
     cppdialect "C++11"
     location "./"
 
-    -- defines "SYS_SOFTWARE_GL"
-    defines "SYS_OPENGL_1_0"
+    defines "SYS_SOFTWARE_GL"
+    -- defines "SYS_OPENGL_1_0"
     -- defines "SYS_OPENGL_3_3"
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")

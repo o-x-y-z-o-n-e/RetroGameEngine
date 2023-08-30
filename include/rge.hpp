@@ -627,22 +627,24 @@ public:
 	bool get_on_gpu() const;
 	color sample(float u, float v) const;
 	color* get_data() const;
+	uint32_t get_handle() const;
 	void dump_to_raw_buffer(uint8_t* buffer) const;
 
 	// NOTE: TESTING FUNCTION
 	rge::result write_to_disk(const std::string& path) const;
 	static ptr(texture) read_from_disk(const std::string& path);
 
-
-
-private:
-	void allocate();
+public:
+	void allocate_cpu();
+	void allocate_gpu();
 
 private:
 	bool on_disk, on_cpu, on_gpu;
 	int width;
 	int height;
-	color* data;
+	color* data;     // For CPU buffer
+	uint32_t handle; // For GPU ref
+
 };
 //********************************************//
 //* Texture class.                           *//
@@ -677,10 +679,7 @@ public:
 //********************************************//
 class render_target {
 public:
-	render_target();
-	render_target(int width, int height);
-
-public:
+	static render_target* create(renderer* renderer, int width, int height);
 	rge::result resize(int width, int height);
 
 	int get_width() const;
@@ -688,9 +687,15 @@ public:
 
 	texture* get_frame_buffer() const;
 	texture* get_depth_buffer() const;
-	
+
+public:
+	~render_target();
 
 private:
+	render_target(renderer* renderer);
+
+private:
+	renderer* renderer_instance;
 	int width;
 	int height;
 	texture* frame_buffer;
@@ -710,7 +715,7 @@ class platform {
 public:
 	virtual rge::result init(rge::engine* engine) = 0;
 	virtual rge::result create_window() = 0;
-	virtual void set_window_title(const char* title) = 0;
+	virtual void set_window_title(const std::string& title) = 0;
 	virtual void poll_events() = 0;
 	virtual void refresh_window() = 0;
 
@@ -739,8 +744,11 @@ public:
 
 public:
 	virtual rge::result init(platform* platform) = 0;
-	virtual render_target* create_render_target(int width, int height) = 0;
-	virtual void free_render_target(render_target* target) = 0;
+
+	virtual texture* create_texture(int width, int height) = 0;
+	virtual void upload_texture(texture* texture) = 0;
+	virtual void free_texture(texture* texture) = 0;
+
 	virtual void clear(color background) = 0;
 	virtual void display() = 0;
 	virtual rge::result draw(
@@ -1769,6 +1777,7 @@ void engine::loop() {
 		if(render_counter > render_interval) {
 			on_render();
 			renderer_impl->display();
+			platform_impl->refresh_window();
 			render_counter = 0;
 		}
 		
@@ -2095,8 +2104,6 @@ texture::texture(int width, int height) {
 	on_cpu = false;
 	on_gpu = false;
 	data = nullptr;
-
-	allocate();
 }
 
 texture::~texture() {
@@ -2221,11 +2228,19 @@ ptr(texture) texture::read_from_disk(const std::string& path) {
 	#endif
 }
 
-void texture::allocate() {
+void texture::allocate_cpu() {
 	if(data) return;
 
 	data = new color[width * height];
 	on_cpu = true;
+}
+
+void texture::allocate_gpu() {
+	// TODO: EXIST CHECK
+
+	// TODO
+
+	on_gpu = true;
 }
 
 //********************************************//
@@ -2257,36 +2272,30 @@ material::~material() {
 //********************************************//
 //* Render Target class.                     *//
 //********************************************//
-render_target::render_target() {
-	width = 1;
-	height = 1;
-	frame_buffer = nullptr;
-	depth_buffer = nullptr;
-}
+render_target* render_target::create(renderer* renderer, int width, int height) {
+	if(renderer == nullptr) return nullptr;
+	if(width < 1) return nullptr;
+	if(height < 1) return nullptr;
 
-render_target::render_target(int width, int height) {
-	if(width < 1) width = 1;
-	if(height < 1) height = 1;
+	render_target* target = new render_target(renderer);
 
-	this->width = width;
-	this->height = height;
+	target->resize(width, height);
 
-	frame_buffer = new texture(width, height);
-	depth_buffer = new texture(width, height);
+	return target;
 }
 
 rge::result render_target::resize(int width, int height) {
-	if(width < 0) return rge::FAIL;
-	if(height < 0) return rge::FAIL;
+	if(width < 1) return rge::FAIL;
+	if(height < 1) return rge::FAIL;
 
 	this->width = width;
 	this->height = height;
 
-	if(frame_buffer) delete frame_buffer;
-	if(depth_buffer) delete depth_buffer;
+	if(frame_buffer) renderer_instance->free_texture(frame_buffer);
+	if(depth_buffer) renderer_instance->free_texture(depth_buffer);
 
-	frame_buffer = new texture(width, height);
-	depth_buffer = new texture(width, height);
+	frame_buffer = renderer_instance->create_texture(width, height);
+	depth_buffer = renderer_instance->create_texture(width, height);
 
 	return rge::OK;
 }
@@ -2305,6 +2314,25 @@ texture* render_target::get_frame_buffer() const {
 
 texture* render_target::get_depth_buffer() const {
 	return depth_buffer;
+}
+
+render_target::~render_target() {
+
+	delete frame_buffer;
+	delete depth_buffer;
+}
+
+render_target::render_target(renderer* renderer) {
+	renderer_instance = renderer;
+
+	if(width < 1) width = 1;
+	if(height < 1) height = 1;
+
+	this->width = width;
+	this->height = height;
+
+	frame_buffer = renderer->create_texture(width, height);
+	depth_buffer = renderer->create_texture(width, height);
 }
 //********************************************//
 //* Render Target class.                     *//
@@ -2362,18 +2390,33 @@ public:
 	const LPCWSTR WINDOW_NAME = L"RETRO_GAME_ENGINE_WINDOW";
 	WNDCLASS config;
 	HWND handle;
+	HDC device_context;
 
 	int window_width;
 	int window_height;
 
+	bool has_init;
+	bool has_window;
+
+	struct {
+		BITMAPINFO bitmap_info;
+		HBITMAP bitmap;
+		void* buffer;
+	} frame;
+
 	static engine* engine_instance;
+	static windows* windows_instance;
 
 	windows() {
-
+		windows_instance = this;
+		has_init = false;
+		has_window = false;
 	}
 
 public:
 	rge::result init(rge::engine* engine) override {
+		if(has_init) return rge::FAIL;
+
 		this->engine_instance = engine;
 
 		ZeroMemory(&config, sizeof(WNDCLASS));
@@ -2393,12 +2436,20 @@ public:
 			return rge::FAIL;
 		}
 
+		#ifdef SYS_SOFTWARE_GL
+		device_context = CreateCompatibleDC(0);
+		#endif /* SYS_SOFTWARE_GL */
+
 		// TODO: Key mapping
 		
+		has_init = true;
 		return rge::OK;
 	}
 
 	rge::result create_window() override {
+		if(!has_init) return rge::FAIL;
+		if(has_window) return rge::FAIL;
+
 		DWORD style_ex = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
 		DWORD style = WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_THICKFRAME;
 
@@ -2429,14 +2480,42 @@ public:
 			return rge::FAIL;
 		}
 
+		SendMessage(handle, WM_SIZE, 0, (window_width) + (window_height << 16));
+
+		has_window = true;
 		return rge::OK;
 	}
 
-	void set_window_title(const char* title) override {
-		// TODO
+	static std::wstring convert_str_to_wstr(const std::string& str) {
+		#ifdef __MINGW32__
+		wchar_t* buffer = new wchar_t[str.length() + 1];
+		mbstowcs(buffer, str.c_str(), str.length());
+		buffer[str.length()] = L'\0';
+		#else
+		int count = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
+		wchar_t* buffer = new wchar_t[count];
+		MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, buffer, count);
+		#endif
+
+		std::wstring w(buffer);
+		delete[] buffer;
+
+		return w;
+	}
+
+	void set_window_title(const std::string& title) override {
+		if(!has_window) return;
+
+		#ifdef UNICODE
+		SetWindowText(handle, convert_str_to_wstr(title).c_str());
+		#else
+		SetWindowText(handle, title.c_str());
+		#endif
 	}
 
 	void poll_events() override {
+		if(!has_window) return;
+
 		MSG msg;
 
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0) {
@@ -2446,8 +2525,11 @@ public:
 	}
 
 	void refresh_window() override {
+		if(!has_window) return;
+
 		#ifdef SYS_SOFTWARE_GL
-		// TODO
+		InvalidateRect(handle, NULL, FALSE);
+		UpdateWindow(handle);
 		#endif /* SYS_SOFTWARE_GL */
 	}
 
@@ -2465,10 +2547,13 @@ public:
 			}
 
 			case WM_SIZE: {
-				create_frame(LOWORD(lParam), HIWORD(lParam));
+				windows_instance->create_frame(LOWORD(lParam), HIWORD(lParam));
 
 				// TODO: Change to proper event propagation.
-				engine_instance->get_renderer()->on_window_resized(window_width, window_height);
+				engine_instance->get_renderer()->on_window_resized(
+					windows_instance->window_width,
+					windows_instance->window_height
+				);
 				break;
 			}
 
@@ -2485,13 +2570,27 @@ public:
 		window_width = width;
 		window_height = height;
 		#ifdef SYS_SOFTWARE_GL
-		// TODO
+		frame.bitmap_info.bmiHeader.biWidth = width;
+		frame.bitmap_info.bmiHeader.biHeight = height;
+
+		if(frame.bitmap)
+			DeleteObject(frame.bitmap);
+
+		frame.bitmap = CreateDIBSection(NULL, &frame.bitmap_info, DIB_RGB_COLORS, &frame.buffer, 0, 0);
+		if(frame.bitmap == NULL)
+			return;
+
+		SelectObject(device_context, frame.bitmap);
 		#endif /* SYS_SOFTWARE_GL */
 	}
 
+	uint8_t* get_frame_buffer() {
+		return (uint8_t*)frame.buffer;
+	}
 };
 
 engine* windows::engine_instance = nullptr;
+windows* windows::windows_instance = nullptr;
 
 #endif /* SYS_WINDOWS */
 //********************************************//
@@ -2570,8 +2669,8 @@ public:
 		return rge::OK;
 	}
 
-	void set_window_title(const char* title) override {
-		glutSetWindowTitle(title);
+	void set_window_title(const std::string& title) override {
+		glutSetWindowTitle(title.c_str());
 	}
 
 	void poll_events() override {
@@ -2598,19 +2697,37 @@ class software_gl : public renderer {
 private:
 	std::vector<light*> lights; // TODO: Move to rge::renderer.
 	render_target* output_window;
+	platform* platform_instance;
 
-	render_tareget* get_real_target() {
+	render_target* get_real_target() {
 		return output_render != nullptr ? output_render : output_window;
 	}
 
 public:
-	software_gl() : renderer() {
-		output_window = new render_target();
-	}
+	software_gl() : renderer() {}
 
 public:
 	rge::result init(platform* platform) override {
+		platform_instance = platform;
+		output_window = render_target::create(this, 1, 1);
 		return rge::OK;
+	}
+
+	texture* create_texture(int width, int height) override {
+		texture* t = new texture(width, height);
+
+		t->allocate_cpu();
+
+		return t;
+	}
+
+	void upload_texture(texture* texture) override {
+		// NOTE: N/A to software renderer.
+	}
+
+	void free_texture(texture* texture) override {
+		// TODO: Deallocate cpu
+		delete texture;
 	}
 
 	void on_window_resized(int width, int height) override {
@@ -2628,7 +2745,8 @@ public:
 
 	void display() override {
 		#ifdef SYS_WINDOWS
-		uint8_t* buffer; // TODO: Hook to winapi.
+		windows* winapi = (windows*)platform_instance;
+		uint8_t* buffer = winapi->get_frame_buffer();
 		output_window->get_frame_buffer()->dump_to_raw_buffer(buffer);
 		#endif
 	}
@@ -2779,12 +2897,12 @@ public:
 			texture,
 			int(dest.x * get_real_target()->get_width()),
 			int(dest.y * get_real_target()->get_height()),
-			int(dest.width * get_real_target()->get_width()),
-			int(dest.height * get_real_target()->get_height()),
+			int(dest.w * get_real_target()->get_width()),
+			int(dest.h * get_real_target()->get_height()),
 			int(src.x * get_real_target()->get_width()),
 			int(src.y * get_real_target()->get_height()),
-			int(src.width * get_real_target()->get_width()),
-			int(src.height * get_real_target()->get_height())
+			int(src.w * get_real_target()->get_width()),
+			int(src.h * get_real_target()->get_height())
 		);
 	}
 
@@ -2805,8 +2923,8 @@ public:
 		float u, v;
 		float ut, vt;
 
-		int wt = get_real_target()->width;
-		int ht = get_real_target()->height;
+		int wt = get_real_target()->get_width();
+		int ht = get_real_target()->get_height();
 
 		int x_min = dest_x;
 		int y_min = dest_y;
@@ -3142,15 +3260,21 @@ public:
 		return rge::OK;
 	}
 
-	render_target* create_render_target(int width, int height) override {
-		// NOT: Feature not supported.
-		rge::log::error("Render targets not supported with OpenGL 1.0!");
-		return nullptr;
+	texture* create_texture(int width, int height) override {
+		texture* t = new texture(width, height);
+
+		// TODO
+
+		return t;
 	}
 
-	void free_render_target(render_target* target) override {
-		// NOT: Feature not supported.
-		rge::log::error("Render targets not supported with OpenGL 1.0!");
+	void upload_texture(texture* texture) override {
+		// TODO
+	}
+
+	void free_texture(texture* texture) override {
+		// TODO: Free GPU texture.
+		delete texture;
 	}
 
 	void clear(color background) override {
@@ -3414,13 +3538,21 @@ public:
 		return rge::OK;
 	}
 
-	render_target* create_render_target(int width, int height) override {
+	texture* create_texture(int width, int height) override {
+		texture* t = new texture(width, height);
+
 		// TODO
-		return nullptr;
+
+		return t;
 	}
 
-	void free_render_target(render_target* target) override {
+	void upload_texture(texture* texture) override {
 		// TODO
+	}
+
+	void free_texture(texture* texture) override {
+		// TODO: Free GPU texture.
+		delete texture;
 	}
 
 	void clear(color background) override {
