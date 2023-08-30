@@ -11,7 +11,7 @@ This project is inspired by:
 
 ## Core System Features
 - Windows, Linux, & MacOS platform support.
-- Software & OpenGL 1.0 2D/3D renderers.
+- Software & OpenGL 2D/3D renderers.
 - Entity component system [**planned**].
 - Serialization system [**planned**].
 - Audio playback [**planned**].
@@ -30,28 +30,28 @@ Startup code example:
 class game : public rge::engine {
 public:
     game() : rge::engine() {
-        
+		
     }
-
+	
     void on_init() override {
-        
+		
     }
-
+	
 	void on_update(float delta_time) override {
-        
+		
 	}
-
+	
     void on_render() override {
-        
+		
     }
 };
 
 int main(int argc, char** argv) {
-    game* gm = new game();
+	game* gm = new game();
 	gm->create(true);
 	gm->wait_for_exit();
 	delete gm;
-    return 0;
+	return 0;
 }
 ```
 
@@ -63,6 +63,7 @@ In your compiler, set one of these defines to compile support for that platform.
 In your compiler, Set one of these defines to compile support for that renderer.
 - SYS_SOFTWARE_GL
 - SYS_OPENGL_1_0
+- SYS_OPENGL_3_3
 
 ### Windows
 Premake generates a Visual Studio 2022 solution.
