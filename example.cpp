@@ -39,7 +39,6 @@ static model_t* load_obj(const char* fname) {
 	std::vector<rge::vec3> vertices;
 	std::vector<rge::vec3> normals;
 	std::vector<rge::vec2> uvs;
-
 	std::string line;
 	std::vector<std::string> comps;
 	std::vector<std::string> face_comps;
@@ -56,26 +55,26 @@ static model_t* load_obj(const char* fname) {
 			if(comps.size() >= 4)
 				normals.push_back(rge::vec3(std::stof(comps[1]), std::stof(comps[2]), std::stof(comps[3])));
 		} else if(comps[0] == "vt") {
-			if(comps.size() >= 3)
+			if(comps.size() >= 3) {
 				uvs.push_back(rge::vec2(std::stof(comps[1]), std::stof(comps[2])));
+			}
 		} else if(comps[0] == "f") {
 			for(int i = 1; i < 4; i++) {
 				face_comps.clear();
 				face_comps = str_split(comps[i], '/');
 				int vi = 0, vti = 0, vni = 0;
 
-				if(face_comps.size() > 0) {
-					vi = std::stoi(face_comps[0]);
-				} else if(face_comps.size() > 1) {
-					vti = std::stoi(face_comps[1]);
-				} else if(face_comps.size() > 2) {
-					vni = std::stoi(face_comps[2]);
-				}
+				if(face_comps.size() > 0)
+					vi = std::stoi(face_comps[0]) - 1;
+				if(face_comps.size() > 1)
+					vti = std::stoi(face_comps[1]) - 1;
+				if(face_comps.size() > 2)
+					vni = std::stoi(face_comps[2]) - 1;
 
-				if(vti == 0) vti = vi;
-				if(vni == 0) vni = vi;
+				if(vti < 0) vti = vi;
+				if(vni < 0) vni = vi;
 
-				mdl->triangles.push_back(vertices.size());
+				mdl->triangles.push_back(mdl->vertices.size());
 				mdl->vertices.push_back(vertices[vi]);
 				mdl->uvs.push_back(uvs[vti]);
 				mdl->normals.push_back(normals[vni]);
@@ -106,8 +105,8 @@ static model_t* load_triangle() {
 	mdl->normals.push_back(rge::vec3(0, 0, 1));
 
 	mdl->triangles.push_back(0);
-	mdl->triangles.push_back(1);
 	mdl->triangles.push_back(2);
+	mdl->triangles.push_back(1);
 
 	mdl->uvs.push_back(rge::vec2(0, 0));
 	mdl->uvs.push_back(rge::vec2(0.5F, 1.0F));
@@ -138,25 +137,28 @@ public:
     void on_init() override {
 		renderer = get_renderer();
 
-		//model = load_obj("tests/cube.obj");
+		model = load_obj("tests/cube.obj");
 		triangle = load_triangle();
 
         // camera->set_perspective(60, 1.6F, 1.0F, 1000.0F);
 		camera->set_orthographic(-16, 16, 10, -10, 0.0F, 100.0F);
-		camera->transform->position = rge::vec3(0, 0, 0);
-		camera->transform->rotation = rge::quaternion::identity();
+		camera->transform->position = rge::vec3(0, 1.5F, 0);
+		camera->transform->rotation = rge::quaternion::yaw_pitch_roll(0, -22.5F * DEG_2_RAD, 0);
 
         // renderer->set_target(render);
         renderer->set_camera(camera);
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
 
+		rge::texture* test_tex = rge::texture::read_from_disk("tests/test.bmp");
+		renderer->upload_texture(test_tex);
+
 		material->diffuse = rge::color(1, 0, 1);
-        //material->texture = rge::texture::read_from_disk("tests/test.bmp");
+		material->texture = test_tex;
     }
 
 	void on_update(float delta_time) override {
 		counter += delta_time;
-		if(counter > 3.14F)
+		if(counter > 3.14F*2)
 			counter = 0;
 
 		//camera->transform->position = rge::vec3(5 * cosf(counter), 0, -5 * sinf(counter));
@@ -168,9 +170,10 @@ public:
 		
 		renderer->draw(*material->texture, rge::rect(0, 0, 0.25F, 0.25F));
 
+		
 		if(triangle) {
 			renderer->draw(
-				rge::mat4::trs(rge::vec3(0, 0, 2), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
+				rge::mat4::trs(rge::vec3(0, 0, 3), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
 				triangle->vertices,
 				triangle->triangles,
 				triangle->normals,
@@ -178,12 +181,26 @@ public:
 				*material
 			);
 		}
+
+		/*
+		if(model) {
+			renderer->draw(
+				rge::mat4::trs(rge::vec3(0, 0, 3), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
+				model->vertices,
+				model->triangles,
+				model->normals,
+				model->uvs,
+				*material
+			);
+		}
+		*/
     }
 
+	/*
 	bool on_window_close_requested(const rge::window_close_requested_event& e) override {
 		rge::log::info("Cancelled exit()");
 		return true;
-	}
+	}*/
 };
 
 

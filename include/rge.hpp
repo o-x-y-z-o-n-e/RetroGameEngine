@@ -413,7 +413,7 @@ enum class event_type {
 	KEY_PRESSED, KEY_RELEASED,
 	MOUSE_PRESSED, MOUSE_RELEASED, MOUSE_MOVED, MOUSE_SCROLLED
 };
-#define EVENT_ENUM_TYPE(type) public:\
+#define EVENT_ENUM_TYPE(type) public: \
 static event_type get_static_type() { return event_type::type; } \
 virtual event_type get_event_type() const override { return get_static_type(); }
 class event {
@@ -689,9 +689,8 @@ public:
 public:
 	int get_width() const;
 	int get_height() const;
-	bool get_on_disk() const;
-	bool get_on_cpu() const;
-	bool get_on_gpu() const;
+	bool is_on_cpu() const;
+	bool is_on_gpu() const;
 	color sample(float u, float v) const;
 	color* get_data() const;
 	uint32_t get_handle() const;
@@ -702,13 +701,18 @@ public:
 	static texture* read_from_disk(const std::string& path);
 
 public:
-	void allocate_cpu();
-	void allocate_gpu();
+	void allocate();
 
 private:
-	bool on_disk, on_cpu, on_gpu;
 	int width;
 	int height;
+
+	// Internal variables
+	#ifdef RGE_IMPL
+public:
+	#else
+private:
+	#endif
 	color* data;     // For CPU buffer
 	uint32_t handle; // For GPU ref
 
@@ -2283,15 +2287,12 @@ texture::texture(int width, int height) {
 	this->width = width;
 	this->height = height;
 
-	on_disk = false;
-	on_cpu = false;
-	on_gpu = false;
 	data = nullptr;
-
 	handle = 0;
 }
 
 texture::~texture() {
+	// TODO: Make sure GPU side is cleared as well.
 	if(data) delete[] data;
 }
 
@@ -2303,16 +2304,12 @@ int texture::get_height() const {
 	return height;
 }
 
-bool texture::get_on_disk() const {
-	return on_disk;
+bool texture::is_on_cpu() const {
+	return data != nullptr;
 }
 
-bool texture::get_on_cpu() const {
-	return on_cpu;
-}
-
-bool texture::get_on_gpu() const {
-	return on_gpu;
+bool texture::is_on_gpu() const {
+	return handle > 0;
 }
 
 color texture::sample(float u, float v) const {
@@ -2331,8 +2328,12 @@ color* texture::get_data() const {
 	return data;
 }
 
+uint32_t texture::get_handle() const {
+	return handle;
+}
+
 void texture::dump_to_raw_buffer(uint8_t* buffer) const {
-	if(!on_cpu) return;
+	if(!is_on_cpu()) return;
 
 	for(int i = 0; i < width * height; i++) {
 		color c = data[i];
@@ -2344,7 +2345,7 @@ void texture::dump_to_raw_buffer(uint8_t* buffer) const {
 }
 
 rge::result texture::write_to_disk(const std::string& path) const {
-	if(!on_cpu) return rge::FAIL;
+	if(!is_on_cpu()) return rge::FAIL;
 
 	#ifdef RGE_USE_STB_IMAGE_WRITE
 	uint8_t* buffer = (uint8_t*)malloc(4 * width * height);
@@ -2384,6 +2385,7 @@ texture* texture::read_from_disk(const std::string& path) {
 	}
 
 	texture* tex = new texture(w, h);
+	tex->allocate();
 	color* tex_data = tex->get_data();
 	color c;
 	for(i = 0; i < w * h; ++i) {
@@ -2413,19 +2415,9 @@ texture* texture::read_from_disk(const std::string& path) {
 	#endif
 }
 
-void texture::allocate_cpu() {
+void texture::allocate() {
 	if(data) return;
-
 	data = new color[width * height];
-	on_cpu = true;
-}
-
-void texture::allocate_gpu() {
-	// TODO: EXIST CHECK
-
-	// TODO
-
-	on_gpu = true;
 }
 
 //********************************************//
@@ -3443,23 +3435,45 @@ public:
 		
 		#endif
 
+		//glEnable(GL_LIGHTING);
+		glEnable(GL_LIGHT0);
+		glEnable(GL_COLOR_MATERIAL);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_NORMALIZE);
+
+		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+
 		return rge::OK;
 	}
 
 	texture* create_texture(int width, int height) override {
 		texture* t = new texture(width, height);
 
-		// TODO
+		glGenTextures(1, &t->handle);
 
 		return t;
 	}
 
 	void upload_texture(texture* texture) override {
-		// TODO
+		if(!texture->is_on_cpu()) return;
+
+		if(!texture->is_on_gpu())
+			glGenTextures(1, &texture->handle);
+
+		glBindTexture(GL_TEXTURE_2D, texture->handle);
+		//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		glTexImage2D(GL_TEXTURE_2D, 0, 4, texture->get_width(), texture->get_height(), 0, GL_RGBA, GL_FLOAT, texture->get_data());
 	}
 
 	void free_texture(texture* texture) override {
-		// TODO: Free GPU texture.
+		if(texture->is_on_gpu())
+			glDeleteTextures(1, &texture->handle);
+
 		delete texture;
 	}
 
@@ -3508,6 +3522,7 @@ public:
 		const std::vector<vec2>& uvs,
 		const material& material
 	) override {
+		int t;
 		int i;
 		int v;
 		vec3 vertex;
@@ -3522,9 +3537,29 @@ public:
 		glMatrixMode(GL_PROJECTION);
 		glLoadMatrixf(gl_m);
 
+		/*
+		glEnable(GL_ALPHA_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		*/
+
+		if(material.texture != nullptr && material.texture->is_on_gpu()) {
+			glEnable(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, material.texture->handle);
+		} else {
+			glDisable(GL_TEXTURE_2D);
+		}
+
+		float lpos[4] = { 0, 1, 0, 1.0 };  //light's position
+		//glLightfv(GL_LIGHT0, GL_POSITION, lpos);   //Set light position
+
 		glBegin(GL_TRIANGLES);
 		for(i = 0; i < triangles.size(); i++) {
 			v = triangles[i];
+
+			if(v < uvs.size()) {
+				glTexCoord2f(uvs[v].x, uvs[v].y);
+			}
 
 			if(v < vertices.size()) {
 				vertex = model_to_world.multiply_point_3x4(vertices[v]);
@@ -3536,11 +3571,17 @@ public:
 				glNormal3f(normal.x, normal.y, normal.z);
 			}
 
-			if(v < uvs.size()) {
-				glTexCoord2f(uvs[v].x, uvs[v].y);
-			}
+			
 		}
 		glEnd();
+
+		//glDisable(GL_TEXTURE_2D);
+		/*
+		glDisable(GL_BLEND);
+		glDisable(GL_LIGHTING);
+		*/
+
+		glFlush();
 
 		return rge::OK;
 	}
@@ -3557,25 +3598,32 @@ public:
 		float d_max_x = d_min_x + (dest.w * 2);
 		float d_max_y = d_min_y + (dest.h * 2);
 
+		if(texture.is_on_gpu()) {
+			glEnable(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, texture.handle);
+		} else {
+			glDisable(GL_TEXTURE_2D);
+		}
+
 		glBegin(GL_QUADS);
 
-		glVertex3f(d_min_x, d_min_y, 0);
-		glNormal3f(0, 0, -1);
 		glTexCoord2f(src.x, src.y);
-
-		glVertex3f(d_max_x, d_min_y, 0);
-		glNormal3f(0, 0, -1);
+		glVertex3f(d_min_x, d_min_y, 0);
+		
 		glTexCoord2f(src.x + src.w, src.y);
-
-		glVertex3f(d_max_x, d_max_y, 0);
-		glNormal3f(0, 0, -1);
+		glVertex3f(d_max_x, d_min_y, 0);
+		
 		glTexCoord2f(src.x + src.w, src.y + src.h);
-
-		glVertex3f(d_min_x, d_max_y, 0);
-		glNormal3f(0, 0, -1);
+		glVertex3f(d_max_x, d_max_y, 0);
+		
 		glTexCoord2f(src.x, src.y + src.h);
-
+		glVertex3f(d_min_x, d_max_y, 0);
+		
 		glEnd();
+
+		//glDisable(GL_TEXTURE_2D);
+
+		glFlush();
 	}
 
 	void draw(
