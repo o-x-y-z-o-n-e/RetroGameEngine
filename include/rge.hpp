@@ -73,6 +73,7 @@ class mouse_released_event;
 class mouse_moved_event;
 class mouse_scrolled_event;
 class engine;
+class input;
 class transform;
 class camera;
 class light;
@@ -104,32 +105,65 @@ namespace key {
 	enum code {
 		NONE = 0,
 
-		A = 65,
-		B = 66,
-		C = 67,
-		D = 68,
-		E = 69,
-		F = 70,
-		G = 71,
-		H = 72,
-		I = 73,
-		J = 74,
-		K = 75,
-		L = 76,
-		M = 77,
-		N = 78,
-		O = 79,
-		P = 80,
-		Q = 81,
-		R = 82,
-		S = 83,
-		T = 84,
-		U = 85,
-		V = 86,
-		W = 87,
-		X = 88,
-		Y = 89,
-		Z = 90,
+		A = 1,
+		B = 2,
+		C = 3,
+		D = 4,
+		E = 5,
+		F = 6,
+		G = 7,
+		H = 8,
+		I = 9,
+		J = 10,
+		K = 11,
+		L = 12,
+		M = 13,
+		N = 14,
+		O = 15,
+		P = 16,
+		Q = 17,
+		R = 18,
+		S = 19,
+		T = 20,
+		U = 21,
+		V = 22,
+		W = 23,
+		X = 24,
+		Y = 25,
+		Z = 26,
+
+		SPACE = 27,
+		CAPS = 28,
+		RETURN = 29,
+
+		DIGIT_0 = 30,
+		DIGIT_1 = 31,
+		DIGIT_2 = 32,
+		DIGIT_3 = 33,
+		DIGIT_4 = 34,
+		DIGIT_5 = 35,
+		DIGIT_6 = 36,
+		DIGIT_7 = 37,
+		DIGIT_8 = 38,
+		DIGIT_9 = 39,
+
+		LEFT = 40,
+		UP = 41,
+		RIGHT = 42,
+		DOWN = 43,
+
+		LEFT_SHIFT = 44,
+		LEFT_CTRL = 45,
+		LEFT_ALT = 46,
+
+		RIGHT_SHIFT = 47,
+		RIGHT_CTRL = 48,
+		RIGHT_ALT = 49,
+
+		TAB = 50,
+		BACKSPACE = 51,
+
+		ESC = 60,
 	};
 }
 //********************************************//
@@ -168,6 +202,7 @@ struct vec2 {
 
 	float magnitude() const;
 
+	static float distance(const vec2& a, const vec2& b);
 	static float dot(const vec2& a, const vec2& b);
 	static float cross(const vec2& a, const vec2& b);
 	static vec2 normalize(const vec2& v);
@@ -213,29 +248,34 @@ struct vec3 {
 
 	float magnitude() const;
 
+	static float distance(const vec3& a, const vec3& b);
 	static float dot(const vec3& v1, const vec3& v2);
 	static vec3 cross(const vec3& v1, const vec3& v2);
 	static vec3 normalize(const vec3& v);
 
-	vec3 operator + (const vec3& rhs) const { return vec3(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z); }
-	vec3 operator - (const vec3& rhs) const { return vec3(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z); }
-	vec3 operator * (const float& rhs) const { return vec3(this->x * rhs, this->y * rhs, this->z * rhs); }
-	vec3 operator * (const vec3& rhs) const { return vec3(this->x * rhs.x, this->y * rhs.y, this->z * rhs.z); }
-	vec3 operator / (const float& rhs) const { return vec3(this->x / rhs, this->y / rhs, this->z / rhs); }
-	vec3 operator / (const vec3& rhs) const { return vec3(this->x / rhs.x, this->y / rhs.y, this->z / rhs.z); }
+	vec3 operator + (const vec3& rhs) const;
+	vec3 operator - (const vec3& rhs) const;
+	vec3 operator * (const float& rhs) const;
+	vec3 operator * (const vec3& rhs) const;
+	vec3 operator / (const float& rhs) const;
+	vec3 operator / (const vec3& rhs) const;
 
-	vec3& operator += (const vec3& rhs) { this->x += rhs.x; this->y += rhs.y; this->z += rhs.z; return *this; }
-	vec3& operator -= (const vec3& rhs) { this->x -= rhs.x; this->y -= rhs.y; this->z -= rhs.z; return *this; }
-	vec3& operator *= (const float& rhs) { this->x *= rhs;  this->y *= rhs; this->z *= rhs; return *this; }
-	vec3& operator *= (const vec3& rhs) { this->x *= rhs.x; this->y *= rhs.y; this->z *= rhs.z; return *this; }
-	vec3& operator /= (const float& rhs) { this->x /= rhs;  this->y /= rhs; this->z /= rhs; return *this; }
-	vec3& operator /= (const vec3& rhs) { this->x /= rhs.x; this->y /= rhs.y; this->z /= rhs.z; return *this; }
+	vec3& operator += (const vec3& rhs);
+	vec3& operator -= (const vec3& rhs);
+	vec3& operator *= (const float& rhs);
+	vec3& operator *= (const vec3& rhs);
+	vec3& operator /= (const float& rhs);
+	vec3& operator /= (const vec3& rhs);
 
-	vec3 operator + () const { return { +x, +y, +z }; }
-	vec3 operator - () const { return { -x, -y, -z }; }
+	vec3 operator + () const;
+	vec3 operator - () const;
 
-	bool operator == (const vec3& rhs) const { return (this->x == rhs.x && this->y == rhs.y && this->z == rhs.z); }
-	bool operator != (const vec3& rhs) const { return (this->x != rhs.x || this->y != rhs.y || this->z != rhs.z); }
+	bool operator == (const vec3& rhs) const;
+	bool operator != (const vec3& rhs) const;
+
+	operator vec2() const;
+	operator vec4() const;
+
 };
 //********************************************//
 //* Vector3 struct.                          *//
@@ -253,28 +293,28 @@ struct vec4 {
 	vec4();
 	vec4(float x, float y, float z, float w);
 
-	vec4 operator + (const vec4& rhs) const { return vec4(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z, this->w + rhs.w); }
-	vec4 operator - (const vec4& rhs) const { return vec4(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z, this->w - rhs.w); }
-	vec4 operator * (const float& rhs) const { return vec4(this->x * rhs, this->y * rhs, this->z * rhs, this->w * rhs); }
-	vec4 operator * (const vec4& rhs) const { return vec4(this->x * rhs.x, this->y * rhs.y, this->z * rhs.z, this->w * rhs.w); }
-	vec4 operator / (const float& rhs) const { return vec4(this->x / rhs, this->y / rhs, this->z / rhs, this->w / rhs); }
-	vec4 operator / (const vec4& rhs) const { return vec4(this->x / rhs.x, this->y / rhs.y, this->z / rhs.z, this->w / rhs.w); }
+	vec4 operator + (const vec4& rhs) const;
+	vec4 operator - (const vec4& rhs) const;
+	vec4 operator * (const float& rhs) const;
+	vec4 operator * (const vec4& rhs) const;
+	vec4 operator / (const float& rhs) const;
+	vec4 operator / (const vec4& rhs) const;
 
-	vec4& operator += (const vec4& rhs) { this->x += rhs.x; this->y += rhs.y; this->z += rhs.z; this->w += rhs.w; return *this; }
-	vec4& operator -= (const vec4& rhs) { this->x -= rhs.x; this->y -= rhs.y; this->z -= rhs.z; this->w -= rhs.w; return *this; }
-	vec4& operator *= (const float& rhs) { this->x *= rhs;  this->y *= rhs; this->z *= rhs; this->w *= rhs; return *this; }
-	vec4& operator *= (const vec4& rhs) { this->x *= rhs.x; this->y *= rhs.y; this->z *= rhs.z; this->w *= rhs.w; return *this; }
-	vec4& operator /= (const float& rhs) { this->x /= rhs;  this->y /= rhs; this->z /= rhs; this->w /= rhs; return *this; }
-	vec4& operator /= (const vec4& rhs) { this->x /= rhs.x; this->y /= rhs.y; this->z /= rhs.z; this->w /= rhs.w; return *this; }
+	vec4& operator += (const vec4& rhs);
+	vec4& operator -= (const vec4& rhs);
+	vec4& operator *= (const float& rhs);
+	vec4& operator *= (const vec4& rhs);
+	vec4& operator /= (const float& rhs);
+	vec4& operator /= (const vec4& rhs);
 
-	vec4 operator + () const { return { +x, +y, +z, +w }; }
-	vec4 operator - () const { return { -x, -y, -z, -w }; }
+	vec4 operator + () const;
+	vec4 operator - () const;
 
-	bool operator == (const vec4& rhs) const { return (this->x == rhs.x && this->y == rhs.y && this->z == rhs.z && this->w == rhs.w); }
-	bool operator != (const vec4& rhs) const { return (this->x != rhs.x || this->y != rhs.y || this->z != rhs.z || this->w != rhs.w); }
+	bool operator == (const vec4& rhs) const;
+	bool operator != (const vec4& rhs) const;
 
-	operator vec3() const { return { x, y, z }; }
-	operator vec2() const { return { x, y }; }
+	operator vec3() const;
+	operator vec2() const;
 };
 //********************************************//
 //* Vector4 struct.                          *//
@@ -580,6 +620,40 @@ private:
 #pragma endregion
 
 
+#pragma region /* rge::input */
+//********************************************//
+//* Input manager                            *//
+//********************************************//
+class input {
+public:
+	static bool is_down(rge::key::code key);
+	static bool is_up(rge::key::code key);
+	static bool is_pressed(rge::key::code key);
+	static bool is_released(rge::key::code key);
+	static vec2 get_mouse_position();
+
+#ifdef RGE_IMPL
+public:
+#else
+private:
+#endif
+	static void flush_all();
+	static void flush_presses_and_releases();
+	static bool on_mouse_moved(const mouse_moved_event& e);
+	static bool on_key_pressed(const key_pressed_event& e);
+	static bool on_key_released(const key_released_event& e);
+
+private:
+	input() {}
+	static uint8_t states[255];
+	static vec2 mouse_position;
+};
+//********************************************//
+//* Input manager                            *//
+//********************************************//
+#pragma endregion
+
+
 #pragma region /* rge::transform */
 //********************************************//
 //* Transform class.                         *//
@@ -789,6 +863,7 @@ public:
 	virtual void set_window_title(const std::string& title) = 0;
 	virtual void poll_events() = 0;
 	virtual void refresh_window() = 0;
+	virtual bool is_focused() const = 0;
 
 public:
 	virtual ~platform() {}
@@ -1104,6 +1179,10 @@ float vec2::magnitude() const {
 	return sqrtf(x * x + y * y);
 }
 
+float vec2::distance(const vec2& a, const vec2& b) {
+	return (b - a).magnitude();
+}
+
 float vec2::dot(const vec2& a, const vec2& b) {
 	return a.x * b.x + a.y * b.y;
 }
@@ -1213,6 +1292,10 @@ float vec3::magnitude() const {
 	return sqrtf(x * x + y * y + z * z);
 }
 
+float vec3::distance(const vec3& a, const vec3& b) {
+	return (b - a).magnitude();
+}
+
 float vec3::dot(const vec3& v1, const vec3& v2) {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
@@ -1229,8 +1312,77 @@ vec3 vec3::normalize(const vec3& v) {
 	return v / v.magnitude();
 }
 
-// TODO: Move operator definitions here
+vec3 vec3::operator + (const vec3& rhs) const {
+	return vec3(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z);
+}
 
+vec3 vec3::operator - (const vec3& rhs) const {
+	return vec3(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z);
+}
+
+vec3 vec3::operator * (const float& rhs) const {
+	return vec3(this->x * rhs, this->y * rhs, this->z * rhs);
+}
+
+vec3 vec3::operator * (const vec3& rhs) const {
+	return vec3(this->x * rhs.x, this->y * rhs.y, this->z * rhs.z);
+}
+
+vec3 vec3::operator / (const float& rhs) const {
+	return vec3(this->x / rhs, this->y / rhs, this->z / rhs);
+}
+
+vec3 vec3::operator / (const vec3& rhs) const {
+	return vec3(this->x / rhs.x, this->y / rhs.y, this->z / rhs.z);
+}
+
+vec3& vec3::operator += (const vec3& rhs) {
+	this->x += rhs.x; this->y += rhs.y; this->z += rhs.z; return *this;
+}
+
+vec3& vec3::operator -= (const vec3& rhs) {
+	this->x -= rhs.x; this->y -= rhs.y; this->z -= rhs.z; return *this;
+}
+
+vec3& vec3::operator *= (const float& rhs) {
+	this->x *= rhs;  this->y *= rhs; this->z *= rhs; return *this;
+}
+
+vec3& vec3::operator *= (const vec3& rhs) {
+	this->x *= rhs.x; this->y *= rhs.y; this->z *= rhs.z; return *this;
+	}
+
+vec3& vec3::operator /= (const float& rhs) {
+	this->x /= rhs;  this->y /= rhs; this->z /= rhs; return *this;
+}
+
+vec3& vec3::operator /= (const vec3& rhs) {
+	this->x /= rhs.x; this->y /= rhs.y; this->z /= rhs.z; return *this;
+}
+
+vec3 vec3::operator + () const {
+	return { +x, +y, +z };
+}
+
+vec3 vec3::operator - () const {
+	return { -x, -y, -z };
+}
+
+bool vec3::operator == (const vec3& rhs) const {
+	return (this->x == rhs.x && this->y == rhs.y && this->z == rhs.z);
+}
+
+bool vec3::operator != (const vec3& rhs) const {
+	return (this->x != rhs.x || this->y != rhs.y || this->z != rhs.z);
+}
+
+vec3::operator vec2() const {
+	return vec2(x, y);
+}
+
+vec3::operator vec4() const {
+	return vec4(x, y, z, 0);
+}
 //********************************************//
 //* Vector3 struct.                          *//
 //********************************************//
@@ -1255,8 +1407,77 @@ vec4::vec4(float x, float y, float z, float w) {
 	this->w = w;
 }
 
-// TODO: Move operator definitions here
+vec4 vec4::operator + (const vec4& rhs) const {
+	return vec4(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z, this->w + rhs.w);
+}
 
+vec4 vec4::operator - (const vec4& rhs) const {
+	return vec4(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z, this->w - rhs.w);
+}
+
+vec4 vec4::operator * (const float& rhs) const {
+	return vec4(this->x * rhs, this->y * rhs, this->z * rhs, this->w * rhs);
+}
+
+vec4 vec4::operator * (const vec4& rhs) const {
+	return vec4(this->x * rhs.x, this->y * rhs.y, this->z * rhs.z, this->w * rhs.w);
+}
+
+vec4 vec4::operator / (const float& rhs) const {
+	return vec4(this->x / rhs, this->y / rhs, this->z / rhs, this->w / rhs);
+}
+
+vec4 vec4::operator / (const vec4& rhs) const {
+	return vec4(this->x / rhs.x, this->y / rhs.y, this->z / rhs.z, this->w / rhs.w);
+}
+
+vec4& vec4::operator += (const vec4& rhs) {
+	this->x += rhs.x; this->y += rhs.y; this->z += rhs.z; this->w += rhs.w; return *this;
+}
+
+vec4& vec4::operator -= (const vec4& rhs) {
+	this->x -= rhs.x; this->y -= rhs.y; this->z -= rhs.z; this->w -= rhs.w; return *this;
+}
+
+vec4& vec4::operator *= (const float& rhs) {
+	this->x *= rhs; this->y *= rhs; this->z *= rhs; this->w *= rhs; return *this;
+}
+
+vec4& vec4::operator *= (const vec4& rhs) {
+	this->x *= rhs.x; this->y *= rhs.y; this->z *= rhs.z; this->w *= rhs.w; return *this;
+}
+
+vec4& vec4::operator /= (const float& rhs) {
+	this->x /= rhs; this->y /= rhs; this->z /= rhs; this->w /= rhs; return *this;
+}
+
+vec4& vec4::operator /= (const vec4& rhs) {
+	this->x /= rhs.x; this->y /= rhs.y; this->z /= rhs.z; this->w /= rhs.w; return *this;
+}
+
+vec4 vec4::operator + () const {
+	return { +x, +y, +z, +w };
+}
+
+vec4 vec4::operator - () const {
+	return { -x, -y, -z, -w };
+}
+
+bool vec4::operator == (const vec4& rhs) const {
+	return (this->x == rhs.x && this->y == rhs.y && this->z == rhs.z && this->w == rhs.w);
+}
+
+bool vec4::operator != (const vec4& rhs) const {
+	return (this->x != rhs.x || this->y != rhs.y || this->z != rhs.z || this->w != rhs.w);
+}
+
+vec4::operator vec3() const {
+	return vec3(x, y, z);
+}
+
+vec4::operator vec2() const {
+	return vec2(x, y);
+}
 //********************************************//
 //* Vector4 struct.                          *//
 //********************************************//
@@ -1832,6 +2053,8 @@ public:
 			case event_type::MOUSE_SCROLLED:
 				return on_mouse_scrolled.add_event(e);
 		}
+
+		return false;
 	}
 
 	void process() {
@@ -1928,6 +2151,9 @@ rge::result engine::init() {
 
 	events_impl->on_window_close_requested.add_handler(RGE_BIND_EVENT_HANDLER(on_window_close_requested));
 	events_impl->on_window_resized.add_handler(RGE_BIND_EVENT_HANDLER(renderer_impl->on_window_resized));
+	events_impl->on_key_pressed.add_handler(&input::on_key_pressed);
+	events_impl->on_key_released.add_handler(&input::on_key_released);
+	events_impl->on_mouse_moved.add_handler(&input::on_mouse_moved);
 
 	on_init();
 	has_init = true;
@@ -1970,6 +2196,7 @@ void engine::loop() {
 		if(update_counter > update_interval) {
 			on_update(update_counter);
 			update_counter = 0;
+			input::flush_presses_and_releases();
 		}
 		
 		// Tick the physics routine.
@@ -2061,6 +2288,78 @@ void engine::wait_for_exit() {
 //********************************************//
 #pragma endregion
 
+
+#pragma region /* rge::input */
+//********************************************//
+//* Input manager                            *//
+//********************************************//
+uint8_t input::states[255];
+vec2 input::mouse_position;
+
+inline void _input_clear(uint8_t* d, int b) {
+	*d &= ~(1 << b);
+}
+
+inline void _input_set(uint8_t* d, int b) {
+	*d |= (1 << b);
+}
+
+inline bool _input_get(uint8_t* d, int b) {
+	return (*d & (1 << b)) != 0;
+}
+
+bool input::is_down(rge::key::code key) {
+	return _input_get(&states[key], 0);
+}
+
+bool input::is_up(rge::key::code key) {
+	return !_input_get(&states[key], 0);
+}
+
+bool input::is_pressed(rge::key::code key) {
+	return _input_get(&states[key], 1);
+}
+
+bool input::is_released(rge::key::code key) {
+	return _input_get(&states[key], 2);
+}
+
+vec2 input::get_mouse_position() {
+	return mouse_position;
+}
+
+bool input::on_key_pressed(const key_pressed_event& e) {
+	_input_set(&states[e.key_code], 1);
+	_input_set(&states[e.key_code], 0);
+	return false; // Do not consume event. Let it propagate through higher layers.
+}
+
+bool input::on_key_released(const key_released_event& e) {
+	_input_set(&states[e.key_code], 2);
+	_input_clear(&states[e.key_code], 0);
+	return false; // Do not consume event. Let it propagate through higher layers.
+}
+
+bool input::on_mouse_moved(const mouse_moved_event& e) {
+	mouse_position = vec2(e.x, e.y);
+	return false;
+}
+
+void input::flush_all() {
+	for(int i = 0; i < 255; i++)
+		states[i] = 0;
+}
+
+void input::flush_presses_and_releases() {
+	for(int i = 0; i < 255; i++) {
+		_input_clear(&states[i], 1);
+		_input_clear(&states[i], 2);
+	}
+}
+//********************************************//
+//* Input manager                            *//
+//********************************************//
+#pragma endregion
 
 #pragma region /* rge::transform */
 //********************************************//
@@ -2574,6 +2873,7 @@ public:
 
 	bool has_init;
 	bool has_window;
+	bool has_focus;
 
 	struct {
 		BITMAPINFO bitmap_info;
@@ -2588,6 +2888,7 @@ public:
 		windows_instance = this;
 		has_init = false;
 		has_window = false;
+		has_focus = false;
 	}
 
 public:
@@ -2680,6 +2981,39 @@ public:
 		return w;
 	}
 
+	static rge::key::code convert_sys_key_to_rge_key(uint8_t sys_key) {
+		// If system key is a letter.
+		if(sys_key > 0x40 && sys_key < 0x5B)
+			return (rge::key::code)(sys_key - 0x40);
+
+		// If system key is a digit (keypad).
+		if(sys_key > 0x5F && sys_key < 0x6A)
+			return (rge::key::code)(sys_key - 0x60 + 30);
+
+		// If system key is a digit (alpha).
+		if(sys_key > 0x2F && sys_key < 0x3A)
+			return (rge::key::code)(sys_key - 0x30 + 30);
+
+		// Otherwise...
+		switch(sys_key) {
+			case VK_SPACE: return	rge::key::SPACE;
+			case VK_CAPITAL: return rge::key::CAPS;
+			case VK_RETURN: return	rge::key::RETURN;
+			case VK_LEFT: return	rge::key::LEFT;
+			case VK_UP: return		rge::key::UP;
+			case VK_RIGHT: return	rge::key::RIGHT;
+			case VK_DOWN: return	rge::key::DOWN;
+			case VK_LSHIFT: return	rge::key::LEFT_SHIFT;
+			case VK_CONTROL: return rge::key::LEFT_CTRL;
+			case VK_RSHIFT: return	rge::key::RIGHT_SHIFT;
+			case VK_TAB: return		rge::key::TAB;
+			case VK_BACK: return	rge::key::BACKSPACE;
+			case VK_ESCAPE: return	rge::key::ESC;
+		}
+
+		return rge::key::NONE;
+	}
+
 	void set_window_title(const std::string& title) override {
 		if(!has_window) return;
 
@@ -2734,8 +3068,103 @@ public:
 				break;
 			}
 
-			default:
-			{
+			case WM_MOVE: {
+				window_moved_event e;
+				e.x = (int)(short)LOWORD(lParam); // Horizontal position.
+				e.y = (int)(short)HIWORD(lParam); // Vertical position.
+				engine_instance->post_event(e);
+				break;
+			}
+
+			case WM_KILLFOCUS: {
+				windows_instance->has_focus = false;
+				window_unfocused_event e;
+				engine_instance->post_event(e);
+				break;
+			}
+
+			case WM_SETFOCUS: {
+				windows_instance->has_focus = true;
+				window_focused_event e;
+				engine_instance->post_event(e);
+				break;
+			}
+			
+			case WM_KEYUP: {
+				key_released_event e;
+				e.key_code = convert_sys_key_to_rge_key((uint8_t)wParam);
+				engine_instance->post_event(e);
+				break;
+			}
+
+			case WM_KEYDOWN: {
+				bool key_was_down = ((lParam & (1 << 30)) != 0);
+				if(!key_was_down) {
+					key_pressed_event e;
+					e.key_code = convert_sys_key_to_rge_key((uint8_t)wParam);
+					engine_instance->post_event(e);
+				}
+				break;
+			}
+
+			case WM_LBUTTONDOWN: {
+				mouse_pressed_event e;
+				e.button = 0;
+				engine_instance->post_event(e);
+				break;
+			}
+
+			case WM_RBUTTONDOWN: {
+				mouse_pressed_event e;
+				e.button = 1;
+				engine_instance->post_event(e);
+				break;
+			}
+
+			case WM_MBUTTONDOWN: {
+				mouse_pressed_event e;
+				e.button = 2;
+				engine_instance->post_event(e);
+				break;
+			}
+
+			case WM_LBUTTONUP: {
+				mouse_released_event e;
+				e.button = 0;
+				engine_instance->post_event(e);
+				break;
+			}
+
+			case WM_RBUTTONUP: {
+				mouse_released_event e;
+				e.button = 1;
+				engine_instance->post_event(e);
+				break;
+			}
+
+			case WM_MBUTTONUP: {
+				mouse_released_event e;
+				e.button = 2;
+				engine_instance->post_event(e);
+				break;
+			}
+
+			case WM_MOUSEMOVE: {
+				mouse_moved_event e;
+				e.x = (int)(short)LOWORD(lParam); // Horizontal position.
+				e.y = (int)(short)HIWORD(lParam); // Vertical position.
+				engine_instance->post_event(e);
+				break;
+			}
+
+			case WM_MOUSEWHEEL: {
+				mouse_scrolled_event e;
+				e.scroll = (short)HIWORD(wParam) / 120;
+				engine_instance->post_event(e);
+				break;
+			}
+
+			default: {
 				return DefWindowProc(hwnd, msg, wParam, lParam);
 			}
 		}
@@ -2763,6 +3192,10 @@ public:
 
 	uint8_t* get_frame_buffer() {
 		return (uint8_t*)frame.buffer;
+	}
+
+	bool is_focused() const {
+		return has_focus;
 	}
 };
 
@@ -2909,7 +3342,7 @@ public:
 
 	bool on_window_resized(const window_resized_event& e) override {
 		output_window->resize(e.width, e.height);
-		return true;
+		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
 	void clear(color background) override {
@@ -3644,7 +4077,7 @@ public:
 		window_width = e.width;
 		window_height = e.height;
 		glViewport(0, 0, window_width, window_height);
-		return true;
+		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 };
 #endif /* SYS_OPENGL_1_0 */
@@ -3860,7 +4293,7 @@ public:
 		window_width = e.width;
 		window_height = e.height;
 		glViewport(0, 0, window_width, window_height);
-		return true;
+		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 };
 #endif /* SYS_OPENGL_3_3 */

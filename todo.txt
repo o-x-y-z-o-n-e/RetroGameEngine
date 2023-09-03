@@ -1,5 +1,4 @@
 ==CURRENT==
-	[windows & opengl_1_0] + texture render
 	windows + software_gl
 	macosx + opengl_1_0
 	macosx + software_gl
@@ -7,7 +6,6 @@
 	linux + software_gl
 
 	engine-level input system
-	windows input
 	macosx input
 	linux input
 	
@@ -17,6 +15,7 @@
 ==CURRENT==
 
 ==FUTURE==
+	gamepad support
 	entity component system
 	physics
 	audio

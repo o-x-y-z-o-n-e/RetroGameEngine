@@ -137,7 +137,7 @@ public:
     void on_init() override {
 		renderer = get_renderer();
 
-		model = load_obj("tests/cube.obj");
+		// model = load_obj("tests/cube.obj");
 		triangle = load_triangle();
 
         // camera->set_perspective(60, 1.6F, 1.0F, 1000.0F);
@@ -182,7 +182,7 @@ public:
 			);
 		}
 
-		/*
+		
 		if(model) {
 			renderer->draw(
 				rge::mat4::trs(rge::vec3(0, 0, 3), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
@@ -193,7 +193,6 @@ public:
 				*material
 			);
 		}
-		*/
     }
 
 	/*
