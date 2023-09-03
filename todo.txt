@@ -1,11 +1,12 @@
 ==CURRENT==
+	gamepad input
+
 	windows + software_gl
 	macosx + opengl_1_0
 	macosx + software_gl
 	linux + opengl_1_0
 	linux + software_gl
 
-	engine-level input system
 	macosx input
 	linux input
 	

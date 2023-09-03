@@ -73,7 +73,6 @@ class mouse_released_event;
 class mouse_moved_event;
 class mouse_scrolled_event;
 class engine;
-class input;
 class transform;
 class camera;
 class light;
@@ -90,91 +89,9 @@ enum result {
 };
 
 
-enum class light_mode {
-	DIRECTIONAL,
-	POINT,
-	SPOT
-};
-
-
-#pragma region /* rge::key */
-//********************************************//
-//* Key module.                              *//
-//********************************************//
-namespace key {
-	enum code {
-		NONE = 0,
-
-		A = 1,
-		B = 2,
-		C = 3,
-		D = 4,
-		E = 5,
-		F = 6,
-		G = 7,
-		H = 8,
-		I = 9,
-		J = 10,
-		K = 11,
-		L = 12,
-		M = 13,
-		N = 14,
-		O = 15,
-		P = 16,
-		Q = 17,
-		R = 18,
-		S = 19,
-		T = 20,
-		U = 21,
-		V = 22,
-		W = 23,
-		X = 24,
-		Y = 25,
-		Z = 26,
-
-		SPACE = 27,
-		CAPS = 28,
-		RETURN = 29,
-
-		DIGIT_0 = 30,
-		DIGIT_1 = 31,
-		DIGIT_2 = 32,
-		DIGIT_3 = 33,
-		DIGIT_4 = 34,
-		DIGIT_5 = 35,
-		DIGIT_6 = 36,
-		DIGIT_7 = 37,
-		DIGIT_8 = 38,
-		DIGIT_9 = 39,
-
-		LEFT = 40,
-		UP = 41,
-		RIGHT = 42,
-		DOWN = 43,
-
-		LEFT_SHIFT = 44,
-		LEFT_CTRL = 45,
-		LEFT_ALT = 46,
-
-		RIGHT_SHIFT = 47,
-		RIGHT_CTRL = 48,
-		RIGHT_ALT = 49,
-
-		TAB = 50,
-		BACKSPACE = 51,
-
-		ESC = 60,
-	};
-}
-//********************************************//
-//* Key module.                              *//
-//********************************************//
-#pragma endregion
-
-
 #pragma region /* rge::rect */
 //********************************************//
-//* Rectangle struct.                        *//
+//* Rectangle Struct                         *//
 //********************************************//
 struct rect {
 	float x, y, w, h;
@@ -185,14 +102,14 @@ struct rect {
 	vec2 get_max() const;
 };
 //********************************************//
-//* Rectangle struct.                        *//
+//* Rectangle Struct                         *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::vec2 */
 //********************************************//
-//* Vector2 struct.                          *//
+//* Vector2 Struct                           *//
 //********************************************//
 struct vec2 {
 	float x, y;
@@ -231,14 +148,14 @@ struct vec2 {
 	operator vec4() const;
 };
 //********************************************//
-//* Vector2 struct.                          *//
+//* Vector2 Struct                           *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::vec3 */
 //********************************************//
-//* Vector3 struct.                          *//
+//* Vector3 Struct                           *//
 //********************************************//
 struct vec3 {
 	float x, y, z;
@@ -278,14 +195,14 @@ struct vec3 {
 
 };
 //********************************************//
-//* Vector3 struct.                          *//
+//* Vector3 Struct                           *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::vec4 */
 //********************************************//
-//* Vector4 struct.                          *//
+//* Vector4 Struct                           *//
 //********************************************//
 struct vec4 {
 	float x, y, z, w;
@@ -317,14 +234,14 @@ struct vec4 {
 	operator vec2() const;
 };
 //********************************************//
-//* Vector4 struct.                          *//
+//* Vector4 Struct                           *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::quaternion */
 //********************************************//
-//* Quaternion struct.                       *//
+//* Quaternion Struct                        *//
 //********************************************//
 struct quaternion {
 	float x, y, z, w;
@@ -340,14 +257,14 @@ struct quaternion {
 	vec3 operator * (const vec3& rhs) const;
 };
 //********************************************//
-//* Quaternion struct.                       *//
+//* Quaternion Struct                        *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::mat4 */
 //********************************************//
-//* Matrix 4x4 struct.                       *//
+//* Matrix 4x4 Struct                        *//
 //********************************************//
 struct mat4 {
 	float m[4][4]; // Rows by columns.
@@ -374,14 +291,14 @@ struct mat4 {
 	mat4 operator * (const mat4& rhs) const;
 };
 //********************************************//
-//* Matrix 4x4 struct.                       *//
+//* Matrix 4x4 Struct                        *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::color */
 //********************************************//
-//* Color struct.                            *//
+//* Color Struct                             *//
 //********************************************//
 struct color {
 	float r, g, b, a;
@@ -405,14 +322,14 @@ struct color {
 	color& operator /= (const float& rhs);
 };
 //********************************************//
-//* Color struct.                            *//
+//* Color Struct                             *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::math */
 //********************************************//
-//* Math Module.                             *//
+//* Math Module                              *//
 //********************************************//
 namespace math {
 	#define DEG_2_RAD 0.0174532924F
@@ -423,14 +340,14 @@ namespace math {
 	int max(int a, int b) { return a > b ? a : b; }
 }
 //********************************************//
-//* Math Module.                             *//
+//* Math Module                              *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::log */
 //********************************************//
-//* Logging Module.                          *//
+//* Logging Module                           *//
 //********************************************//
 namespace log {
 	void info(const char* msg, ...);
@@ -438,7 +355,129 @@ namespace log {
 	void error(const char* msg, ...);
 }
 //********************************************//
-//* Logging Module.                          *//
+//* Logging Module                           *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::input */
+//********************************************//
+//* Input Module                             *//
+//********************************************//
+namespace input {
+	enum code {
+		NONE = 0,
+
+		// Keyboard keys.
+
+		KEY_A = 1,
+		KEY_B = 2,
+		KEY_C = 3,
+		KEY_D = 4,
+		KEY_E = 5,
+		KEY_F = 6,
+		KEY_G = 7,
+		KEY_H = 8,
+		KEY_I = 9,
+		KEY_J = 10,
+		KEY_K = 11,
+		KEY_L = 12,
+		KEY_M = 13,
+		KEY_N = 14,
+		KEY_O = 15,
+		KEY_P = 16,
+		KEY_Q = 17,
+		KEY_R = 18,
+		KEY_S = 19,
+		KEY_T = 20,
+		KEY_U = 21,
+		KEY_V = 22,
+		KEY_W = 23,
+		KEY_X = 24,
+		KEY_Y = 25,
+		KEY_Z = 26,
+
+		KEY_SPACE = 27,
+		KEY_CAPS = 28,
+		KEY_RETURN = 29,
+
+		KEY_0 = 30,
+		KEY_1 = 31,
+		KEY_2 = 32,
+		KEY_3 = 33,
+		KEY_4 = 34,
+		KEY_5 = 35,
+		KEY_6 = 36,
+		KEY_7 = 37,
+		KEY_8 = 38,
+		KEY_9 = 39,
+
+		KEY_UP = 40,
+		KEY_DOWN = 41,
+		KEY_LEFT = 42,
+		KEY_RIGHT = 43,
+
+		KEY_LEFT_SHIFT = 44,
+		KEY_LEFT_CTRL = 45,
+		KEY_LEFT_ALT = 46,
+
+		KEY_RIGHT_SHIFT = 47,
+		KEY_RIGHT_CTRL = 48,
+		KEY_RIGHT_ALT = 49,
+
+		KEY_TAB = 50,
+		KEY_BACKSPACE = 51,
+
+		KEY_ESC = 60,
+
+		// Mouse buttons.
+
+		MOUSE_LEFT = 100,
+		MOUSE_RIGHT = 101,
+		MOUSE_MIDDLE = 102,
+		MOUSE_SCROLL = 103,
+
+		// Gamepad buttons & axis.
+
+		GAMEPAD_UP = 150,
+		GAMEPAD_DOWN = 151,
+		GAMEPAD_LEFT = 152,
+		GAMEPAD_RIGHT = 153,
+
+		GAMEPAD_NORTH = 154,
+		GAMEPAD_SOUTH = 155,
+		GAMEPAD_WEST = 156,
+		GAMEPAD_EAST = 157,
+
+		GAMEPAD_LEFT_TRIGGER = 158,
+		GAMEPAD_RIGHT_TRIGGER = 159,
+		GAMEPAD_LEFT_BUMPER = 160,
+		GAMEPAD_RIGHT_BUMPER = 161,
+
+		GAMEPAD_OPTIONS = 162,
+		GAMEPAD_START = 163,
+	};
+
+	bool is_down(rge::input::code input_code, int user = 0);
+	bool is_up(rge::input::code input_code, int user = 0);
+	bool has_pressed(rge::input::code input_code, int user = 0);
+	bool has_released(rge::input::code input_code, int user = 0);
+	float get_axis(rge::input::code input_code, int user = 0);
+	vec2 get_mouse_position();
+
+	#ifdef RGE_IMPL // Internal functions, no touchy.
+	void flush_all();
+	void flush_presses_and_releases();
+	bool on_key_pressed(const key_pressed_event& e);
+	bool on_key_released(const key_released_event& e);
+	bool on_mouse_pressed(const mouse_pressed_event& e);
+	bool on_mouse_released(const mouse_released_event& e);
+	bool on_mouse_scrolled(const mouse_scrolled_event& e);
+	bool on_mouse_moved(const mouse_moved_event& e);
+	#endif
+}
+//********************************************//
+//* Input module                             *//
 //********************************************//
 #pragma endregion
 
@@ -509,13 +548,13 @@ class window_unfocused_event : public event {
 class key_pressed_event : public event {
 	EVENT_ENUM_TYPE(KEY_PRESSED)
 public:
-	rge::key::code key_code;
+	rge::input::code input_code;
 };
 //----------------------------------------------
 class key_released_event : public event {
 	EVENT_ENUM_TYPE(KEY_RELEASED)
 public:
-	rge::key::code key_code;
+	rge::input::code input_code;
 };
 //********************************************//
 //* Key events                               *//
@@ -530,13 +569,13 @@ public:
 class mouse_pressed_event : public event {
 	EVENT_ENUM_TYPE(MOUSE_PRESSED)
 public:
-	int button;
+	rge::input::code input_code;
 };
 //----------------------------------------------
 class mouse_released_event : public event {
 	EVENT_ENUM_TYPE(MOUSE_RELEASED)
 public:
-	int button;
+	rge::input::code input_code;
 };
 //----------------------------------------------
 class mouse_moved_event : public event {
@@ -620,40 +659,6 @@ private:
 #pragma endregion
 
 
-#pragma region /* rge::input */
-//********************************************//
-//* Input manager                            *//
-//********************************************//
-class input {
-public:
-	static bool is_down(rge::key::code key);
-	static bool is_up(rge::key::code key);
-	static bool is_pressed(rge::key::code key);
-	static bool is_released(rge::key::code key);
-	static vec2 get_mouse_position();
-
-#ifdef RGE_IMPL
-public:
-#else
-private:
-#endif
-	static void flush_all();
-	static void flush_presses_and_releases();
-	static bool on_mouse_moved(const mouse_moved_event& e);
-	static bool on_key_pressed(const key_pressed_event& e);
-	static bool on_key_released(const key_released_event& e);
-
-private:
-	input() {}
-	static uint8_t states[255];
-	static vec2 mouse_position;
-};
-//********************************************//
-//* Input manager                            *//
-//********************************************//
-#pragma endregion
-
-
 #pragma region /* rge::transform */
 //********************************************//
 //* Transform class.                         *//
@@ -733,6 +738,12 @@ private:
 //********************************************//
 //* Light class.                             *//
 //********************************************//
+enum class light_mode {
+	DIRECTIONAL,
+	POINT,
+	SPOT
+};
+
 class light {
 public:
 	light();
@@ -1949,6 +1960,172 @@ void log::error(const char* msg, ...) {
 #pragma endregion
 
 
+#pragma region /* rge::input */
+//********************************************//
+//* Input Module                             *//
+//********************************************//
+namespace input {
+	typedef uint8_t button;
+	const int NUM_KEYBOARD_BUTTONS = 60;
+	const int NUM_MOUSE_BUTTONS = 3;
+	const int NUM_GAMEPAD_BUTTONS = 14;
+	const int NUM_GAMEPAD_AXIS = 6;
+	const int MAX_GAMEPAD_COUNT = 4;
+
+	static button keyboard_buttons[NUM_KEYBOARD_BUTTONS];
+
+	static button mouse_buttons[NUM_MOUSE_BUTTONS];
+	static float mouse_scroll = 0;
+	static vec2 mouse_position = vec2();
+
+	static button gamepad_buttons[NUM_GAMEPAD_BUTTONS][MAX_GAMEPAD_COUNT];
+	static float gamepad_axis[NUM_GAMEPAD_AXIS][MAX_GAMEPAD_COUNT];
+
+	inline void clear(button* d, int b) {
+		*d &= ~(1 << b);
+	}
+
+	inline void set(button* d, int b) {
+		*d |= (1 << b);
+	}
+
+	inline bool get(button* d, int b) {
+		return (*d & (1 << b)) != 0;
+	}
+
+	bool is_down(rge::input::code input_code, int user = 0) {
+		if(input_code >= KEY_A && input_code <= KEY_ESC) {
+			return get(&keyboard_buttons[input_code - KEY_A], 0);
+		}
+
+		if(input_code >= MOUSE_LEFT && input_code <= MOUSE_MIDDLE) {
+			return get(&mouse_buttons[input_code - MOUSE_LEFT], 0);
+		}
+
+		if(input_code >= GAMEPAD_UP && input_code <= GAMEPAD_START && user >= 0 && user < MAX_GAMEPAD_COUNT) {
+			return get(&gamepad_buttons[input_code - GAMEPAD_UP][user], 0);
+		}
+
+		return false;
+	}
+
+	bool is_up(rge::input::code input_code, int user = 0) {
+		return !is_down(input_code, user);
+	}
+
+	bool has_pressed(rge::input::code input_code, int user = 0) {
+		if(input_code >= KEY_A && input_code <= KEY_ESC) {
+			return get(&keyboard_buttons[input_code - KEY_A], 1);
+		}
+
+		if(input_code >= MOUSE_LEFT && input_code <= MOUSE_MIDDLE) {
+			return get(&mouse_buttons[input_code - MOUSE_LEFT], 1);
+		}
+
+		if(input_code >= GAMEPAD_UP && input_code <= GAMEPAD_START && user >= 0 && user < MAX_GAMEPAD_COUNT) {
+			return get(&gamepad_buttons[input_code - GAMEPAD_UP][user], 1);
+		}
+
+		return false;
+	}
+
+	bool has_released(rge::input::code input_code, int user = 0) {
+		if(input_code >= KEY_A && input_code <= KEY_ESC) {
+			return get(&keyboard_buttons[input_code], 2);
+		}
+
+		if(input_code >= MOUSE_LEFT && input_code <= MOUSE_MIDDLE) {
+			return get(&mouse_buttons[input_code - MOUSE_LEFT], 2);
+		}
+
+		if(input_code >= GAMEPAD_UP && input_code <= GAMEPAD_START && user >= 0 && user < MAX_GAMEPAD_COUNT) {
+			return get(&gamepad_buttons[input_code - GAMEPAD_UP][user], 2);
+		}
+
+		return false;
+	}
+
+	vec2 get_mouse_position() {
+		return mouse_position;
+	}
+
+	float get_axis(rge::input::code input_code, int user = 0) {
+		if(input_code == rge::input::MOUSE_SCROLL) {
+			return mouse_scroll;
+		}
+
+		// TODO: Gamepad
+
+		return 0;
+	}
+
+	bool on_key_pressed(const key_pressed_event& e) {
+		set(&keyboard_buttons[e.input_code - KEY_A], 1);
+		set(&keyboard_buttons[e.input_code - KEY_A], 0);
+		return false; // Do not consume event. Let it propagate through higher layers.
+	}
+
+	bool on_key_released(const key_released_event& e) {
+		set(&keyboard_buttons[e.input_code - KEY_A], 2);
+		clear(&keyboard_buttons[e.input_code - KEY_A], 0);
+		return false; // Do not consume event. Let it propagate through higher layers.
+	}
+
+	bool on_mouse_pressed(const mouse_pressed_event& e) {
+		set(&mouse_buttons[e.input_code - MOUSE_LEFT], 1);
+		set(&mouse_buttons[e.input_code - MOUSE_LEFT], 0);
+		return false; // Do not consume event. Let it propagate through higher layers.
+	}
+
+	bool on_mouse_released(const mouse_released_event& e) {
+		set(&mouse_buttons[e.input_code - MOUSE_LEFT], 2);
+		clear(&mouse_buttons[e.input_code - MOUSE_LEFT], 0);
+		return false; // Do not consume event. Let it propagate through higher layers.
+	}
+
+	bool on_mouse_moved(const mouse_moved_event& e) {
+		mouse_position = vec2(e.x, e.y);
+		return false; // Do not consume event. Let it propagate through higher layers.
+	}
+
+	bool on_mouse_scrolled(const mouse_scrolled_event& e) {
+		mouse_scroll = e.scroll;
+		return false; // Do not consume event. Let it propagate through higher layers.
+	}
+
+	void flush_all() {
+		for(int i = 0; i < NUM_KEYBOARD_BUTTONS; i++) keyboard_buttons[i] = 0;
+		for(int i = 0; i < NUM_MOUSE_BUTTONS; i++) mouse_buttons[i] = 0;
+		for(int i = 0; i < NUM_GAMEPAD_BUTTONS; i++)
+			for(int j = 0; j < MAX_GAMEPAD_COUNT; j++)
+				gamepad_buttons[i][j] = 0;
+	}
+
+	void flush_presses_and_releases() {
+		for(int i = 0; i < NUM_KEYBOARD_BUTTONS; i++) {
+			clear(&keyboard_buttons[i], 1);
+			clear(&keyboard_buttons[i], 2);
+		}
+
+		for(int i = 0; i < NUM_MOUSE_BUTTONS; i++) {
+			clear(&keyboard_buttons[i], 1);
+			clear(&keyboard_buttons[i], 2);
+		}
+
+		for(int i = 0; i < NUM_GAMEPAD_BUTTONS; i++) {
+			for(int j = 0; j < MAX_GAMEPAD_COUNT; j++) {
+				clear(&gamepad_buttons[i][j], 1);
+				clear(&gamepad_buttons[i][j], 2);
+			}
+		}
+	}
+}
+//********************************************//
+//* Input Module                             *//
+//********************************************//
+#pragma endregion
+
+
 #pragma region /* rge::event_dispatcher */
 //********************************************//
 //* Event dispatcher                         *//
@@ -2153,6 +2330,9 @@ rge::result engine::init() {
 	events_impl->on_window_resized.add_handler(RGE_BIND_EVENT_HANDLER(renderer_impl->on_window_resized));
 	events_impl->on_key_pressed.add_handler(&input::on_key_pressed);
 	events_impl->on_key_released.add_handler(&input::on_key_released);
+	events_impl->on_mouse_pressed.add_handler(&input::on_mouse_pressed);
+	events_impl->on_mouse_released.add_handler(&input::on_mouse_released);
+	events_impl->on_mouse_scrolled.add_handler(&input::on_mouse_scrolled);
 	events_impl->on_mouse_moved.add_handler(&input::on_mouse_moved);
 
 	on_init();
@@ -2288,78 +2468,6 @@ void engine::wait_for_exit() {
 //********************************************//
 #pragma endregion
 
-
-#pragma region /* rge::input */
-//********************************************//
-//* Input manager                            *//
-//********************************************//
-uint8_t input::states[255];
-vec2 input::mouse_position;
-
-inline void _input_clear(uint8_t* d, int b) {
-	*d &= ~(1 << b);
-}
-
-inline void _input_set(uint8_t* d, int b) {
-	*d |= (1 << b);
-}
-
-inline bool _input_get(uint8_t* d, int b) {
-	return (*d & (1 << b)) != 0;
-}
-
-bool input::is_down(rge::key::code key) {
-	return _input_get(&states[key], 0);
-}
-
-bool input::is_up(rge::key::code key) {
-	return !_input_get(&states[key], 0);
-}
-
-bool input::is_pressed(rge::key::code key) {
-	return _input_get(&states[key], 1);
-}
-
-bool input::is_released(rge::key::code key) {
-	return _input_get(&states[key], 2);
-}
-
-vec2 input::get_mouse_position() {
-	return mouse_position;
-}
-
-bool input::on_key_pressed(const key_pressed_event& e) {
-	_input_set(&states[e.key_code], 1);
-	_input_set(&states[e.key_code], 0);
-	return false; // Do not consume event. Let it propagate through higher layers.
-}
-
-bool input::on_key_released(const key_released_event& e) {
-	_input_set(&states[e.key_code], 2);
-	_input_clear(&states[e.key_code], 0);
-	return false; // Do not consume event. Let it propagate through higher layers.
-}
-
-bool input::on_mouse_moved(const mouse_moved_event& e) {
-	mouse_position = vec2(e.x, e.y);
-	return false;
-}
-
-void input::flush_all() {
-	for(int i = 0; i < 255; i++)
-		states[i] = 0;
-}
-
-void input::flush_presses_and_releases() {
-	for(int i = 0; i < 255; i++) {
-		_input_clear(&states[i], 1);
-		_input_clear(&states[i], 2);
-	}
-}
-//********************************************//
-//* Input manager                            *//
-//********************************************//
-#pragma endregion
 
 #pragma region /* rge::transform */
 //********************************************//
@@ -2981,37 +3089,37 @@ public:
 		return w;
 	}
 
-	static rge::key::code convert_sys_key_to_rge_key(uint8_t sys_key) {
+	static rge::input::code convert_sys_key_to_rge_key(uint8_t sys_key) {
 		// If system key is a letter.
 		if(sys_key > 0x40 && sys_key < 0x5B)
-			return (rge::key::code)(sys_key - 0x40);
+			return (rge::input::code)(sys_key - 0x40);
 
 		// If system key is a digit (keypad).
 		if(sys_key > 0x5F && sys_key < 0x6A)
-			return (rge::key::code)(sys_key - 0x60 + 30);
+			return (rge::input::code)(sys_key - 0x60 + 30);
 
 		// If system key is a digit (alpha).
 		if(sys_key > 0x2F && sys_key < 0x3A)
-			return (rge::key::code)(sys_key - 0x30 + 30);
+			return (rge::input::code)(sys_key - 0x30 + 30);
 
 		// Otherwise...
 		switch(sys_key) {
-			case VK_SPACE: return	rge::key::SPACE;
-			case VK_CAPITAL: return rge::key::CAPS;
-			case VK_RETURN: return	rge::key::RETURN;
-			case VK_LEFT: return	rge::key::LEFT;
-			case VK_UP: return		rge::key::UP;
-			case VK_RIGHT: return	rge::key::RIGHT;
-			case VK_DOWN: return	rge::key::DOWN;
-			case VK_LSHIFT: return	rge::key::LEFT_SHIFT;
-			case VK_CONTROL: return rge::key::LEFT_CTRL;
-			case VK_RSHIFT: return	rge::key::RIGHT_SHIFT;
-			case VK_TAB: return		rge::key::TAB;
-			case VK_BACK: return	rge::key::BACKSPACE;
-			case VK_ESCAPE: return	rge::key::ESC;
+			case VK_SPACE: return	rge::input::KEY_SPACE;
+			case VK_CAPITAL: return rge::input::KEY_CAPS;
+			case VK_RETURN: return	rge::input::KEY_RETURN;
+			case VK_LEFT: return	rge::input::KEY_LEFT;
+			case VK_UP: return		rge::input::KEY_UP;
+			case VK_RIGHT: return	rge::input::KEY_RIGHT;
+			case VK_DOWN: return	rge::input::KEY_DOWN;
+			case VK_LSHIFT: return	rge::input::KEY_LEFT_SHIFT;
+			case VK_CONTROL: return rge::input::KEY_LEFT_CTRL;
+			case VK_RSHIFT: return	rge::input::KEY_RIGHT_SHIFT;
+			case VK_TAB: return		rge::input::KEY_TAB;
+			case VK_BACK: return	rge::input::KEY_BACKSPACE;
+			case VK_ESCAPE: return	rge::input::KEY_ESC;
 		}
 
-		return rge::key::NONE;
+		return rge::input::NONE;
 	}
 
 	void set_window_title(const std::string& title) override {
@@ -3092,7 +3200,7 @@ public:
 			
 			case WM_KEYUP: {
 				key_released_event e;
-				e.key_code = convert_sys_key_to_rge_key((uint8_t)wParam);
+				e.input_code = convert_sys_key_to_rge_key((uint8_t)wParam);
 				engine_instance->post_event(e);
 				break;
 			}
@@ -3101,7 +3209,7 @@ public:
 				bool key_was_down = ((lParam & (1 << 30)) != 0);
 				if(!key_was_down) {
 					key_pressed_event e;
-					e.key_code = convert_sys_key_to_rge_key((uint8_t)wParam);
+					e.input_code = convert_sys_key_to_rge_key((uint8_t)wParam);
 					engine_instance->post_event(e);
 				}
 				break;
@@ -3109,42 +3217,42 @@ public:
 
 			case WM_LBUTTONDOWN: {
 				mouse_pressed_event e;
-				e.button = 0;
+				e.input_code = rge::input::MOUSE_LEFT;
 				engine_instance->post_event(e);
 				break;
 			}
 
 			case WM_RBUTTONDOWN: {
 				mouse_pressed_event e;
-				e.button = 1;
+				e.input_code = rge::input::MOUSE_RIGHT;
 				engine_instance->post_event(e);
 				break;
 			}
 
 			case WM_MBUTTONDOWN: {
 				mouse_pressed_event e;
-				e.button = 2;
+				e.input_code = rge::input::MOUSE_MIDDLE;
 				engine_instance->post_event(e);
 				break;
 			}
 
 			case WM_LBUTTONUP: {
 				mouse_released_event e;
-				e.button = 0;
+				e.input_code = rge::input::MOUSE_LEFT;
 				engine_instance->post_event(e);
 				break;
 			}
 
 			case WM_RBUTTONUP: {
 				mouse_released_event e;
-				e.button = 1;
+				e.input_code = rge::input::MOUSE_RIGHT;
 				engine_instance->post_event(e);
 				break;
 			}
 
 			case WM_MBUTTONUP: {
 				mouse_released_event e;
-				e.button = 2;
+				e.input_code = rge::input::MOUSE_MIDDLE;
 				engine_instance->post_event(e);
 				break;
 			}
