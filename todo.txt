@@ -10,6 +10,7 @@
 	macosx keyboard & mouse input
 	linux keyboard & mouse input
 	
+	texture filtering options
 	obj loading
 	yaml parsing & writer
 	multithreaded command queue

@@ -312,6 +312,7 @@ struct color {
 	color(float r, float g, float b);
 	color(float r, float g, float b, float a);
 
+	// Linearly interpolate between colors a & b.
 	static color lerp(const color& a, const color& b, float t);
 
 	color operator + (const color& rhs) const;
@@ -339,9 +340,18 @@ struct color {
 namespace math {
 	#define DEG_2_RAD 0.0174532924F
 	#define RAD_2_DEG 57.29578F
+	#define PI 3.14159265F
+
+	// Linearly interpolate between numbers a & b.
 	float lerp(float a, float b, float t);
+
+	// Gets the linear percent between points a & b.
 	float inverse_lerp(float a, float b, float v);
+
+	// Returns smallest integer.
 	int min(int a, int b) { return a < b ? a : b; }
+
+	// Returns largest integer.
 	int max(int a, int b) { return a > b ? a : b; }
 }
 //********************************************//
@@ -374,7 +384,6 @@ namespace input {
 		NONE = 0,
 
 		// Keyboard keys.
-
 		KEY_A = 1,
 		KEY_B = 2,
 		KEY_C = 3,
@@ -436,14 +445,12 @@ namespace input {
 		KEY_ESC = 60,
 
 		// Mouse buttons.
-
 		MOUSE_LEFT = 100,
 		MOUSE_RIGHT = 101,
 		MOUSE_MIDDLE = 102,
 		MOUSE_SCROLL = 103,
 
 		// Gamepad buttons.
-
 		GAMEPAD_UP = 150,
 		GAMEPAD_DOWN = 151,
 		GAMEPAD_LEFT = 152,
@@ -464,7 +471,6 @@ namespace input {
 		GAMEPAD_START = 163,
 
 		// Gamepad axis.
-
 		GAMEPAD_LEFT_TRIGGER = 180,
 		GAMEPAD_RIGHT_TRIGGER = 181,
 
@@ -474,11 +480,22 @@ namespace input {
 		GAMEPAD_RIGHT_STICK_Y = 185,
 	};
 
+	// Returns true if a control is being held down.
 	bool is_down(input::code input_code, int user = 0);
+
+	// Returns true if a control is not being touched.
 	bool is_up(input::code input_code, int user = 0);
+
+	// Returns true if a control has been pressed within last update.
 	bool has_pressed(input::code input_code, int user = 0);
+
+	// Returns true if a control has been released within last update.
 	bool has_released(input::code input_code, int user = 0);
+
+	// Return input axis value [-1, 1] of a control.
 	float get_axis(input::code input_code, int user = 0);
+
+	// Returns the position of the mouse cursor in window-space. 
 	vec2 get_mouse_position();
 
 	#ifdef RGE_IMPL // Internal functions, no touchy.
@@ -767,10 +784,16 @@ public:
 	~camera();
 
 public:
+	// Returns matrix used to convert world-space to view-space.
 	mat4 get_view_matrix() const;
+
+	// Returns matrix used to convert view-space to camera-space.
 	mat4 get_projection_matrix() const;
 
+	// Sets camera's projection to perspective.
 	void set_perspective(float fov, float aspect, float near_plane, float far_plane);
+	
+	// Sets camera's projection to orthographic.
 	void set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane);
 
 public:
@@ -869,11 +892,23 @@ public:
 public:
 	int get_width() const;
 	int get_height() const;
+
+	// Returns true if space is allocated on cpu.
 	bool is_on_cpu() const;
+
+	// Returns true if space is allocated on gpu.
 	bool is_on_gpu() const;
+
+	// Returns sampled color at uv texture coords.
 	color sample(float u, float v) const;
+
+	// Returns color buffer stored on cpu.
 	color* get_data() const;
+
+	// Returns gpu texture reference.
 	uint32_t get_handle() const;
+
+	// Convert and store float color buffer to raw byte color buffer.
 	void dump_to_raw_buffer(uint8_t* buffer) const;
 
 	// NOTE: TESTING FUNCTION
@@ -881,6 +916,7 @@ public:
 	static texture* read_from_disk(const std::string& path);
 
 public:
+	// Allocates space on cpu for texture data.
 	void allocate();
 
 private:
@@ -2934,6 +2970,8 @@ bool texture::is_on_gpu() const {
 
 color texture::sample(float u, float v) const {
 	if(data == nullptr) return color(0, 0, 0);
+
+	// TODO: More filtering options.
 
 	int ui = (int)(u * width) % width;
 	int vi = (int)(v * height) % height;

@@ -190,7 +190,7 @@ public:
 
 	void on_update(float delta_time) override {
 		counter += delta_time;
-		if(counter > 3.14F*2)
+		if(counter > PI * 2)
 			counter = 0;
 
 		smile->transform->position = rge::vec3(cosf(counter) * 3.0F, sinf(counter) * 3.0F, 0.0F);
