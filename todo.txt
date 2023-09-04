@@ -1,23 +1,28 @@
 ==CURRENT==
-	gamepad input
+	fix upside down uv in opengl_1_0
 
-	windows + software_gl
-	macosx + opengl_1_0
-	macosx + software_gl
-	linux + opengl_1_0
-	linux + software_gl
+	windows WM_PAINT platform event for software_gl
+	get software_gl fully working
+	
+	macosx platform
+	linux platform
 
-	macosx input
-	linux input
+	macosx keyboard & mouse input
+	linux keyboard & mouse input
 	
 	obj loading
+	yaml parsing & writer
 	fix quaternions + camera view + perspective matrix
 	multithreaded command queue
 ==CURRENT==
 
 ==FUTURE==
-	gamepad support
 	entity component system
 	physics
 	audio
 ==FUTURE==
+
+==PENDING==
+macosx gamepad support
+linux gamepad support
+==PENDING==
