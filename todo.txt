@@ -1,8 +1,8 @@
 ==CURRENT==
-	fix upside down uv in opengl_1_0
-
 	windows WM_PAINT platform event for software_gl
 	get software_gl fully working
+
+	fix quaternions + fix camera view + fix perspective matrix
 	
 	macosx platform
 	linux platform
@@ -12,7 +12,6 @@
 	
 	obj loading
 	yaml parsing & writer
-	fix quaternions + camera view + perspective matrix
 	multithreaded command queue
 ==CURRENT==
 

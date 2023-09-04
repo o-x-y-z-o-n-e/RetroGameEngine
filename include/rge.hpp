@@ -79,6 +79,8 @@ class engine;
 class transform;
 class camera;
 class light;
+class mesh;
+class sprite;
 class texture;
 class material;
 class render_target;
@@ -785,7 +787,7 @@ private:
 
 #pragma region /* rge::light */
 //********************************************//
-//* Light class.                             *//
+//* Light Class                              *//
 //********************************************//
 enum class light_mode {
 	DIRECTIONAL,
@@ -806,7 +808,51 @@ public:
 	transform* transform;
 };
 //********************************************//
-//* Light class.                             *//
+//* Light Class                              *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::mesh */
+//********************************************//
+//* Mesh Class                               *//
+//********************************************//
+class mesh {
+public:
+	mesh();
+	~mesh();
+
+public:
+	std::vector<rge::vec3> vertices;
+	std::vector<int> triangles;
+	std::vector<rge::vec3> normals;
+	std::vector<rge::vec2> uvs;
+};
+//********************************************//
+//* Mesh Class                               *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::sprite */
+//********************************************//
+//* Sprite Class                             *//
+//********************************************//
+class sprite {
+public:
+	sprite();
+	sprite(texture* texture);
+	~sprite();
+
+public:
+	bool centered;
+	int pixels_per_unit;
+
+	texture* texture;
+	transform* transform;
+};
+//********************************************//
+//* Sprite Class                             *//
 //********************************************//
 #pragma endregion
 
@@ -922,6 +968,7 @@ public:
 	virtual rge::result create_window() = 0;
 	virtual void set_window_title(const std::string& title) = 0;
 	virtual void poll_events() = 0;
+	virtual void poll_gamepads() = 0;
 	virtual void refresh_window() = 0;
 	virtual bool is_focused() const = 0;
 
@@ -951,14 +998,22 @@ public:
 public:
 	virtual rge::result init(platform* platform) = 0;
 
+	// Creates a texture with allocated space on gpu.
 	virtual texture* create_texture(int width, int height) = 0;
+	// Copies the texture data, on cpu, to gpu.
 	virtual void upload_texture(texture* texture) = 0;
+	// Frees the allocated texture data on gpu.
 	virtual void free_texture(texture* texture) = 0;
 
+	// Clears the depth & frame buffers.
 	virtual void clear(color background) = 0;
+
+	// Update current frame buffer to window.
 	virtual void display() = 0;
+
+	// Draw 3D geometry, using model space data.
 	virtual rge::result draw(
-		const mat4& model_to_world,
+		const mat4& local_to_world,
 		const std::vector<vec3>& vertices,
 		const std::vector<int>& triangles,
 		const std::vector<vec3>& normals,
@@ -966,35 +1021,56 @@ public:
 		const material& material
 	) = 0;
 
-	// Draw 2D texture onto cmaera space.
+	// Draw a 2D sprite onto camera space.
+	virtual void draw(const sprite& sprite) = 0;
+
+	// Draw a 2D texture onto view [0,1] space.
 	virtual void draw(
 		const texture& texture,
-		const rect& dest,
-		const rect& src
+		vec2 dest_min,
+		vec2 dest_max,
+		vec2 src_min,
+		vec2 src_max
 	) = 0;
 
-	// Draw 2D texture onto viewport space.
+	// Draw a 2D texture onto window [0, w/h] space.
 	virtual void draw(
 		const texture& texture,
-		int dest_x,
-		int dest_y,
-		int dest_width,
-		int dest_height,
-		int src_x,
-		int src_y,
-		int src_width,
-		int src_height
+		int dest_min_x,
+		int dest_min_y,
+		int dest_max_x,
+		int dest_max_y,
+		int src_min_x,
+		int src_min_y,
+		int src_max_x,
+		int src_max_y
 	) = 0;
 
-public: // Inline macro functions.
-	// Draw 2D texture onto cmaera space.
-	void draw(const texture& texture, const rect& dest) {
-		draw(texture, dest, rge::rect(0, 0, 1, 1));
+public: // Inline macro short args functions.
+	// Draw 3D geometry, using local/model space data.
+	rge::result draw(
+		const mat4& local_to_world,
+		const mesh& mesh,
+		const material& material
+	) {
+		return draw(
+			local_to_world,
+			mesh.vertices,
+			mesh.triangles,
+			mesh.normals,
+			mesh.uvs,
+			material
+		);
 	}
 
-	// Draw 2D texture onto viewport space.
-	void draw(const texture& texture, int dest_x, int dest_y, int dest_width, int dest_height) {
-		draw(texture, dest_x, dest_y, dest_width, dest_height, 0, 0, texture.get_width(), texture.get_height());
+	// Draw a 2D texture onto view [0,1] space.
+	void draw(const texture& texture, const vec2& dest_min, const vec2& dest_max) {
+		draw(texture, dest_min, dest_max, vec2(0, 0), vec2(1, 1));
+	}
+
+	// Draw a 2D texture onto window [0, w/h] space.
+	void draw(const texture& texture, int dest_min_x, int dest_min_y, int dest_max_x, int dest_max_y) {
+		draw(texture, dest_min_x, dest_min_y, dest_max_x, dest_max_y, 0, 0, texture.get_width(), texture.get_height());
 	}
 
 public: // Events handlers.
@@ -2106,7 +2182,7 @@ namespace input {
 		}
 
 		if(input_code >= GAMEPAD_LEFT_TRIGGER && input_code <= GAMEPAD_RIGHT_STICK_Y && user >= 0 && user < MAX_GAMEPAD_COUNT) {
-			return gamepad_axis[input_code][user];
+			return gamepad_axis[input_code - GAMEPAD_LEFT_TRIGGER][user];
 		}
 
 		return 0;
@@ -2462,6 +2538,7 @@ void engine::loop() {
 		// Tick the update routine.
 		update_counter += delta_time;
 		if(update_counter > update_interval) {
+			platform_impl->poll_gamepads();
 			on_update(update_counter);
 			update_counter = 0;
 			input::flush_presses_and_releases();
@@ -2563,11 +2640,15 @@ void engine::wait_for_exit() {
 //********************************************//
 transform::transform() {
 	parent = nullptr;
+	this->position = vec3();
+	this->rotation = quaternion::identity();
 	this->scale = vec3(1, 1, 1);
 }
 
 transform::transform(transform* parent) {
 	this->parent = parent;
+	this->position = vec3();
+	this->rotation = quaternion::identity();
 	this->scale = vec3(1, 1, 1);
 }
 
@@ -2729,8 +2810,8 @@ void camera::set_perspective(float fov, float aspect, float near_plane, float fa
 	projection = mat4::zero();
 	projection.m[0][0] = 1.0F / (aspect * tanf(fov / 2.0F));
 	projection.m[1][1] = 1.0F / tanf(fov / 2.0F);
-	projection.m[2][2] = -((-near_plane - far_plane) / (near_plane - far_plane));
-	projection.m[2][3] = (2 * far_plane * near_plane) / (near_plane - far_plane);
+	projection.m[2][2] = -((far_plane + near_plane) / (far_plane - near_plane));
+	projection.m[2][3] = -((2 * far_plane * near_plane) / (far_plane - near_plane));
 	projection.m[3][2] = -1.0F;
 }
 
@@ -2770,6 +2851,50 @@ light::~light() {
 }
 //********************************************//
 //* Light class.                             *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::mesh */
+//********************************************//
+//* Mesh Class                               *//
+//********************************************//
+mesh::mesh() {
+
+}
+
+mesh::~mesh() {
+
+}
+//********************************************//
+//* Mesh Class                               *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::sprite */
+//********************************************//
+//* Sprite Class                             *//
+//********************************************//
+sprite::sprite() {
+	texture = nullptr;
+	transform = new rge::transform();
+	centered = false;
+	pixels_per_unit = 32;
+}
+
+sprite::sprite(rge::texture* texture) {
+	this->texture = texture;
+	transform = new rge::transform();
+	centered = false;
+	pixels_per_unit = 32;
+}
+
+sprite::~sprite() {
+	delete transform;
+}
+//********************************************//
+//* Sprite Class                             *//
 //********************************************//
 #pragma endregion
 
@@ -3229,8 +3354,6 @@ public:
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-
-		poll_gamepads();
 	}
 
 	void refresh_window() override {
@@ -3370,58 +3493,26 @@ public:
 		return 0;
 	}
 
-	void poll_gamepads() {
+	inline void post_gamepad_axis(float v, input::code ic, int u) {
+		gamepad_axis_event e;
+		e.input_code = ic;
+		e.user = u;
+		e.value = v;
+		engine_instance->post_event(e);
+	}
+
+	void poll_gamepads() override {
 		for(int u = 0; u < input::MAX_GAMEPAD_COUNT; u++) {
 			XINPUT_STATE state;
-			XInputGetState(u, &state);
+			if(XInputGetState(u, &state) != ERROR_SUCCESS)
+				continue;
 
-			{
-				gamepad_axis_event e;
-				e.input_code = input::GAMEPAD_LEFT_TRIGGER;
-				e.user = u;
-				e.value = (float)state.Gamepad.bLeftTrigger / 255;
-				engine_instance->post_event(e);
-			}
-
-			{
-				gamepad_axis_event e;
-				e.input_code = input::GAMEPAD_RIGHT_TRIGGER;
-				e.user = u;
-				e.value = (float)state.Gamepad.bRightTrigger / 255;
-				engine_instance->post_event(e);
-			}
-
-			{
-				gamepad_axis_event e;
-				e.input_code = input::GAMEPAD_LEFT_STICK_X;
-				e.user = u;
-				e.value = fmaxf(-1, (float)state.Gamepad.sThumbLX / 32767);
-				engine_instance->post_event(e);
-			}
-
-			{
-				gamepad_axis_event e;
-				e.input_code = input::GAMEPAD_LEFT_STICK_Y;
-				e.user = u;
-				e.value = fmaxf(-1, (float)state.Gamepad.sThumbLY / 32767);
-				engine_instance->post_event(e);
-			}
-
-			{
-				gamepad_axis_event e;
-				e.input_code = input::GAMEPAD_RIGHT_STICK_X;
-				e.user = u;
-				e.value = fmaxf(-1, (float)state.Gamepad.sThumbRX / 32767);
-				engine_instance->post_event(e);
-			}
-
-			{
-				gamepad_axis_event e;
-				e.input_code = input::GAMEPAD_RIGHT_STICK_Y;
-				e.user = u;
-				e.value = fmaxf(-1, (float)state.Gamepad.sThumbRY / 32767);
-				engine_instance->post_event(e);
-			}
+			post_gamepad_axis(float(state.Gamepad.bLeftTrigger) / 255, input::GAMEPAD_LEFT_TRIGGER, u);
+			post_gamepad_axis(float(state.Gamepad.bRightTrigger) / 255, input::GAMEPAD_RIGHT_TRIGGER, u);
+			post_gamepad_axis(fmaxf(-1, (float)state.Gamepad.sThumbLX / 32767), input::GAMEPAD_LEFT_STICK_X, u);
+			post_gamepad_axis(fmaxf(-1, (float)state.Gamepad.sThumbLY / 32767), input::GAMEPAD_LEFT_STICK_Y, u);
+			post_gamepad_axis(fmaxf(-1, (float)state.Gamepad.sThumbRX / 32767), input::GAMEPAD_RIGHT_STICK_X, u);
+			post_gamepad_axis(fmaxf(-1, (float)state.Gamepad.sThumbRY / 32767), input::GAMEPAD_RIGHT_STICK_Y, u);
 
 			// Generate gamepad button events.
 			int i;
@@ -3690,7 +3781,7 @@ public:
 	}
 
 	rge::result draw(
-		const mat4& model_to_world,
+		const mat4& local_to_world,
 		const std::vector<vec3>& vertices,
 		const std::vector<int>& triangles,
 		const std::vector<vec3>& normals,
@@ -3726,14 +3817,14 @@ public:
 		// Loop through each of the triplets of triangle indices.
 		for(i = 0; i < triangles.size(); i += 3) {
 			// Transform model vertices to world vertices.
-			world_v1 = model_to_world.multiply_point_3x4(vertices[triangles[i]]);
-			world_v2 = model_to_world.multiply_point_3x4(vertices[triangles[i + 1]]);
-			world_v3 = model_to_world.multiply_point_3x4(vertices[triangles[i + 2]]);
+			world_v1 = local_to_world.multiply_point_3x4(vertices[triangles[i]]);
+			world_v2 = local_to_world.multiply_point_3x4(vertices[triangles[i + 1]]);
+			world_v3 = local_to_world.multiply_point_3x4(vertices[triangles[i + 2]]);
 
 			// Transform model normals to world normals.
-			world_n1 = model_to_world.multiply_vector(normals[triangles[i]]);
-			world_n2 = model_to_world.multiply_vector(normals[triangles[i + 1]]);
-			world_n2 = model_to_world.multiply_vector(normals[triangles[i + 2]]);
+			world_n1 = local_to_world.multiply_vector(normals[triangles[i]]);
+			world_n2 = local_to_world.multiply_vector(normals[triangles[i + 1]]);
+			world_n2 = local_to_world.multiply_vector(normals[triangles[i + 2]]);
 
 			// Get the projected vertices that make up the triangle based
 			// on these indices.
@@ -3890,6 +3981,10 @@ public:
 				}
 			}
 		}
+	}
+
+	void draw(const sprite& sprite) override {
+		// TODO
 	}
 
 private:
@@ -4275,7 +4370,7 @@ public:
 	}
 
 	rge::result draw(
-		const mat4& model_to_world,
+		const mat4& local_to_world,
 		const std::vector<vec3>& vertices,
 		const std::vector<int>& triangles,
 		const std::vector<vec3>& normals,
@@ -4318,16 +4413,16 @@ public:
 			v = triangles[i];
 
 			if(v < uvs.size()) {
-				glTexCoord2f(uvs[v].x, uvs[v].y);
+				glTexCoord2f(uvs[v].x, 1.0F - uvs[v].y);
 			}
 
 			if(v < vertices.size()) {
-				vertex = model_to_world.multiply_point_3x4(vertices[v]);
+				vertex = local_to_world.multiply_point_3x4(vertices[v]);
 				glVertex3f(vertex.x, vertex.y, vertex.z);
 			}
 
 			if(v < normals.size()) {
-				normal = model_to_world.multiply_vector(normals[v]);
+				normal = local_to_world.multiply_vector(normals[v]);
 				glNormal3f(normal.x, normal.y, normal.z);
 			}
 
@@ -4346,17 +4441,81 @@ public:
 		return rge::OK;
 	}
 
-	void draw(const texture& texture, const rect& dest, const rect& src) override {
+	// Draw a 2D sprite onto camera space.
+	void draw(const sprite& sprite) override {
+		GLfloat gl_m[16];
+		mat4 m = sprite.transform->get_global_matrix();
+		vec3 n = m.multiply_vector(vec3(0, 0, -1));
+
+		float w = float(sprite.texture->get_width()) / sprite.pixels_per_unit;
+		float h = float(sprite.texture->get_height()) / sprite.pixels_per_unit;
+
+		vec3 p = vec2(0, 0);
+		vec3 r = vec2(w, 0);
+		vec3 u = vec2(0, h);
+
+		if(sprite.centered) {
+			p.x -= w / 2.0F;
+			p.y -= h / 2.0F;
+		}
+		
+		vec3 p_bl = m.multiply_point_3x4(p);
+		vec3 p_br = m.multiply_point_3x4(p + r);
+		vec3 p_tl = m.multiply_point_3x4(p + u);
+		vec3 p_tr = m.multiply_point_3x4(p + r + u);
+
+		convert_matrix(gl_m, input_camera->get_view_matrix());
+		glMatrixMode(GL_MODELVIEW);
+		glLoadMatrixf(gl_m);
+
+		convert_matrix(gl_m, input_camera->get_projection_matrix());
+		glMatrixMode(GL_PROJECTION);
+		glLoadMatrixf(gl_m);
+
+		if(sprite.texture->is_on_gpu()) {
+			glEnable(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, sprite.texture->handle);
+		} else {
+			glDisable(GL_TEXTURE_2D);
+		}
+
+		glBegin(GL_QUADS);
+
+		glTexCoord2f(0.0F, 1.0F);
+		glVertex3f(p_bl.x, p_bl.y, p_bl.z);
+		glNormal3f(n.x, n.y, n.z);
+
+		glTexCoord2f(1.0F, 1.0F);
+		glVertex3f(p_br.x, p_br.y, p_br.z);
+		glNormal3f(n.x, n.y, n.z);
+
+		glTexCoord2f(1.0F, 0.0F);
+		glVertex3f(p_tr.x, p_tr.y, p_tr.z);
+		glNormal3f(n.x, n.y, n.z);
+
+		glTexCoord2f(0.0F, 0.0F);
+		glVertex3f(p_tl.x, p_tl.y, p_tl.z);
+		glNormal3f(n.x, n.y, n.z);
+
+		glEnd();
+
+		glDisable(GL_TEXTURE_2D);
+
+		glFlush();
+	}
+
+	// Draw a 2D texture onto view [0,1] space.
+	void draw(const texture& texture, vec2 dest_min, vec2 dest_max, vec2 src_min, vec2 src_max) override {
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 		
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 
-		float d_min_x = (dest.x * 2) - 1;
-		float d_min_y =	(dest.y * 2) - 1;
-		float d_max_x = d_min_x + (dest.w * 2);
-		float d_max_y = d_min_y + (dest.h * 2);
+		dest_min.x = (dest_min.x * 2.0F) - 1.0F;
+		dest_min.y = (dest_min.y * 2.0F) - 1.0F;
+		dest_max.x = (dest_max.x * 2.0F) - 1.0F;
+		dest_max.y = (dest_max.y * 2.0F) - 1.0F;
 
 		if(texture.is_on_gpu()) {
 			glEnable(GL_TEXTURE_2D);
@@ -4365,39 +4524,60 @@ public:
 			glDisable(GL_TEXTURE_2D);
 		}
 
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+
 		glBegin(GL_QUADS);
 
-		glTexCoord2f(src.x, src.y);
-		glVertex3f(d_min_x, d_min_y, 0);
-		
-		glTexCoord2f(src.x + src.w, src.y);
-		glVertex3f(d_max_x, d_min_y, 0);
-		
-		glTexCoord2f(src.x + src.w, src.y + src.h);
-		glVertex3f(d_max_x, d_max_y, 0);
-		
-		glTexCoord2f(src.x, src.y + src.h);
-		glVertex3f(d_min_x, d_max_y, 0);
-		
+		glTexCoord2f(src_min.x, 1.0F - src_min.y);
+		glVertex3f(dest_min.x, dest_min.y, 0.0F);
+
+		glTexCoord2f(src_max.x, 1.0F - src_min.y);
+		glVertex3f(dest_max.x, dest_min.y, 0.0F);
+
+		glTexCoord2f(src_max.x, 1.0F - src_max.y);
+		glVertex3f(dest_max.x, dest_max.y, 0.0F);
+
+		glTexCoord2f(src_min.x, 1.0F - src_max.y);
+		glVertex3f(dest_min.x, dest_max.y, 0.0F);
+
 		glEnd();
 
-		//glDisable(GL_TEXTURE_2D);
-
 		glFlush();
+
+		glDisable(GL_TEXTURE_2D);
+		glDepthMask(GL_TRUE);
+		glEnable(GL_DEPTH_TEST);
 	}
 
+	// Draw a 2D texture onto window [0, w/h] space.
 	void draw(
 		const texture& texture,
-		int dest_x,
-		int dest_y,
-		int dest_width,
-		int dest_height,
-		int src_x,
-		int src_y,
-		int src_width,
-		int src_height
+		int dest_min_x,
+		int dest_min_y,
+		int dest_max_x,
+		int dest_max_y,
+		int src_min_x,
+		int src_min_y,
+		int src_max_x,
+		int src_max_y
 	) override {
-		// TODO
+		vec2 dest_min;
+		vec2 dest_max;
+		vec2 src_min;
+		vec2 src_max;
+
+		dest_min.x = float(dest_min_x) / window_width;
+		dest_min.y = float(dest_min_y) / window_height;
+		dest_max.x = float(dest_max_x) / window_width;
+		dest_max.y = float(dest_max_y) / window_height;
+
+		src_min.x = float(src_min_x) / texture.get_width();
+		src_min.y = float(src_min_y) / texture.get_height();
+		src_max.x = float(src_max_x) / texture.get_width();
+		src_max.y = float(src_max_y) / texture.get_height();
+
+		draw(texture, dest_min, dest_max, src_min, src_max);
 	}
 
 	bool on_window_resized(const window_resized_event& e) override {
@@ -4586,7 +4766,7 @@ public:
 	}
 
 	rge::result draw(
-		const mat4& model_to_world,
+		const mat4& local_to_world,
 		const std::vector<vec3>& vertices,
 		const std::vector<int>& triangles,
 		const std::vector<vec3>& normals,
@@ -4596,6 +4776,10 @@ public:
 		// TODO
 
 		return rge::OK;
+	}
+
+	void draw(const sprite& sprite) override {
+		// TODO
 	}
 
 	void draw(const texture& texture, const rect& dest, const rect& src) override {
