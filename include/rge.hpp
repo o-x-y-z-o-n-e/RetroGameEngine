@@ -72,6 +72,9 @@ class mouse_pressed_event;
 class mouse_released_event;
 class mouse_moved_event;
 class mouse_scrolled_event;
+class gamepad_pressed_event;
+class gamepad_released_event;
+class gamepad_axis_event;
 class engine;
 class transform;
 class camera;
@@ -437,7 +440,7 @@ namespace input {
 		MOUSE_MIDDLE = 102,
 		MOUSE_SCROLL = 103,
 
-		// Gamepad buttons & axis.
+		// Gamepad buttons.
 
 		GAMEPAD_UP = 150,
 		GAMEPAD_DOWN = 151,
@@ -449,20 +452,31 @@ namespace input {
 		GAMEPAD_WEST = 156,
 		GAMEPAD_EAST = 157,
 
-		GAMEPAD_LEFT_TRIGGER = 158,
-		GAMEPAD_RIGHT_TRIGGER = 159,
-		GAMEPAD_LEFT_BUMPER = 160,
-		GAMEPAD_RIGHT_BUMPER = 161,
+		GAMEPAD_LEFT_BUMPER = 158,
+		GAMEPAD_RIGHT_BUMPER = 159,
+
+		GAMEPAD_LEFT_STICK = 160,
+		GAMEPAD_RIGHT_STICK = 161,
 
 		GAMEPAD_OPTIONS = 162,
 		GAMEPAD_START = 163,
+
+		// Gamepad axis.
+
+		GAMEPAD_LEFT_TRIGGER = 180,
+		GAMEPAD_RIGHT_TRIGGER = 181,
+
+		GAMEPAD_LEFT_STICK_X = 182,
+		GAMEPAD_LEFT_STICK_Y = 183,
+		GAMEPAD_RIGHT_STICK_X = 184,
+		GAMEPAD_RIGHT_STICK_Y = 185,
 	};
 
-	bool is_down(rge::input::code input_code, int user = 0);
-	bool is_up(rge::input::code input_code, int user = 0);
-	bool has_pressed(rge::input::code input_code, int user = 0);
-	bool has_released(rge::input::code input_code, int user = 0);
-	float get_axis(rge::input::code input_code, int user = 0);
+	bool is_down(input::code input_code, int user = 0);
+	bool is_up(input::code input_code, int user = 0);
+	bool has_pressed(input::code input_code, int user = 0);
+	bool has_released(input::code input_code, int user = 0);
+	float get_axis(input::code input_code, int user = 0);
 	vec2 get_mouse_position();
 
 	#ifdef RGE_IMPL // Internal functions, no touchy.
@@ -474,6 +488,9 @@ namespace input {
 	bool on_mouse_released(const mouse_released_event& e);
 	bool on_mouse_scrolled(const mouse_scrolled_event& e);
 	bool on_mouse_moved(const mouse_moved_event& e);
+	bool on_gamepad_pressed(const gamepad_pressed_event& e);
+	bool on_gamepad_released(const gamepad_released_event& e);
+	bool on_gamepad_axis(const gamepad_axis_event& e);
 	#endif
 }
 //********************************************//
@@ -490,7 +507,8 @@ enum class event_type {
 	NONE = 0,
 	WINDOW_CLOSE_REQUESTED, WINDOW_MOVED, WINDOW_RESIZED, WINDOW_FOCUSED, WINDOW_UNFOCUSED,
 	KEY_PRESSED, KEY_RELEASED,
-	MOUSE_PRESSED, MOUSE_RELEASED, MOUSE_MOVED, MOUSE_SCROLLED
+	MOUSE_PRESSED, MOUSE_RELEASED, MOUSE_MOVED, MOUSE_SCROLLED,
+	GAMEPAD_PRESSED, GAMEPAD_RELEASED, GAMEPAD_AXIS
 };
 #define EVENT_ENUM_TYPE(type) public: \
 static event_type get_static_type() { return event_type::type; } \
@@ -548,13 +566,13 @@ class window_unfocused_event : public event {
 class key_pressed_event : public event {
 	EVENT_ENUM_TYPE(KEY_PRESSED)
 public:
-	rge::input::code input_code;
+	input::code input_code;
 };
 //----------------------------------------------
 class key_released_event : public event {
 	EVENT_ENUM_TYPE(KEY_RELEASED)
 public:
-	rge::input::code input_code;
+	input::code input_code;
 };
 //********************************************//
 //* Key events                               *//
@@ -569,13 +587,13 @@ public:
 class mouse_pressed_event : public event {
 	EVENT_ENUM_TYPE(MOUSE_PRESSED)
 public:
-	rge::input::code input_code;
+	input::code input_code;
 };
 //----------------------------------------------
 class mouse_released_event : public event {
 	EVENT_ENUM_TYPE(MOUSE_RELEASED)
 public:
-	rge::input::code input_code;
+	input::code input_code;
 };
 //----------------------------------------------
 class mouse_moved_event : public event {
@@ -591,6 +609,37 @@ public:
 };
 //********************************************//
 //* Mouse events                             *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::mouse_event */
+//********************************************//
+//* Gamepad events                           *//
+//********************************************//
+class gamepad_pressed_event : public event {
+	EVENT_ENUM_TYPE(GAMEPAD_PRESSED)
+public:
+	input::code input_code;
+	int user;
+};
+//----------------------------------------------
+class gamepad_released_event : public event {
+	EVENT_ENUM_TYPE(GAMEPAD_RELEASED)
+public:
+	input::code input_code;
+	int user;
+};
+//----------------------------------------------
+class gamepad_axis_event : public event {
+	EVENT_ENUM_TYPE(GAMEPAD_AXIS)
+public:
+	input::code input_code;
+	int user;
+	float value;
+};
+//********************************************//
+//* Gamepad events                           *//
 //********************************************//
 #pragma endregion
 
@@ -1047,7 +1096,9 @@ int main(int argc, char** argv);
 //********************************************//
 #ifdef SYS_WINDOWS
 #include <windows.h>
+#include <xinput.h>
 #pragma comment(lib, "user32.lib")
+#pragma comment(lib, "xinput.lib")
 #undef MOUSE_MOVED // Annoying general #define name taking over possible names bs.
 class windows;
 #endif /* SYS_WINDOWS */
@@ -1993,7 +2044,7 @@ namespace input {
 		return (*d & (1 << b)) != 0;
 	}
 
-	bool is_down(rge::input::code input_code, int user = 0) {
+	bool is_down(input::code input_code, int user) {
 		if(input_code >= KEY_A && input_code <= KEY_ESC) {
 			return get(&keyboard_buttons[input_code - KEY_A], 0);
 		}
@@ -2009,11 +2060,11 @@ namespace input {
 		return false;
 	}
 
-	bool is_up(rge::input::code input_code, int user = 0) {
+	bool is_up(input::code input_code, int user) {
 		return !is_down(input_code, user);
 	}
 
-	bool has_pressed(rge::input::code input_code, int user = 0) {
+	bool has_pressed(input::code input_code, int user) {
 		if(input_code >= KEY_A && input_code <= KEY_ESC) {
 			return get(&keyboard_buttons[input_code - KEY_A], 1);
 		}
@@ -2029,7 +2080,7 @@ namespace input {
 		return false;
 	}
 
-	bool has_released(rge::input::code input_code, int user = 0) {
+	bool has_released(rge::input::code input_code, int user) {
 		if(input_code >= KEY_A && input_code <= KEY_ESC) {
 			return get(&keyboard_buttons[input_code], 2);
 		}
@@ -2049,12 +2100,14 @@ namespace input {
 		return mouse_position;
 	}
 
-	float get_axis(rge::input::code input_code, int user = 0) {
-		if(input_code == rge::input::MOUSE_SCROLL) {
+	float get_axis(input::code input_code, int user) {
+		if(input_code == MOUSE_SCROLL) {
 			return mouse_scroll;
 		}
 
-		// TODO: Gamepad
+		if(input_code >= GAMEPAD_LEFT_TRIGGER && input_code <= GAMEPAD_RIGHT_STICK_Y && user >= 0 && user < MAX_GAMEPAD_COUNT) {
+			return gamepad_axis[input_code][user];
+		}
 
 		return 0;
 	}
@@ -2090,6 +2143,23 @@ namespace input {
 
 	bool on_mouse_scrolled(const mouse_scrolled_event& e) {
 		mouse_scroll = e.scroll;
+		return false; // Do not consume event. Let it propagate through higher layers.
+	}
+
+	bool on_gamepad_pressed(const gamepad_pressed_event& e) {
+		set(&gamepad_buttons[e.input_code - GAMEPAD_UP][e.user], 1);
+		set(&gamepad_buttons[e.input_code - GAMEPAD_UP][e.user], 0);
+		return false; // Do not consume event. Let it propagate through higher layers.
+	}
+
+	bool on_gamepad_released(const gamepad_released_event& e) {
+		set(&gamepad_buttons[e.input_code - GAMEPAD_UP][e.user], 2);
+		clear(&gamepad_buttons[e.input_code - GAMEPAD_UP][e.user], 0);
+		return false; // Do not consume event. Let it propagate through higher layers.
+	}
+
+	bool on_gamepad_axis(const gamepad_axis_event& e) {
+		gamepad_axis[e.input_code - GAMEPAD_LEFT_TRIGGER][e.user] = e.value;
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
@@ -2193,6 +2263,9 @@ public:
 	event_dispatcher<mouse_released_event> on_mouse_released;
 	event_dispatcher<mouse_moved_event> on_mouse_moved;
 	event_dispatcher<mouse_scrolled_event> on_mouse_scrolled;
+	event_dispatcher<gamepad_pressed_event> on_gamepad_pressed;
+	event_dispatcher<gamepad_released_event> on_gamepad_released;
+	event_dispatcher<gamepad_axis_event> on_gamepad_axis;
 
 public:
 	bool post(const rge::event& e) {
@@ -2229,6 +2302,15 @@ public:
 
 			case event_type::MOUSE_SCROLLED:
 				return on_mouse_scrolled.add_event(e);
+
+			case event_type::GAMEPAD_PRESSED:
+				return on_gamepad_pressed.add_event(e);
+
+			case event_type::GAMEPAD_RELEASED:
+				return on_gamepad_released.add_event(e);
+
+			case event_type::GAMEPAD_AXIS:
+				return on_gamepad_axis.add_event(e);
 		}
 
 		return false;
@@ -2246,6 +2328,9 @@ public:
 		on_mouse_released.process();
 		on_mouse_moved.process();
 		on_mouse_scrolled.process();
+		on_gamepad_pressed.process();
+		on_gamepad_released.process();
+		on_gamepad_axis.process();
 	}
 };
 //********************************************//
@@ -2334,6 +2419,9 @@ rge::result engine::init() {
 	events_impl->on_mouse_released.add_handler(&input::on_mouse_released);
 	events_impl->on_mouse_scrolled.add_handler(&input::on_mouse_scrolled);
 	events_impl->on_mouse_moved.add_handler(&input::on_mouse_moved);
+	events_impl->on_gamepad_pressed.add_handler(&input::on_gamepad_pressed);
+	events_impl->on_gamepad_released.add_handler(&input::on_gamepad_released);
+	events_impl->on_gamepad_axis.add_handler(&input::on_gamepad_axis);
 
 	on_init();
 	has_init = true;
@@ -3141,6 +3229,8 @@ public:
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+
+		poll_gamepads();
 	}
 
 	void refresh_window() override {
@@ -3278,6 +3368,135 @@ public:
 		}
 
 		return 0;
+	}
+
+	void poll_gamepads() {
+		for(int u = 0; u < input::MAX_GAMEPAD_COUNT; u++) {
+			XINPUT_STATE state;
+			XInputGetState(u, &state);
+
+			{
+				gamepad_axis_event e;
+				e.input_code = input::GAMEPAD_LEFT_TRIGGER;
+				e.user = u;
+				e.value = (float)state.Gamepad.bLeftTrigger / 255;
+				engine_instance->post_event(e);
+			}
+
+			{
+				gamepad_axis_event e;
+				e.input_code = input::GAMEPAD_RIGHT_TRIGGER;
+				e.user = u;
+				e.value = (float)state.Gamepad.bRightTrigger / 255;
+				engine_instance->post_event(e);
+			}
+
+			{
+				gamepad_axis_event e;
+				e.input_code = input::GAMEPAD_LEFT_STICK_X;
+				e.user = u;
+				e.value = fmaxf(-1, (float)state.Gamepad.sThumbLX / 32767);
+				engine_instance->post_event(e);
+			}
+
+			{
+				gamepad_axis_event e;
+				e.input_code = input::GAMEPAD_LEFT_STICK_Y;
+				e.user = u;
+				e.value = fmaxf(-1, (float)state.Gamepad.sThumbLY / 32767);
+				engine_instance->post_event(e);
+			}
+
+			{
+				gamepad_axis_event e;
+				e.input_code = input::GAMEPAD_RIGHT_STICK_X;
+				e.user = u;
+				e.value = fmaxf(-1, (float)state.Gamepad.sThumbRX / 32767);
+				engine_instance->post_event(e);
+			}
+
+			{
+				gamepad_axis_event e;
+				e.input_code = input::GAMEPAD_RIGHT_STICK_Y;
+				e.user = u;
+				e.value = fmaxf(-1, (float)state.Gamepad.sThumbRY / 32767);
+				engine_instance->post_event(e);
+			}
+
+			// Generate gamepad button events.
+			int i;
+			int mask;
+			bool is_pressed;
+			bool was_pressed;
+			for(i = input::GAMEPAD_UP; i <= input::GAMEPAD_START; i++) {
+				switch(i) {
+					case input::GAMEPAD_UP:
+						mask = 0x0001;
+						break;
+					case input::GAMEPAD_DOWN:
+						mask = 0x0002;
+						break;
+					case input::GAMEPAD_LEFT:
+						mask = 0x0004;
+						break;
+					case input::GAMEPAD_RIGHT:
+						mask = 0x0008;
+						break;
+
+					case input::GAMEPAD_NORTH:
+						mask = 0x8000;
+						break;
+					case input::GAMEPAD_SOUTH:
+						mask = 0x1000;
+						break;
+					case input::GAMEPAD_WEST:
+						mask = 0x4000;
+						break;
+					case input::GAMEPAD_EAST:
+						mask = 0x2000;
+						break;
+
+					case input::GAMEPAD_LEFT_BUMPER:
+						mask = 0x0100;
+						break;
+					case input::GAMEPAD_RIGHT_BUMPER:
+						mask = 0x0200;
+						break;
+
+					case input::GAMEPAD_LEFT_STICK:
+						mask = 0x0040;
+						break;
+					case input::GAMEPAD_RIGHT_STICK:
+						mask = 0x0080;
+						break;
+
+					case input::GAMEPAD_OPTIONS:
+						mask = 0x0020;
+						break;
+					case input::GAMEPAD_START:
+						mask = 0x0010;
+						break;
+
+					default:
+						continue;
+				}
+
+				is_pressed = state.Gamepad.wButtons & mask;
+				was_pressed = input::is_down((input::code)i, u);
+
+				if(is_pressed && !was_pressed) {
+					gamepad_pressed_event e;
+					e.input_code = (input::code)i;
+					e.user = u;
+					engine_instance->post_event(e);
+				} else if(!is_pressed && was_pressed) {
+					gamepad_released_event e;
+					e.input_code = (input::code)i;
+					e.user = u;
+					engine_instance->post_event(e);
+				}
+			}
+		}
 	}
 
 	void create_frame(int width, int height) {
