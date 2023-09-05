@@ -143,6 +143,7 @@ private:
 	rge::renderer* renderer;
     rge::camera* camera;
 	rge::sprite* smile;
+	rge::sprite* background;
 	rge::mesh* model;
 	rge::mesh* triangle;
 	rge::mesh* floor;
@@ -154,6 +155,7 @@ public:
         material = new rge::material();
 		camera = new rge::camera();
 		smile = new rge::sprite();
+		background = new rge::sprite();
 		model = nullptr;
 		floor = nullptr;
 		triangle = nullptr;
@@ -167,6 +169,11 @@ public:
 		triangle = load_triangle();
 		floor = load_floor();
 
+		background->texture = rge::texture::read_from_disk("tests/background_2.png");
+		background->transform->position = rge::vec3(0, 0, 1);
+		background->pixels_per_unit = 16;
+		renderer->upload_texture(background->texture);
+
 		smile->texture = rge::texture::read_from_disk("tests/test.bmp");
 		smile->pixels_per_unit = 16;
 		smile->centered = true;
@@ -174,8 +181,8 @@ public:
 
         //camera->set_perspective(60, 1.6F, 0.0F, 1000.0F);
 		camera->set_orthographic(-8, 8, 6, -6, 0.0F, 100.0F);
-		camera->transform->position = rge::vec3(0, 0, -1);
-		//camera->transform->rotation = rge::quaternion::yaw_pitch_roll(0, -22.5F * DEG_2_RAD, 0);
+		camera->transform->position = rge::vec3(0, 0, -10);
+		//camera->transform->rotation = rge::quaternion::yaw_pitch_roll(0, 180 * DEG_2_RAD, 0);
 
         // renderer->set_target(render);
         renderer->set_camera(camera);
@@ -222,11 +229,12 @@ public:
     void on_render() override {
 		renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
 		
+		renderer->draw(*background);
 		renderer->draw(*smile);
 
 		if(triangle) {
 			renderer->draw(
-				rge::mat4::trs(rge::vec3(0, 0, 3), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
+				rge::mat4::trs(rge::vec3(0, 0, 0), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
 				*triangle,
 				*material
 			);

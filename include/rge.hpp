@@ -884,6 +884,11 @@ public:
 //********************************************//
 //* Texture class.                           *//
 //********************************************//
+enum class texture_filter {
+	NEAREST = 0,
+	BILINEAR = 1,
+	// TRILINEAR = 2
+};
 class texture {
 public:
 	texture(int width, int height);
@@ -918,6 +923,9 @@ public:
 public:
 	// Allocates space on cpu for texture data.
 	void allocate();
+
+public:
+	texture_filter filter;
 
 private:
 	int width;
@@ -2065,7 +2073,10 @@ float math::lerp(float a, float b, float t) {
 }
 
 float math::inverse_lerp(float a, float b, float v) {
-	return (v - a) / (b - a);
+	float t = (v - a) / (b - a);
+	if(t < 0) t = 0;
+	if(t > 1) t = 1;
+	return t;
 }
 //********************************************//
 //* Logging Module.                          *//
@@ -2814,53 +2825,24 @@ mat4 camera::get_projection_matrix() const {
 }
 
 void camera::set_perspective(float fov, float aspect, float near_plane, float far_plane) {
-	// float uh, uw, frustum_depth, one_over_depth;
-
-	// General form of the Projection Matrix
-	//
-	// uh = cot(fov / 2) = 1 / tan(fov / 2)
-	// uw / uh = 1 / aspect
-	// 
-	//   uw         0       0       0
-	//    0        uh       0       0
-	//    0         0      f/(f-n)  1
-	//    0         0    -fn/(f-n)  0
-
 	fov *= DEG_2_RAD;
 
-	/*
-	uh = 1.0F / tanf(fov * 0.5F);
-	uw = uh / aspect;
-	frustum_depth = far_plane - near_plane;
-	one_over_depth = 1.0F / frustum_depth;
-
-	projection = mat4::identity();
-	projection.m[0][0] = uw;
-	projection.m[1][1] = uh;
-	projection.m[2][2] = far_plane / (far_plane - near_plane);
-	projection.m[3][2] = -far_plane * near_plane / (far_plane - near_plane);
-	projection.m[2][3] = 1.0F;
-	projection.m[3][3] = 0.0F;
-	*/
-
 	projection = mat4::zero();
-	projection.m[0][0] = 1.0F / (aspect * tanf(fov / 2.0F));
+	projection.m[0][0] = aspect / tanf(fov / 2.0F);
 	projection.m[1][1] = 1.0F / tanf(fov / 2.0F);
-	projection.m[2][2] = -((far_plane + near_plane) / (far_plane - near_plane));
-	projection.m[2][3] = -((2 * far_plane * near_plane) / (far_plane - near_plane));
-	projection.m[3][2] = -1.0F;
+	projection.m[2][2] = -(far_plane + near_plane) / (far_plane - near_plane);
+	projection.m[2][3] = (2 * far_plane * near_plane) / (far_plane - near_plane);
+	projection.m[3][2] = 1.0F;
 }
 
 void camera::set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane) {
 	projection = mat4::zero();
 	projection.m[0][0] = 2.0F / (right_plane - left_plane);
 	projection.m[1][1] = 2.0F / (top_plane - bottom_plane);
-	// projection.m[2][2] = 1.0F / (far_plane - near_plane);
 	projection.m[2][2] = 2.0F / (far_plane - near_plane);
 
 	projection.m[0][3] = -((right_plane + left_plane) / (right_plane - left_plane));
 	projection.m[1][3] = -((top_plane + bottom_plane) / (top_plane - bottom_plane));
-	// projection.m[2][3] = near_plane / (near_plane - far_plane);
 	projection.m[2][3] = -((far_plane + near_plane) / (far_plane - near_plane));
 
 	projection.m[3][3] = 1.0F;
@@ -2943,6 +2925,7 @@ texture::texture(int width, int height) {
 	this->width = width;
 	this->height = height;
 
+	filter = texture_filter::NEAREST;
 	data = nullptr;
 	handle = 0;
 }
@@ -2971,15 +2954,43 @@ bool texture::is_on_gpu() const {
 color texture::sample(float u, float v) const {
 	if(data == nullptr) return color(0, 0, 0);
 
-	// TODO: More filtering options.
+	if(filter == texture_filter::NEAREST) {
+		int ui = (int)(u * width) % width;
+		int vi = (int)(v * height) % height;
 
-	int ui = (int)(u * width) % width;
-	int vi = (int)(v * height) % height;
+		if(ui < 0) ui += width;
+		if(vi < 0) vi += height;
 
-	if(ui < 0) ui += width;
-	if(vi < 0) vi += height;
+		return data[ui + (vi * width)];
+	} else if(filter == texture_filter::BILINEAR) {
+		// TODO: Add repeating uv
+		float uw = u * width;
+		float vh = v * height;
+		int ui = int(u * width);
+		int vi = int(v * height);
 
-	return data[ui + (vi * width)];
+		int fui = int(floor(uw));
+		int fvi = int(floor(vh));
+		int cui = int(ceil(uw));
+		int cvi = int(ceil(vh));
+
+		if(fui < 0) fui = 0;
+		if(fvi < 0) fvi = 0;
+		if(cui >= width) cui = width - 1;
+		if(cvi >= height) cvi = height - 1;
+
+		color bl = data[fui + (fvi * width)];
+		color br = data[cui + (fvi * width)];
+		color tl = data[fui + (cvi * width)];
+		color tr = data[cui + (cvi * width)];
+
+		float ix = math::inverse_lerp(fui, cui, uw);
+		float iy = math::inverse_lerp(fvi, cvi, vh);
+
+		return color::lerp(color::lerp(bl, br, ix), color::lerp(tl, tr, ix), iy);
+	}
+
+	return color(0, 0, 0);
 }
 
 color* texture::get_data() const {
@@ -4354,12 +4365,18 @@ public:
 			glGenTextures(1, &texture->handle);
 
 		glBindTexture(GL_TEXTURE_2D, texture->handle);
-		//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		if(texture->filter == texture_filter::NEAREST) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		} else if(texture->filter == texture_filter::BILINEAR) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		}
+
 		glTexImage2D(GL_TEXTURE_2D, 0, 4, texture->get_width(), texture->get_height(), 0, GL_RGBA, GL_FLOAT, texture->get_data());
 	}
 
