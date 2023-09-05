@@ -23,26 +23,33 @@ workspace "retro_game_engine"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
-project "example"
+
+------------------------------------------------------------------
+
+
+project "2d"
     language "C++"
     cppdialect "C++11"
-    location "./"
+    location "examples/2d"
 
-    defines "SYS_SOFTWARE_GL"
-    -- defines "SYS_OPENGL_1_0"
+    -- defines "SYS_SOFTWARE_GL"
+    defines "SYS_OPENGL_1_0"
     -- defines "SYS_OPENGL_3_3"
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("tmp/" .. outputdir .. "/%{prj.name}")
 
     files {
-        "%{prj.location}/include/rge.hpp",
-		"%{prj.location}/example.cpp"
+        "include/rge.hpp",
+		"%{prj.location}/**.cpp",
+		"%{prj.location}/**.hpp",
+		"%{prj.location}/**.h"
     }
 
     includedirs {
-        "%{prj.location}/include/",
-        "%{prj.location}/vendor/"
+		"include/",
+		"vendor/",
+        "%{prj.location}/"
     }
 	
 	filter "system:windows"
@@ -56,7 +63,65 @@ project "example"
         }
         linkoptions {
             "-F /Library/Frameworks",
-            "-framework Cocoa",
+            "-framework Carbon",
+            "-framework GLUT",
+            "-framework OpenGL"
+        }
+	
+	filter "system:linux"
+		links {
+            "m"
+        }
+	
+    filter "configurations:debug"
+		kind "ConsoleApp"
+        symbols "On"
+    
+    filter "configurations:release"
+		kind "WindowedApp"
+        optimize "On"
+
+
+------------------------------------------------------------------
+
+
+project "3d"
+    language "C++"
+    cppdialect "C++11"
+    location "examples/3d"
+
+    -- defines "SYS_SOFTWARE_GL"
+    defines "SYS_OPENGL_1_0"
+    -- defines "SYS_OPENGL_3_3"
+
+    targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+    objdir ("tmp/" .. outputdir .. "/%{prj.name}")
+
+    files {
+        "include/rge.hpp",
+		"%{prj.location}/**.cpp",
+		"%{prj.location}/**.hpp",
+		"%{prj.location}/**.h"
+    }
+
+    includedirs {
+		"include/",
+		"vendor/",
+        "%{prj.location}/"
+    }
+	
+	filter "system:windows"
+		staticruntime "On"
+		systemversion "latest"
+		entrypoint "mainCRTStartup"
+	
+	filter "system:macosx"
+        buildoptions {
+            "-F /Library/Frameworks"
+        }
+        linkoptions {
+            "-F /Library/Frameworks",
+            "-framework Carbon",
             "-framework GLUT",
             "-framework OpenGL"
         }

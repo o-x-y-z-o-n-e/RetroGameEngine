@@ -137,13 +137,10 @@ static rge::mesh* load_floor() {
 }
 
 class game : public rge::engine {
-
 private:
     rge::material* material;
 	rge::renderer* renderer;
     rge::camera* camera;
-	rge::sprite* smile;
-	rge::sprite* background;
 	rge::mesh* model;
 	rge::mesh* triangle;
 	rge::mesh* floor;
@@ -154,8 +151,6 @@ public:
     game() : rge::engine() {
         material = new rge::material();
 		camera = new rge::camera();
-		smile = new rge::sprite();
-		background = new rge::sprite();
 		model = nullptr;
 		floor = nullptr;
 		triangle = nullptr;
@@ -169,43 +164,22 @@ public:
 		triangle = load_triangle();
 		floor = load_floor();
 
-		background->texture = rge::texture::read_from_disk("tests/background_2.png");
-		background->transform->position = rge::vec3(0, 0, 1);
-		background->pixels_per_unit = 16;
-		renderer->upload_texture(background->texture);
-
-		smile->texture = rge::texture::read_from_disk("tests/test.bmp");
-		smile->pixels_per_unit = 16;
-		smile->centered = true;
-		renderer->upload_texture(smile->texture);
-
-        //camera->set_perspective(60, 1.6F, 0.0F, 1000.0F);
-		camera->set_orthographic(-8, 8, 6, -6, 0.0F, 100.0F);
-		camera->transform->position = rge::vec3(0, 0, -10);
-		//camera->transform->rotation = rge::quaternion::yaw_pitch_roll(0, 180 * DEG_2_RAD, 0);
+        camera->set_perspective(60, 1.6F, 0.0F, 1000.0F);
+		camera->transform->position = rge::vec3(0, 2, -10);
+		camera->transform->rotation = rge::quaternion::yaw_pitch_roll(0, 22.5F * DEG_2_RAD, 0);
 
         // renderer->set_target(render);
         renderer->set_camera(camera);
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
 
-		rge::texture* test_tex = rge::texture::read_from_disk("tests/test.bmp");
-		renderer->upload_texture(test_tex);
-
-		material->diffuse = rge::color(1, 0, 1);
-		material->texture = test_tex;
+		material->texture = rge::texture::read_from_disk("floor.png");
+		renderer->upload_texture(material->texture);
     }
 
 	void on_update(float delta_time) override {
 		counter += delta_time;
 		if(counter > PI * 2)
 			counter = 0;
-
-		smile->transform->position = rge::vec3(cosf(counter) * 3.0F, sinf(counter) * 3.0F, 0.0F);
-
-		{
-			rge::vec3 velocity = rge::vec3(rge::input::get_axis(rge::input::GAMEPAD_LEFT_STICK_X), rge::input::get_axis(rge::input::GAMEPAD_LEFT_STICK_Y), 0.0F) * 10.0F;
-			camera->transform->position += velocity * delta_time;
-		}
 
 		{
 			rge::vec3 velocity = rge::vec3();
@@ -217,10 +191,10 @@ public:
 				velocity.x += 1;
 
 			if(rge::input::is_down(rge::input::KEY_W))
-				velocity.y += 1;
+				velocity.z += 1;
 
 			if(rge::input::is_down(rge::input::KEY_S))
-				velocity.y -= 1;
+				velocity.z -= 1;
 
 			camera->transform->position += velocity * 10.0F * delta_time;
 		}
@@ -228,9 +202,14 @@ public:
 
     void on_render() override {
 		renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
-		
-		renderer->draw(*background);
-		renderer->draw(*smile);
+
+		if(floor) {
+			renderer->draw(
+				rge::mat4::identity(),
+				*floor,
+				*material
+			);
+		}
 
 		if(triangle) {
 			renderer->draw(
@@ -239,35 +218,13 @@ public:
 				*material
 			);
 		}
-
-		renderer->draw(*material->texture, rge::vec2(0.0F, 0.0F), rge::vec2(0.5F, 0.25F), rge::vec2(0.0F, 0.0F), rge::vec2(1.0F, 1.0F));
     }
-
-	/*
-	bool on_window_close_requested(const rge::window_close_requested_event& e) override {
-		rge::log::info("Cancelled exit()");
-		return true;
-	}*/
 };
 
 
 int main(int argc, char** argv) {
     game* gm = new game();
-	gm->create(true); // Multithreading off.
-
-    while(gm->get_is_running()) {
-        std::string cmd;
-		std::cout << "> ";
-        std::getline(std::cin, cmd);
-        
-        if(!gm->get_is_running())
-            break;
-
-        if(gm->command(cmd) == rge::FAIL) {
-            rge::log::error("Unknown command!");
-        }
-    }
-
+	gm->create(true);
 	gm->wait_for_exit();
 	delete gm;
     return 0;

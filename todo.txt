@@ -1,5 +1,6 @@
 ==CURRENT==
-	fix quaternions + fix camera view
+	material tint in opengl 1.0
+	[3D] fix quaternions + fix camera view
 
 	windows WM_PAINT platform event for software_gl
 	get software_gl fully working

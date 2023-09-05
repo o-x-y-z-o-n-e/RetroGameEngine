@@ -4359,6 +4359,7 @@ public:
 	}
 
 	void upload_texture(texture* texture) override {
+		if(texture == nullptr) return;
 		if(!texture->is_on_cpu()) return;
 
 		if(!texture->is_on_gpu())
@@ -4381,6 +4382,7 @@ public:
 	}
 
 	void free_texture(texture* texture) override {
+		if(texture == nullptr) return;
 		if(texture->is_on_gpu())
 			glDeleteTextures(1, &texture->handle);
 
@@ -4498,6 +4500,8 @@ public:
 
 	// Draw a 2D sprite onto camera space.
 	void draw(const sprite& sprite) override {
+		if(sprite.texture == nullptr) return;
+
 		GLfloat gl_m[16];
 		mat4 m = sprite.transform->get_global_matrix();
 		vec3 n = m.multiply_vector(vec3(0, 0, -1));
