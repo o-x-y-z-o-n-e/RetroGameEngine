@@ -1019,6 +1019,14 @@ public:
 public:
 	virtual ~platform() {}
 
+#ifdef RGE_IMPL
+public:
+#else
+private:
+#endif
+	virtual bool use_custom_loop() const { return false; }
+	virtual void enter_loop(std::function<void()> loop) {}
+
 protected:
 	platform() {}
 };
@@ -2339,7 +2347,8 @@ public:
 
 	void dispatch(const T& e) {
 		std::function<bool(const T&)> handler;
-		for(std::vector<std::function<bool(const T&)>>::iterator it = handlers.begin(); it != handlers.end(); it++) {
+		std::vector<std::function<bool(const T&)>>::iterator it;
+		for(it = handlers.begin(); it != handlers.end(); it++) {
 			handler = (*it);
 
 			if(handler(e)) break;
@@ -2506,7 +2515,11 @@ void engine::create(bool wait_until_exit) {
 void engine::procedure() {
 	if(init() != rge::OK) return;
 	if(start() != rge::OK) return;
-	loop();
+	if(platform_impl->use_custom_loop()) {
+		platform_impl->enter_loop(RGE_BIND_EVENT_HANDLER(loop));
+	} else {
+		while(is_running) loop();
+	}
 }
 
 rge::result engine::init() {
@@ -2568,53 +2581,51 @@ rge::result engine::start() {
 }
 
 void engine::loop() {
-	while(is_running) {
-		// Handle all events.
-		platform_impl->poll_events();
-		events_impl->process();
+	// Handle all events.
+	platform_impl->poll_events();
+	events_impl->process();
 
-		// In case exit() was called during event handling.
-		if(!is_running) break; 
+	// In case exit() was called during event handling.
+	if(!is_running) return;
 
-		// Calculate the elapsed time since last frame.
-		time_stamp_2 = std::chrono::system_clock::now();
-		std::chrono::duration<float> elapsed_time = time_stamp_2 - time_stamp_1;
-		time_stamp_1 = time_stamp_2;
-		float delta_time = elapsed_time.count();
+	// Calculate the elapsed time since last frame.
+	time_stamp_2 = std::chrono::system_clock::now();
+	std::chrono::duration<float> elapsed_time = time_stamp_2 - time_stamp_1;
+	time_stamp_1 = time_stamp_2;
+	float delta_time = elapsed_time.count();
 		
-		// Tick the update routine.
-		update_counter += delta_time;
-		if(update_counter > update_interval) {
-			platform_impl->poll_gamepads();
-			on_update(update_counter);
-			update_counter = 0;
-			input::flush_presses_and_releases();
-		}
+	// Tick the update routine.
+	update_counter += delta_time;
+	if(update_counter > update_interval) {
+		platform_impl->poll_gamepads();
+		on_update(update_counter);
+		update_counter = 0;
+		input::flush_presses_and_releases();
+	}
 		
-		// Tick the physics routine.
-		physics_counter += delta_time;
-		if(physics_counter > physics_interval) {
-			on_physics(physics_counter);
-			physics_counter = 0;
-		}
+	// Tick the physics routine.
+	physics_counter += delta_time;
+	if(physics_counter > physics_interval) {
+		on_physics(physics_counter);
+		physics_counter = 0;
+	}
 		
-		// Tick the rendering routine.
-		render_counter += delta_time;
-		if(render_counter > render_interval) {
-			on_render();
-			renderer_impl->display();
-			platform_impl->refresh_window();
-			render_counter = 0;
-		}
+	// Tick the rendering routine.
+	render_counter += delta_time;
+	if(render_counter > render_interval) {
+		on_render();
+		renderer_impl->display();
+		platform_impl->refresh_window();
+		render_counter = 0;
+	}
 		
-		// Calculate fps.
-		frame_timer += delta_time;
-		frame_counter++;
-		if(frame_timer >= 1.0F) {
-			frame_timer -= 1.0F;
-			frame_rate = frame_counter;
-			frame_counter = 0;
-		}
+	// Calculate fps.
+	frame_timer += delta_time;
+	frame_counter++;
+	if(frame_timer >= 1.0F) {
+		frame_timer -= 1.0F;
+		frame_rate = frame_counter;
+		frame_counter = 0;
 	}
 }
 
@@ -3700,11 +3711,14 @@ class macosx : public platform {
 private:
 	int window_width;
 	int window_height;
+	std::function<void()> loop_func;
+	static macosx* instance;
 
 public:
 	macosx() {
 		window_width = 0;
 		window_height = 0;
+		instance = this;
 	}
 
 	rge::result init(rge::engine* engine) override {
@@ -3746,8 +3760,26 @@ public:
 		return rge::OK;
 	}
 
+	bool use_custom_loop() const override {
+		return true;
+	}
+
+	static void update() {
+		instance->loop_func();
+	}
+
+	void enter_loop(std::function<void()> loop) override {
+		this->loop_func = loop;
+		glutIdleFunc(update);
+		glutMainLoop();
+	}
+
 	void set_window_title(const std::string& title) override {
 		glutSetWindowTitle(title.c_str());
+	}
+
+	void poll_gamepads() override {
+		// TODO
 	}
 
 	void poll_events() override {
@@ -3756,6 +3788,11 @@ public:
 
 	void refresh_window() override {
 		// TODO
+	}
+
+	bool is_focused() const override {
+		// TODO
+		return true;
 	}
 };
 #endif /* SYS_MACOSX */
