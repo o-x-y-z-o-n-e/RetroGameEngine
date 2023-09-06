@@ -49,7 +49,7 @@ SOFTWARE.
 #include <unordered_map>
 #include <memory>
 
-#define RGE_BIND_EVENT_HANDLER(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
+#define RGE_BIND_EVENT_HANDLER(fn, T) [this](const T& e) -> bool { return this->fn(e); }
 
 namespace rge {
 
@@ -1009,9 +1009,9 @@ private:
 	render_target(renderer* renderer);
 
 private:
-	renderer* renderer_instance;
 	int width;
 	int height;
+	renderer* renderer_instance;
 	texture::ptr frame_buffer;
 	texture::ptr depth_buffer;
 };
@@ -2368,7 +2368,7 @@ public:
 
 	void dispatch(const T& e) {
 		std::function<bool(const T&)> handler;
-		std::vector<std::function<bool(const T&)>>::iterator it;
+		typename std::vector<std::function<bool(const T&)>>::iterator it;
 		for(it = handlers.begin(); it != handlers.end(); it++) {
 			handler = (*it);
 
@@ -2464,9 +2464,10 @@ public:
 
 			case event_type::GAMEPAD_AXIS:
 				return on_gamepad_axis.add_event(e);
-		}
 
-		return false;
+			default:
+				return false;
+		}
 	}
 
 	void process() {
@@ -2539,7 +2540,8 @@ void engine::procedure() {
 	if(init() != rge::OK) return;
 	if(start() != rge::OK) return;
 	if(platform_impl->use_custom_loop()) {
-		platform_impl->enter_loop(RGE_BIND_EVENT_HANDLER(loop));
+		std::function<void()> f = [this]() { return this->loop(); };
+		platform_impl->enter_loop(f);
 	} else {
 		while(is_running) loop();
 	}
@@ -2577,8 +2579,8 @@ rge::result engine::init() {
 		return rge::FAIL;
 	}
 
-	events_impl->on_window_close_requested.add_handler(RGE_BIND_EVENT_HANDLER(on_window_close_requested));
-	events_impl->on_window_resized.add_handler(RGE_BIND_EVENT_HANDLER(renderer_impl->on_window_resized));
+	events_impl->on_window_close_requested.add_handler(RGE_BIND_EVENT_HANDLER(on_window_close_requested, window_close_requested_event));
+	events_impl->on_window_resized.add_handler(RGE_BIND_EVENT_HANDLER(renderer_impl->on_window_resized, window_resized_event));
 	events_impl->on_key_pressed.add_handler(&input::on_key_pressed);
 	events_impl->on_key_released.add_handler(&input::on_key_released);
 	events_impl->on_mouse_pressed.add_handler(&input::on_mouse_pressed);
@@ -3254,15 +3256,6 @@ render_target::~render_target() {
 
 render_target::render_target(renderer* renderer) {
 	renderer_instance = renderer;
-
-	if(width < 1) width = 1;
-	if(height < 1) height = 1;
-
-	this->width = width;
-	this->height = height;
-
-	frame_buffer = renderer->create_texture(width, height);
-	depth_buffer = renderer->create_texture(width, height);
 }
 //********************************************//
 //* Render Target class.                     *//
