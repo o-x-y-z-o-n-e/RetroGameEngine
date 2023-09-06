@@ -870,6 +870,7 @@ public:
 
 public:
 	bool centered;
+	bool billboard;
 	int pixels_per_unit;
 
 	texture* texture;
@@ -2912,6 +2913,7 @@ sprite::sprite() {
 	material = nullptr;
 	transform = new rge::transform();
 	centered = false;
+	billboard = false;
 	pixels_per_unit = 32;
 }
 
@@ -2920,6 +2922,7 @@ sprite::sprite(rge::texture* texture) {
 	material = nullptr;
 	transform = new rge::transform();
 	centered = false;
+	billboard = false;
 	pixels_per_unit = 32;
 }
 
@@ -2928,6 +2931,7 @@ sprite::sprite(rge::texture* texture, rge::material* material) {
 	this->material = material;
 	transform = new rge::transform();
 	centered = false;
+	billboard = false;
 	pixels_per_unit = 32;
 }
 
@@ -4489,6 +4493,8 @@ public:
 		vec3 vertex;
 		vec3 normal;
 		GLfloat gl_m[16];
+
+		if(input_camera == nullptr) return rge::FAIL;
 		
 		convert_matrix(gl_m, input_camera->get_view_matrix());
 		glMatrixMode(GL_MODELVIEW);
@@ -4548,11 +4554,13 @@ public:
 
 	// Draw a 2D sprite onto camera space.
 	void draw(const sprite& sprite) override {
+		if(input_camera == nullptr) return;
 		if(sprite.texture == nullptr) return;
 
 		GLfloat gl_m[16];
-		mat4 m = sprite.transform->get_global_matrix();
-		vec3 n = m.multiply_vector(vec3(0, 0, -1));
+		mat4 sprite_matrix = sprite.transform->get_global_matrix();
+		mat4 camera_matrix = input_camera->transform->get_global_matrix();
+		mat4 view_matrix = input_camera->get_view_matrix();
 
 		float w = float(sprite.texture->get_width()) / sprite.pixels_per_unit;
 		float h = float(sprite.texture->get_height()) / sprite.pixels_per_unit;
@@ -4566,10 +4574,25 @@ public:
 			p.y -= h / 2.0F;
 		}
 		
-		vec3 p_bl = m.multiply_point_3x4(p);
-		vec3 p_br = m.multiply_point_3x4(p + r);
-		vec3 p_tl = m.multiply_point_3x4(p + u);
-		vec3 p_tr = m.multiply_point_3x4(p + r + u);
+		vec3 n;
+		vec3 p_bl;
+		vec3 p_br;
+		vec3 p_tl;
+		vec3 p_tr;
+
+		if(sprite.billboard) {
+			n = camera_matrix.multiply_vector(vec3(0, 0, -1));
+			p_bl = sprite_matrix.multiply_point_3x4(p);
+			p_br = p_bl + camera_matrix.multiply_vector(r);
+			p_tl = p_bl + camera_matrix.multiply_vector(u);
+			p_tr = p_bl + camera_matrix.multiply_vector(u + r);
+		} else {
+			n = sprite_matrix.multiply_vector(vec3(0, 0, -1));
+			p_bl = sprite_matrix.multiply_point_3x4(p);
+			p_br = sprite_matrix.multiply_point_3x4(p + r);
+			p_tl = sprite_matrix.multiply_point_3x4(p + u);
+			p_tr = sprite_matrix.multiply_point_3x4(p + r + u);
+		}
 
 		color diffuse = color();
 		if(sprite.material) diffuse = sprite.material->diffuse;

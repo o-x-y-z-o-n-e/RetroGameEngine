@@ -6,6 +6,8 @@
 #include <iostream>
 #include <fstream>
 
+static rge::sprite* s;
+
 static std::vector<std::string> str_split(std::string& s, char sep) {
 	std::vector<std::string> output;
 	std::string::size_type prev_pos = 0, pos = 0;
@@ -174,6 +176,11 @@ public:
 
 		material->texture = rge::texture::read_from_disk("floor.png");
 		renderer->upload_texture(material->texture);
+
+		s = new rge::sprite(rge::texture::read_from_disk("floor.png"));
+		s->transform->position = rge::vec3(2, 0, 0);
+		s->centered = true;
+		s->billboard = true;
     }
 
 	void on_update(float delta_time) override {
@@ -202,6 +209,8 @@ public:
 
     void on_render() override {
 		renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
+
+		renderer->draw(*s);
 
 		if(floor) {
 			renderer->draw(
