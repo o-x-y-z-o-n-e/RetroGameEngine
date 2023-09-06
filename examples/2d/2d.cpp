@@ -59,6 +59,8 @@ public:
 		renderer->upload_texture(background->texture);
 
 		smile->texture = rge::texture::read_from_disk("smile.bmp");
+		smile->material = new rge::material();
+		smile->material->diffuse = rge::color(1, 0, 1, 0.5F);
 		smile->pixels_per_unit = 16;
 		smile->centered = true;
 		renderer->upload_texture(smile->texture);
@@ -82,6 +84,7 @@ public:
 			counter = 0;
 
 		smile->transform->position = rge::vec3(cosf(counter) * 3.0F, sinf(counter) * 3.0F, 0.0F);
+		smile->transform->rotation = rge::quaternion::yaw_pitch_roll(0, 0, -counter);
 
 		{
 			rge::vec3 velocity = rge::vec3(rge::input::get_axis(rge::input::GAMEPAD_LEFT_STICK_X), rge::input::get_axis(rge::input::GAMEPAD_LEFT_STICK_Y), 0.0F) * 10.0F;

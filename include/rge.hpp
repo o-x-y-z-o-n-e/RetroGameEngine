@@ -865,6 +865,7 @@ class sprite {
 public:
 	sprite();
 	sprite(texture* texture);
+	sprite(texture* texture, material* material);
 	~sprite();
 
 public:
@@ -872,6 +873,7 @@ public:
 	int pixels_per_unit;
 
 	texture* texture;
+	material* material;
 	transform* transform;
 };
 //********************************************//
@@ -2896,6 +2898,7 @@ mesh::~mesh() {
 //********************************************//
 sprite::sprite() {
 	texture = nullptr;
+	material = nullptr;
 	transform = new rge::transform();
 	centered = false;
 	pixels_per_unit = 32;
@@ -2903,6 +2906,15 @@ sprite::sprite() {
 
 sprite::sprite(rge::texture* texture) {
 	this->texture = texture;
+	material = nullptr;
+	transform = new rge::transform();
+	centered = false;
+	pixels_per_unit = 32;
+}
+
+sprite::sprite(rge::texture* texture, rge::material* material) {
+	this->texture = texture;
+	this->material = material;
 	transform = new rge::transform();
 	centered = false;
 	pixels_per_unit = 32;
@@ -4449,11 +4461,8 @@ public:
 		glMatrixMode(GL_PROJECTION);
 		glLoadMatrixf(gl_m);
 
-		/*
-		glEnable(GL_ALPHA_TEST);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		*/
+		float lpos[4] = { 0, 1, 0, 1.0 };  //light's position
+		//glLightfv(GL_LIGHT0, GL_POSITION, lpos);   //Set light position
 
 		if(material.texture != nullptr && material.texture->is_on_gpu()) {
 			glEnable(GL_TEXTURE_2D);
@@ -4462,36 +4471,38 @@ public:
 			glDisable(GL_TEXTURE_2D);
 		}
 
-		float lpos[4] = { 0, 1, 0, 1.0 };  //light's position
-		//glLightfv(GL_LIGHT0, GL_POSITION, lpos);   //Set light position
-
-		glBegin(GL_TRIANGLES);
-		for(i = 0; i < triangles.size(); i++) {
-			v = triangles[i];
-
-			if(v < uvs.size()) {
-				glTexCoord2f(uvs[v].x, 1.0F - uvs[v].y);
-			}
-
-			if(v < vertices.size()) {
-				vertex = local_to_world.multiply_point_3x4(vertices[v]);
-				glVertex3f(vertex.x, vertex.y, vertex.z);
-			}
-
-			if(v < normals.size()) {
-				normal = local_to_world.multiply_vector(normals[v]);
-				glNormal3f(normal.x, normal.y, normal.z);
-			}
-
-			
+		if(material.diffuse.a < 1.0F) {
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		} else {
+			glDisable(GL_BLEND);
 		}
-		glEnd();
 
-		//glDisable(GL_TEXTURE_2D);
-		/*
+		glColor4f(material.diffuse.r, material.diffuse.g, material.diffuse.b, material.diffuse.a);
+
+		glBegin(GL_TRIANGLES); {
+			for(i = 0; i < triangles.size(); i++) {
+				v = triangles[i];
+
+				if(v < uvs.size()) {
+					glTexCoord2f(uvs[v].x, 1.0F - uvs[v].y);
+				}
+
+				if(v < vertices.size()) {
+					vertex = local_to_world.multiply_point_3x4(vertices[v]);
+					glVertex3f(vertex.x, vertex.y, vertex.z);
+				}
+
+				if(v < normals.size()) {
+					normal = local_to_world.multiply_vector(normals[v]);
+					glNormal3f(normal.x, normal.y, normal.z);
+				}
+			}
+		} glEnd();
+
+		glColor4f(1, 1, 1, 1);
 		glDisable(GL_BLEND);
-		glDisable(GL_LIGHTING);
-		*/
+		glDisable(GL_TEXTURE_2D);
 
 		glFlush();
 
@@ -4523,6 +4534,9 @@ public:
 		vec3 p_tl = m.multiply_point_3x4(p + u);
 		vec3 p_tr = m.multiply_point_3x4(p + r + u);
 
+		color diffuse = color();
+		if(sprite.material) diffuse = sprite.material->diffuse;
+
 		convert_matrix(gl_m, input_camera->get_view_matrix());
 		glMatrixMode(GL_MODELVIEW);
 		glLoadMatrixf(gl_m);
@@ -4538,26 +4552,35 @@ public:
 			glDisable(GL_TEXTURE_2D);
 		}
 
-		glBegin(GL_QUADS);
+		if(diffuse.a < 1.0F) {
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		} else {
+			glDisable(GL_BLEND);
+		}
 
-		glTexCoord2f(0.0F, 1.0F);
-		glVertex3f(p_bl.x, p_bl.y, p_bl.z);
-		glNormal3f(n.x, n.y, n.z);
+		glColor4f(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
 
-		glTexCoord2f(1.0F, 1.0F);
-		glVertex3f(p_br.x, p_br.y, p_br.z);
-		glNormal3f(n.x, n.y, n.z);
+		glBegin(GL_QUADS); {
+			glTexCoord2f(0.0F, 1.0F);
+			glVertex3f(p_bl.x, p_bl.y, p_bl.z);
+			glNormal3f(n.x, n.y, n.z);
 
-		glTexCoord2f(1.0F, 0.0F);
-		glVertex3f(p_tr.x, p_tr.y, p_tr.z);
-		glNormal3f(n.x, n.y, n.z);
+			glTexCoord2f(1.0F, 1.0F);
+			glVertex3f(p_br.x, p_br.y, p_br.z);
+			glNormal3f(n.x, n.y, n.z);
 
-		glTexCoord2f(0.0F, 0.0F);
-		glVertex3f(p_tl.x, p_tl.y, p_tl.z);
-		glNormal3f(n.x, n.y, n.z);
+			glTexCoord2f(1.0F, 0.0F);
+			glVertex3f(p_tr.x, p_tr.y, p_tr.z);
+			glNormal3f(n.x, n.y, n.z);
 
-		glEnd();
+			glTexCoord2f(0.0F, 0.0F);
+			glVertex3f(p_tl.x, p_tl.y, p_tl.z);
+			glNormal3f(n.x, n.y, n.z);
+		} glEnd();
 
+		glColor4f(1, 1, 1, 1);
+		glDisable(GL_BLEND);
 		glDisable(GL_TEXTURE_2D);
 
 		glFlush();
@@ -4602,11 +4625,11 @@ public:
 
 		glEnd();
 
-		glFlush();
-
-		glDisable(GL_TEXTURE_2D);
 		glDepthMask(GL_TRUE);
 		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_TEXTURE_2D);
+
+		glFlush();
 	}
 
 	// Draw a 2D texture onto window [0, w/h] space.

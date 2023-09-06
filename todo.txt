@@ -1,6 +1,6 @@
 ==CURRENT==
-	material tint in opengl 1.0
 	[3D] fix quaternions + fix camera view
+	[3D] opengl 1.0 lighting
 
 	windows WM_PAINT platform event for software_gl
 	get software_gl fully working
@@ -10,7 +10,7 @@
 
 	macosx keyboard & mouse input
 	linux keyboard & mouse input
-	
+
 	obj loading
 	yaml parsing & writer
 	multithreaded command queue
