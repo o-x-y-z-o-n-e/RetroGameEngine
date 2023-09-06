@@ -2121,7 +2121,7 @@ namespace log { const int BUFFER_SIZE = 512; }
 
 void log::info(const char* msg, ...) {
 	char buffer[log::BUFFER_SIZE];
-    std::va_list args;
+    va_list args;
     va_start(args, msg);
     #ifdef SYS_WINDOWS
 	vsprintf_s(buffer, log::BUFFER_SIZE, msg, args);
@@ -2134,7 +2134,7 @@ void log::info(const char* msg, ...) {
 
 void log::warning(const char* msg, ...) {
 	char buffer[log::BUFFER_SIZE];
-    std::va_list args;
+    va_list args;
     va_start(args, msg);
     #ifdef SYS_WINDOWS
 	vsprintf_s(buffer, log::BUFFER_SIZE, msg, args);
@@ -2142,12 +2142,12 @@ void log::warning(const char* msg, ...) {
 	vsprintf(buffer, msg, args);
 	#endif
     va_end(args);
-	std::cout << "[WARNING] " << msg << std::endl;
+	std::cout << "[WARNING] " << buffer << std::endl;
 }
 
 void log::error(const char* msg, ...) {
 	char buffer[log::BUFFER_SIZE];
-    std::va_list args;
+    va_list args;
     va_start(args, msg);
     #ifdef SYS_WINDOWS
 	vsprintf_s(buffer, log::BUFFER_SIZE, msg, args);
@@ -2155,7 +2155,7 @@ void log::error(const char* msg, ...) {
 	vsprintf(buffer, msg, args);
 	#endif
     va_end(args);
-	std::cout << "[ERROR] " << msg << std::endl;
+	std::cout << "[ERROR] " << buffer << std::endl;
 }
 //********************************************//
 //* Logging Module.                          *//
@@ -3107,6 +3107,11 @@ texture::ptr texture::load(const std::string& path, bool load_to_gpu) {
 	int i, w, h, ch;
 	uint8_t* input_buffer = stbi_load(path.c_str(), &w, &h, &ch, 4);
 
+	if(!input_buffer) {
+		rge::log::error("Could not load texture: %s", path.c_str());
+		return nullptr;
+	}
+
 	if(ch != 3 && ch != 4) {
 		rge::log::error("Texture file read failed: only RGB & RGBA formats supported!");
 		stbi_image_free(input_buffer);
@@ -3780,8 +3785,8 @@ private:
 
 public:
 	macosx() {
-		window_width = 0;
-		window_height = 0;
+		window_width = 800;
+		window_height = 600;
 	}
 
 	rge::result init(rge::engine* engine) override {
@@ -3795,31 +3800,35 @@ public:
 		char* argv[1] = { (char*)"" };
 		glutInit(&argc, argv);
 		glutInitWindowPosition(0, 0);
-		glutInitWindowSize(512, 512);
-		glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGBA);
+		glutInitWindowSize(window_width, window_height);
+		glutInitDisplayMode(GLUT_SINGLE | GLUT_DEPTH | GLUT_RGBA);
 
-		// TODO: Key mapping
-		
 		return rge::OK;
 	}
 
 	rge::result create_window() override {
-		// Creates the window and the OpenGL context for it.
-		glutCreateWindow("OneLoneCoder.com - Pixel Game Engine");
-		glEnable(GL_TEXTURE_2D); // Turn on texturing.
-		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+		glutCreateWindow("Retro Game Engine");
 
 		if(false) {
 			window_width = glutGet(GLUT_SCREEN_WIDTH);
 			window_height = glutGet(GLUT_SCREEN_HEIGHT);
 			glutFullScreen();
-		} else {
-			if(window_width > glutGet(GLUT_SCREEN_WIDTH) || window_height > glutGet(GLUT_SCREEN_HEIGHT)) {
-				rge::log::error("The specified window dimensions do not fit on your screen.");
-				return rge::FAIL;
-			}
-			glutReshapeWindow(window_width, window_height - 1);
 		}
+
+		glutDisplayFunc(update);
+		glutIdleFunc(idle);
+		glutReshapeFunc(on_window_reshape);
+		glutWMCloseFunc(on_window_try_close);
+		// TODO: Events to implement...
+		// 		window moved event
+		// 		window focus/unfocus event
+		// 		key press event
+		// 		key release event
+		// 		mouse press event
+		// 		mouse release event
+		// 		mouse move event
+		// 		mouse scroll event
+
 		return rge::OK;
 	}
 
@@ -3831,9 +3840,29 @@ public:
 		get_instance()->loop_func();
 	}
 
+	static void idle() {
+		glutPostRedisplay();
+	}
+
+	static void on_window_reshape(int w, int h) {
+		get_instance()->window_width = w;
+		get_instance()->window_height = h;
+
+		window_resized_event e;
+		e.width = w;
+		e.height = h;
+		engine::get_instance()->post_event(e);
+	}
+
+	static void on_window_try_close() {
+		rge::log::info("hi"); return; // TODO: Test
+		window_close_requested_event e;
+		engine::get_instance()->post_event(e);
+	}
+
 	void enter_loop(std::function<void()> loop) override {
 		this->loop_func = loop;
-		glutIdleFunc(update);
+		
 		glutMainLoop();
 	}
 
@@ -4592,8 +4621,6 @@ public:
 		glDisable(GL_BLEND);
 		glDisable(GL_TEXTURE_2D);
 
-		glFlush();
-
 		return rge::OK;
 	}
 
@@ -4687,8 +4714,6 @@ public:
 		glColor4f(1, 1, 1, 1);
 		glDisable(GL_BLEND);
 		glDisable(GL_TEXTURE_2D);
-
-		glFlush();
 	}
 
 	// Draw a 2D texture onto view [0,1] space.
@@ -4733,8 +4758,6 @@ public:
 		glDepthMask(GL_TRUE);
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_TEXTURE_2D);
-
-		glFlush();
 	}
 
 	// Draw a 2D texture onto window [0, w/h] space.
