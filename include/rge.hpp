@@ -682,8 +682,9 @@ public:
 	void wait_for_exit();
 	int get_frame_rate() const;
 	bool get_is_running() const;
-	platform* get_platform() const;
-	renderer* get_renderer() const;
+	static engine* get_instance();
+	static platform* get_platform();
+	static renderer* get_renderer();
 
 public:
 	float update_interval;
@@ -708,6 +709,7 @@ private:
 	void loop();
 	
 private:
+	static engine* instance;
 	bool has_init;
 	bool is_running;
 	std::thread thread;
@@ -874,14 +876,17 @@ public:
 
 public:
 	static ptr create(int width, int height);
-	static ptr load(const std::string& path);
+	static ptr load(const std::string& path, bool load_to_gpu = true);
 	static ptr copy(const ptr& original);
 
 	// Only use if needed. Prefer create() instead
 	texture(int width, int height);
 	~texture();
 
+	// Returns width of texture in pixels.
 	int get_width() const;
+
+	// Returns height of texture in pixels.
 	int get_height() const;
 
 	// Returns true if space is allocated on cpu.
@@ -1066,6 +1071,8 @@ public:
 
 	// Creates a texture with allocated space on gpu.
 	virtual texture::ptr create_texture(int width, int height) = 0;
+	// Allocates space on gpu for texture.
+	virtual void alloc_texture(texture& texture) = 0;
 	// Copies the texture data, on cpu, to gpu.
 	virtual void upload_texture(texture& texture) = 0;
 	// Frees the allocated texture data on gpu.
@@ -2489,6 +2496,8 @@ public:
 //********************************************//
 //* Core Engine class.                       *//
 //********************************************//
+engine* engine::instance = nullptr;
+
 engine::engine() {
 	has_init = false;
 	is_running = false;
@@ -2537,12 +2546,19 @@ void engine::procedure() {
 }
 
 rge::result engine::init() {
+	if(instance != nullptr) {
+		log::error("Another instance of RGE already exists!");
+		return rge::FAIL;
+	}
+
 	if(has_init) {
 		log::error("RGE core has already been initialised!");
 		return rge::FAIL;
 	}
 
 	log::info("Initialising RGE...");
+
+	instance = this;
 
 	if(platform_impl == nullptr || renderer_impl == nullptr) return rge::FAIL;
 
@@ -2688,12 +2704,16 @@ bool engine::get_is_running() const {
 	return is_running;
 }
 
-platform* engine::get_platform() const {
-	return platform_impl;
+engine* engine::get_instance() {
+	return instance;
 }
 
-renderer* engine::get_renderer() const {
-	return renderer_impl;
+platform* engine::get_platform() {
+	return instance->platform_impl;
+}
+
+renderer* engine::get_renderer() {
+	return instance->renderer_impl;
 }
 
 void engine::wait_for_exit() {
@@ -2937,6 +2957,7 @@ texture::ptr texture::copy(const texture::ptr& original) {
 	}
 
 	if(original->is_on_gpu()) {
+		engine::get_renderer()->alloc_texture(*texture);
 		// TODO: Copy gpu data.
 	}
 
@@ -3069,10 +3090,12 @@ void texture::flush_registry() {
 	}
 }
 
-texture::ptr texture::load(const std::string& path) {
+texture::ptr texture::load(const std::string& path, bool load_to_gpu) {
 	if(registry.count(path) > 0) {
-		auto search = registry.find(path);
-		return (*search).second;
+		texture::ptr t = registry.find(path)->second;
+		if(load_to_gpu && !t->is_on_gpu())
+			engine::get_renderer()->upload_texture(*t);
+		return t;
 	}
 
 	// TODO: Check if file exists.
@@ -3115,6 +3138,10 @@ texture::ptr texture::load(const std::string& path) {
 	stbi_image_free(input_buffer);
 
 	registry.insert(std::pair<std::string, texture::ptr>(path, texture));
+
+	if(load_to_gpu)
+		engine::get_renderer()->upload_texture(*texture);
+
 	return texture;
 	#else
 	LOG_MISSING_DEP(read_texture_from_disk, stb_image.h)
@@ -3308,11 +3335,12 @@ public:
 		void* buffer;
 	} frame;
 
-	static engine* engine_instance;
-	static windows* windows_instance;
+
+	static windows* get_instance() {
+		return (windows*)engine::get_platform();
+	}
 
 	windows() {
-		windows_instance = this;
 		has_init = false;
 		has_window = false;
 		has_focus = false;
@@ -3321,8 +3349,6 @@ public:
 public:
 	rge::result init(rge::engine* engine) override {
 		if(has_init) return rge::FAIL;
-
-		this->engine_instance = engine;
 
 		ZeroMemory(&config, sizeof(WNDCLASS));
 		config.hIcon = LoadIcon(NULL, IDI_APPLICATION);
@@ -3475,7 +3501,7 @@ public:
 		switch(msg) {
 			case WM_CLOSE: {
 				window_close_requested_event e;
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
@@ -3490,8 +3516,8 @@ public:
 				e.width = LOWORD(lParam);
 				e.height = HIWORD(lParam);
 
-				windows_instance->create_frame(e.width, e.height);
-				engine_instance->post_event(e);
+				get_instance()->create_frame(e.width, e.height);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
@@ -3499,28 +3525,28 @@ public:
 				window_moved_event e;
 				e.x = (int)(short)LOWORD(lParam); // Horizontal position.
 				e.y = (int)(short)HIWORD(lParam); // Vertical position.
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
 			case WM_KILLFOCUS: {
-				windows_instance->has_focus = false;
+				get_instance()->has_focus = false;
 				window_unfocused_event e;
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
 			case WM_SETFOCUS: {
-				windows_instance->has_focus = true;
+				get_instance()->has_focus = true;
 				window_focused_event e;
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 			
 			case WM_KEYUP: {
 				key_released_event e;
 				e.input_code = convert_sys_key_to_rge_key((uint8_t)wParam);
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
@@ -3529,7 +3555,7 @@ public:
 				if(!key_was_down) {
 					key_pressed_event e;
 					e.input_code = convert_sys_key_to_rge_key((uint8_t)wParam);
-					engine_instance->post_event(e);
+					engine::get_instance()->post_event(e);
 				}
 				break;
 			}
@@ -3537,42 +3563,42 @@ public:
 			case WM_LBUTTONDOWN: {
 				mouse_pressed_event e;
 				e.input_code = rge::input::MOUSE_LEFT;
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
 			case WM_RBUTTONDOWN: {
 				mouse_pressed_event e;
 				e.input_code = rge::input::MOUSE_RIGHT;
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
 			case WM_MBUTTONDOWN: {
 				mouse_pressed_event e;
 				e.input_code = rge::input::MOUSE_MIDDLE;
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
 			case WM_LBUTTONUP: {
 				mouse_released_event e;
 				e.input_code = rge::input::MOUSE_LEFT;
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
 			case WM_RBUTTONUP: {
 				mouse_released_event e;
 				e.input_code = rge::input::MOUSE_RIGHT;
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
 			case WM_MBUTTONUP: {
 				mouse_released_event e;
 				e.input_code = rge::input::MOUSE_MIDDLE;
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
@@ -3580,14 +3606,14 @@ public:
 				mouse_moved_event e;
 				e.x = (int)(short)LOWORD(lParam); // Horizontal position.
 				e.y = (int)(short)HIWORD(lParam); // Vertical position.
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
 			case WM_MOUSEWHEEL: {
 				mouse_scrolled_event e;
 				e.scroll = (short)HIWORD(wParam) / 120;
-				engine_instance->post_event(e);
+				engine::get_instance()->post_event(e);
 				break;
 			}
 
@@ -3604,7 +3630,7 @@ public:
 		e.input_code = ic;
 		e.user = u;
 		e.value = v;
-		engine_instance->post_event(e);
+		engine::get_instance()->post_event(e);
 	}
 
 	void poll_gamepads() override {
@@ -3685,12 +3711,12 @@ public:
 					gamepad_pressed_event e;
 					e.input_code = (input::code)i;
 					e.user = u;
-					engine_instance->post_event(e);
+					engine::get_instance()->post_event(e);
 				} else if(!is_pressed && was_pressed) {
 					gamepad_released_event e;
 					e.input_code = (input::code)i;
 					e.user = u;
-					engine_instance->post_event(e);
+					engine::get_instance()->post_event(e);
 				}
 			}
 		}
@@ -3722,10 +3748,6 @@ public:
 		return has_focus;
 	}
 };
-
-engine* windows::engine_instance = nullptr;
-windows* windows::windows_instance = nullptr;
-
 #endif /* SYS_WINDOWS */
 //********************************************//
 //* Windows platform class.                  *//
@@ -3758,13 +3780,15 @@ private:
 	int window_width;
 	int window_height;
 	std::function<void()> loop_func;
-	static macosx* instance;
+
+	static macosx* get_instance() {
+		return (macosx*)engine::get_platform();
+	}
 
 public:
 	macosx() {
 		window_width = 0;
 		window_height = 0;
-		instance = this;
 	}
 
 	rge::result init(rge::engine* engine) override {
@@ -3811,7 +3835,7 @@ public:
 	}
 
 	static void update() {
-		instance->loop_func();
+		get_instance()->loop_func();
 	}
 
 	void enter_loop(std::function<void()> loop) override {
@@ -4434,19 +4458,22 @@ public:
 	}
 
 	texture::ptr create_texture(int width, int height) override {
-		texture::ptr texture = std::make_shared<rge::texture>(width, height);
+		texture::ptr texture = texture::create(width, height);
 
 		glGenTextures(1, &texture->handle);
 
 		return texture;
 	}
 
-	void upload_texture(texture& texture) override {
-		if(!texture.is_on_cpu()) return;
-
+	void alloc_texture(texture& texture) override {
 		if(!texture.is_on_gpu())
 			glGenTextures(1, &texture.handle);
+	}
 
+	void upload_texture(texture& texture) override {
+		alloc_texture(texture);
+
+		if(!texture.is_on_cpu()) return;
 		glBindTexture(GL_TEXTURE_2D, texture.handle);
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

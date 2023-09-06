@@ -54,19 +54,16 @@ public:
 		background->texture = rge::texture::load("background.png");
 		background->transform->position = rge::vec3(0, 0, 1);
 		background->pixels_per_unit = 16;
-		renderer->upload_texture(*background->texture);
 
 		smile->texture = rge::texture::load("smile.bmp");
 		smile->material = new rge::material();
 		smile->material->diffuse = rge::color(1, 0, 1, 0.5F);
 		smile->pixels_per_unit = 16;
 		smile->centered = true;
-		renderer->upload_texture(*smile->texture);
 
 		triangle = load_triangle();
 		material->diffuse = rge::color(1, 0, 1);
 		material->texture = rge::texture::load("smile.bmp");
-		renderer->upload_texture(*material->texture);
 
 		camera->set_orthographic(-8, 8, 6, -6, 0.0F, 100.0F);
 		camera->transform->position = rge::vec3(0, 0, -1);
