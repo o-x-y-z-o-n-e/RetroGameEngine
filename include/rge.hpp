@@ -49,7 +49,9 @@ SOFTWARE.
 #include <unordered_map>
 #include <memory>
 
+
 #define RGE_BIND_EVENT_HANDLER(fn, T) [this](const T& e) -> bool { return this->fn(e); }
+
 
 namespace rge {
 
@@ -1294,7 +1296,7 @@ typedef HGLRC gl_render_context_t;
 #endif /* SYS_LINUX */
 
 #ifdef SYS_MACOSX
-#include <OpenGL/OpenGL.h>
+//#include <OpenGL/OpenGL.h>
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #endif /* SYS_MACOSX */
@@ -3815,18 +3817,95 @@ public:
 			glutFullScreen();
 		}
 
+		glutIgnoreKeyRepeat(true);
 		glutDisplayFunc(update);
 		glutIdleFunc(idle);
 		glutReshapeFunc(on_window_reshape);
 		glutWMCloseFunc(on_window_try_close);
+
+		glutKeyboardFunc([](uint8_t sys_key, int x, int y) -> void {
+			key_pressed_event e;
+
+			if(sys_key >= 'a' && sys_key <= 'z') {
+				e.input_code = (input::code)(sys_key - 96);
+			} else if(sys_key >= 'A' && sys_key <= 'Z') {
+				e.input_code = (input::code)(sys_key - 64);
+			} else if(sys_key >= '0' && sys_key <= '9') {
+				e.input_code = (input::code)(sys_key - 18);
+			} else return;
+
+			engine::get_instance()->post_event(e);
+		});
+
+		glutKeyboardUpFunc([](uint8_t sys_key, int x, int y) -> void {
+			key_released_event e;
+
+			if(sys_key >= 'a' && sys_key <= 'z') {
+				e.input_code = (input::code)(sys_key - 96);
+			} else if(sys_key >= 'A' && sys_key <= 'Z') {
+				e.input_code = (input::code)(sys_key - 64);
+			} else if(sys_key >= '0' && sys_key <= '9') {
+				e.input_code = (input::code)(sys_key - 18);
+			} else return;
+
+			engine::get_instance()->post_event(e);
+		});
+
+		glutMouseFunc([](int button, int state, int x, int y) -> void {
+			switch (button) {
+			case GLUT_LEFT_BUTTON:
+				if(state == GLUT_UP) {
+					mouse_released_event e;
+					e.input_code = input::MOUSE_LEFT;
+					engine::get_instance()->post_event(e);
+				} else if(state == GLUT_DOWN) {
+					mouse_pressed_event e;
+					e.input_code = input::MOUSE_LEFT;
+					engine::get_instance()->post_event(e);
+				}
+				break;
+			case GLUT_MIDDLE_BUTTON:
+				if(state == GLUT_UP) {
+					mouse_released_event e;
+					e.input_code = input::MOUSE_MIDDLE;
+					engine::get_instance()->post_event(e);
+				} else if(state == GLUT_DOWN) {
+					mouse_pressed_event e;
+					e.input_code = input::MOUSE_MIDDLE;
+					engine::get_instance()->post_event(e);
+				}
+				break;
+			case GLUT_RIGHT_BUTTON:
+				if(state == GLUT_UP) {
+					mouse_released_event e;
+					e.input_code = input::MOUSE_RIGHT;
+					engine::get_instance()->post_event(e);
+				} else if(state == GLUT_DOWN) {
+					mouse_pressed_event e;
+					e.input_code = input::MOUSE_RIGHT;
+					engine::get_instance()->post_event(e);
+				}
+				break;
+			}
+		});
+
+		glutMotionFunc([](int x, int y) -> void {
+			mouse_moved_event e;
+			e.x = x;
+			e.y = y;
+			engine::get_instance()->post_event(e);
+		});
+
+		glutPassiveMotionFunc([](int x, int y) -> void {
+			mouse_moved_event e;
+			e.x = x;
+			e.y = y;
+			engine::get_instance()->post_event(e);
+		});
+
 		// TODO: Events to implement...
 		// 		window moved event
 		// 		window focus/unfocus event
-		// 		key press event
-		// 		key release event
-		// 		mouse press event
-		// 		mouse release event
-		// 		mouse move event
 		// 		mouse scroll event
 
 		return rge::OK;
@@ -3841,6 +3920,25 @@ public:
 	}
 
 	static void idle() {
+		static bool cocoa_enabled = false;
+		if(!cocoa_enabled) {
+			Class ns_app_class = objc_getClass("NSApplication");
+			SEL shared_app_sel = sel_registerName("sharedApplication");
+			id ns_app = ((id(*)(Class, SEL))objc_msgSend)(ns_app_class, shared_app_sel);
+			SEL main_window_sel = sel_registerName("mainWindow");
+			id window = ((id(*)(id, SEL))objc_msgSend)(ns_app, main_window_sel);
+			SEL set_style_mask_sel = sel_registerName("setStyleMask:");
+			int style_mask = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
+			// [window setStyleMask: NSWindowStyleMaskClosable | ~NSWindowStyleMaskResizable]
+			((void (*)(id, SEL, NSUInteger))objc_msgSend)(window, set_style_mask_sel, style_mask);
+			cocoa_enabled = true;
+		}
+
+		if(!engine::get_instance()->get_is_running()) {
+			exit(0);
+			return;
+		}
+
 		glutPostRedisplay();
 	}
 
@@ -3855,7 +3953,6 @@ public:
 	}
 
 	static void on_window_try_close() {
-		rge::log::info("hi"); return; // TODO: Test
 		window_close_requested_event e;
 		engine::get_instance()->post_event(e);
 	}
