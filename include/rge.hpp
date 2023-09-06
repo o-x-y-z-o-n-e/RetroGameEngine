@@ -45,6 +45,8 @@ SOFTWARE.
 #include <functional>
 #include <vector>
 #include <queue>
+#include <set>
+#include <unordered_map>
 #include <memory>
 
 #define RGE_BIND_EVENT_HANDLER(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
@@ -857,32 +859,6 @@ public:
 #pragma endregion
 
 
-#pragma region /* rge::sprite */
-//********************************************//
-//* Sprite Class                             *//
-//********************************************//
-class sprite {
-public:
-	sprite();
-	sprite(texture* texture);
-	sprite(texture* texture, material* material);
-	~sprite();
-
-public:
-	bool centered;
-	bool billboard;
-	int pixels_per_unit;
-
-	texture* texture;
-	material* material;
-	transform* transform;
-};
-//********************************************//
-//* Sprite Class                             *//
-//********************************************//
-#pragma endregion
-
-
 #pragma region /* rge::texture */
 //********************************************//
 //* Texture class.                           *//
@@ -894,10 +870,17 @@ enum class texture_filter {
 };
 class texture {
 public:
+	typedef std::shared_ptr<rge::texture> ptr;
+
+public:
+	static ptr create(int width, int height);
+	static ptr load(const std::string& path);
+	static ptr copy(const ptr& original);
+
+	// Only use if needed. Prefer create() instead
 	texture(int width, int height);
 	~texture();
 
-public:
 	int get_width() const;
 	int get_height() const;
 
@@ -910,6 +893,9 @@ public:
 	// Returns sampled color at uv texture coords.
 	color sample(float u, float v) const;
 
+	// Allocates space on cpu for texture data.
+	void allocate();
+
 	// Returns color buffer stored on cpu.
 	color* get_data() const;
 
@@ -918,34 +904,59 @@ public:
 
 	// Convert and store float color buffer to raw byte color buffer.
 	void dump_to_raw_buffer(uint8_t* buffer) const;
-
+	
 	// NOTE: TESTING FUNCTION
 	rge::result write_to_disk(const std::string& path) const;
-	static texture* read_from_disk(const std::string& path);
-
-public:
-	// Allocates space on cpu for texture data.
-	void allocate();
 
 public:
 	texture_filter filter;
 
-private:
+	// ==Internal Members==
+private: 
 	int width;
 	int height;
 
-	// Internal variables
+	typedef std::unordered_map<std::string, ptr> table;
+	static table registry;
+	void flush_registry();
+
 	#ifdef RGE_IMPL
 public:
 	#else
 private:
 	#endif
+	
 	color* data;     // For CPU buffer
 	uint32_t handle; // For GPU ref
-
+	// ==Internal Members==
 };
 //********************************************//
 //* Texture class.                           *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::sprite */
+//********************************************//
+//* Sprite Class                             *//
+//********************************************//
+class sprite {
+public:
+	sprite();
+	sprite(const rge::texture::ptr& texture);
+	~sprite();
+
+public:
+	bool centered;
+	bool billboard;
+	int pixels_per_unit;
+
+	texture::ptr texture;
+	material* material;
+	transform* transform;
+};
+//********************************************//
+//* Sprite Class                             *//
 //********************************************//
 #pragma endregion
 
@@ -960,7 +971,7 @@ public:
 	~material();
 
 public:
-	texture* texture;
+	texture::ptr texture;
 	color diffuse;
 	color specular;
 	float shininess;
@@ -996,8 +1007,8 @@ private:
 	renderer* renderer_instance;
 	int width;
 	int height;
-	texture* frame_buffer;
-	texture* depth_buffer;
+	texture::ptr frame_buffer;
+	texture::ptr depth_buffer;
 };
 //********************************************//
 //* Render Target class.                     *//
@@ -1054,11 +1065,11 @@ public:
 	virtual rge::result init(platform* platform) = 0;
 
 	// Creates a texture with allocated space on gpu.
-	virtual texture* create_texture(int width, int height) = 0;
+	virtual texture::ptr create_texture(int width, int height) = 0;
 	// Copies the texture data, on cpu, to gpu.
-	virtual void upload_texture(texture* texture) = 0;
+	virtual void upload_texture(texture& texture) = 0;
 	// Frees the allocated texture data on gpu.
-	virtual void free_texture(texture* texture) = 0;
+	virtual void free_texture(texture& texture) = 0;
 
 	// Clears the depth & frame buffers.
 	virtual void clear(color background) = 0;
@@ -2271,12 +2282,12 @@ namespace input {
 	}
 
 	bool on_mouse_moved(const mouse_moved_event& e) {
-		mouse_position = vec2(e.x, e.y);
+		mouse_position = vec2(float(e.x), float(e.y));
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
 	bool on_mouse_scrolled(const mouse_scrolled_event& e) {
-		mouse_scroll = e.scroll;
+		mouse_scroll = float(e.scroll);
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
@@ -2904,50 +2915,34 @@ mesh::~mesh() {
 #pragma endregion
 
 
-#pragma region /* rge::sprite */
-//********************************************//
-//* Sprite Class                             *//
-//********************************************//
-sprite::sprite() {
-	texture = nullptr;
-	material = nullptr;
-	transform = new rge::transform();
-	centered = false;
-	billboard = false;
-	pixels_per_unit = 32;
-}
-
-sprite::sprite(rge::texture* texture) {
-	this->texture = texture;
-	material = nullptr;
-	transform = new rge::transform();
-	centered = false;
-	billboard = false;
-	pixels_per_unit = 32;
-}
-
-sprite::sprite(rge::texture* texture, rge::material* material) {
-	this->texture = texture;
-	this->material = material;
-	transform = new rge::transform();
-	centered = false;
-	billboard = false;
-	pixels_per_unit = 32;
-}
-
-sprite::~sprite() {
-	delete transform;
-}
-//********************************************//
-//* Sprite Class                             *//
-//********************************************//
-#pragma endregion
-
-
 #pragma region /* rge::texture */
 //********************************************//
 //* Texture class.                           *//
 //********************************************//
+texture::table texture::registry;
+
+texture::ptr texture::create(int width, int height) {
+	ptr texture;
+	texture.reset(new rge::texture(width, height));
+	return texture;
+}
+
+texture::ptr texture::copy(const texture::ptr& original) {
+	texture::ptr texture = create(original->get_width(), original->get_height());
+	texture->filter = original->filter;
+
+	if(original->is_on_cpu()) {
+		texture->allocate();
+		// TODO: Copy cpu data.
+	}
+
+	if(original->is_on_gpu()) {
+		// TODO: Copy gpu data.
+	}
+
+	return texture;
+}
+
 texture::texture(int width, int height) {
 	this->width = width;
 	this->height = height;
@@ -3011,8 +3006,8 @@ color texture::sample(float u, float v) const {
 		color tl = data[fui + (cvi * width)];
 		color tr = data[cui + (cvi * width)];
 
-		float ix = math::inverse_lerp(fui, cui, uw);
-		float iy = math::inverse_lerp(fvi, cvi, vh);
+		float ix = math::inverse_lerp(float(fui), float(cui), uw);
+		float iy = math::inverse_lerp(float(fvi), float(cvi), vh);
 
 		return color::lerp(color::lerp(bl, br, ix), color::lerp(tl, tr, ix), iy);
 	}
@@ -3046,12 +3041,7 @@ rge::result texture::write_to_disk(const std::string& path) const {
 	#ifdef RGE_USE_STB_IMAGE_WRITE
 	uint8_t* buffer = (uint8_t*)malloc(4 * width * height);
 	dump_to_raw_buffer(buffer);
-	/*
-	if(!stbi_write_png(path.c_str(), width, height, 4, buffer, 4)) {
-		rge::log::error("File write fail.");
-		free(buffer);
-		return rge::FAIL;
-	} */
+	
 	if(!stbi_write_bmp(path.c_str(), width, height, 4, buffer)) {
 		rge::log::error("File write fail.");
 		free(buffer);
@@ -3066,7 +3056,25 @@ rge::result texture::write_to_disk(const std::string& path) const {
 	#endif
 }
 
-texture* texture::read_from_disk(const std::string& path) {
+void texture::allocate() {
+	if(data) return;
+	data = new color[width * height];
+}
+
+void texture::flush_registry() {
+	for(auto it = registry.begin(); it != registry.end(); it++) {
+		if(it->second.use_count() <= 1) {
+			// TODO: Last ref texture is in table itself, therefore we free the memory.
+		}
+	}
+}
+
+texture::ptr texture::load(const std::string& path) {
+	if(registry.count(path) > 0) {
+		auto search = registry.find(path);
+		return (*search).second;
+	}
+
 	// TODO: Check if file exists.
 
 	#ifdef RGE_USE_STB_IMAGE
@@ -3080,23 +3088,24 @@ texture* texture::read_from_disk(const std::string& path) {
 		return nullptr;
 	}
 
-	texture* tex = new texture(w, h);
-	tex->allocate();
-	color* tex_data = tex->get_data();
+	texture::ptr texture = create(w, h);
+	texture->allocate();
+	
+	color* tex_data = texture->get_data();
 	color c;
 	for(i = 0; i < w * h; ++i) {
 		if(ch == 3) {
 			c = color(
-				input_buffer[i*3] / 255.0F,
-				input_buffer[i*3+1] / 255.0F,
-				input_buffer[i*3+2] / 255.0F
+				input_buffer[i * 3] / 255.0F,
+				input_buffer[i * 3 + 1] / 255.0F,
+				input_buffer[i * 3 + 2] / 255.0F
 			);
 		} else if(ch == 4) {
 			c = color(
-				input_buffer[i*4] / 255.0F,
-				input_buffer[i*4+1] / 255.0F,
-				input_buffer[i*4+2] / 255.0F,
-				input_buffer[i*4+3] / 255.0F
+				input_buffer[i * 4] / 255.0F,
+				input_buffer[i * 4 + 1] / 255.0F,
+				input_buffer[i * 4 + 2] / 255.0F,
+				input_buffer[i * 4 + 3] / 255.0F
 			);
 		}
 
@@ -3104,20 +3113,42 @@ texture* texture::read_from_disk(const std::string& path) {
 	}
 
 	stbi_image_free(input_buffer);
-	return tex;
+
+	registry.insert(std::pair<std::string, texture::ptr>(path, texture));
+	return texture;
 	#else
 	LOG_MISSING_DEP(read_texture_from_disk, stb_image.h)
 	return nullptr;
 	#endif
 }
-
-void texture::allocate() {
-	if(data) return;
-	data = new color[width * height];
-}
-
 //********************************************//
 //* Texture class.                           *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::sprite */
+//********************************************//
+//* Sprite Class                             *//
+//********************************************//
+sprite::sprite() {
+	material = nullptr;
+	transform = new rge::transform();
+	centered = false;
+	billboard = false;
+	pixels_per_unit = 32;
+}
+
+sprite::sprite(const rge::texture::ptr& texture) : sprite() {
+	this->texture = texture;
+}
+
+sprite::~sprite() {
+	texture.reset();
+	delete transform;
+}
+//********************************************//
+//* Sprite Class                             *//
 //********************************************//
 #pragma endregion
 
@@ -3164,8 +3195,8 @@ rge::result render_target::resize(int width, int height) {
 	this->width = width;
 	this->height = height;
 
-	if(frame_buffer) renderer_instance->free_texture(frame_buffer);
-	if(depth_buffer) renderer_instance->free_texture(depth_buffer);
+	if(frame_buffer) renderer_instance->free_texture(*frame_buffer);
+	if(depth_buffer) renderer_instance->free_texture(*depth_buffer);
 
 	frame_buffer = renderer_instance->create_texture(width, height);
 	depth_buffer = renderer_instance->create_texture(width, height);
@@ -3182,17 +3213,16 @@ int render_target::get_height() const {
 }
 
 texture* render_target::get_frame_buffer() const {
-	return frame_buffer;
+	return frame_buffer.get();
 }
 
 texture* render_target::get_depth_buffer() const {
-	return depth_buffer;
+	return depth_buffer.get();
 }
 
 render_target::~render_target() {
-
-	delete frame_buffer;
-	delete depth_buffer;
+	frame_buffer.reset();
+	depth_buffer.reset();
 }
 
 render_target::render_target(renderer* renderer) {
@@ -3843,19 +3873,19 @@ public:
 		return rge::OK;
 	}
 
-	texture* create_texture(int width, int height) override {
-		texture* t = new texture(width, height);
+	texture::ptr create_texture(int width, int height) override {
+		texture::ptr texture = std::make_shared<texture>(width, height);
 
-		t->allocate_cpu();
+		texture->allocate_gpu();
 
-		return t;
+		return texture;
 	}
 
-	void upload_texture(texture* texture) override {
+	void upload_texture(texture& texture) override {
 		// NOTE: N/A to software renderer.
 	}
 
-	void free_texture(texture* texture) override {
+	void free_texture(texture& texture) override {
 		// TODO: Deallocate cpu
 		delete texture;
 	}
@@ -4403,43 +4433,39 @@ public:
 		return rge::OK;
 	}
 
-	texture* create_texture(int width, int height) override {
-		texture* t = new texture(width, height);
+	texture::ptr create_texture(int width, int height) override {
+		texture::ptr texture = std::make_shared<rge::texture>(width, height);
 
-		glGenTextures(1, &t->handle);
+		glGenTextures(1, &texture->handle);
 
-		return t;
+		return texture;
 	}
 
-	void upload_texture(texture* texture) override {
-		if(texture == nullptr) return;
-		if(!texture->is_on_cpu()) return;
+	void upload_texture(texture& texture) override {
+		if(!texture.is_on_cpu()) return;
 
-		if(!texture->is_on_gpu())
-			glGenTextures(1, &texture->handle);
+		if(!texture.is_on_gpu())
+			glGenTextures(1, &texture.handle);
 
-		glBindTexture(GL_TEXTURE_2D, texture->handle);
+		glBindTexture(GL_TEXTURE_2D, texture.handle);
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-		if(texture->filter == texture_filter::NEAREST) {
+		if(texture.filter == texture_filter::NEAREST) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		} else if(texture->filter == texture_filter::BILINEAR) {
+		} else if(texture.filter == texture_filter::BILINEAR) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		}
 
-		glTexImage2D(GL_TEXTURE_2D, 0, 4, texture->get_width(), texture->get_height(), 0, GL_RGBA, GL_FLOAT, texture->get_data());
+		glTexImage2D(GL_TEXTURE_2D, 0, 4, texture.get_width(), texture.get_height(), 0, GL_RGBA, GL_FLOAT, texture.get_data());
 	}
 
-	void free_texture(texture* texture) override {
-		if(texture == nullptr) return;
-		if(texture->is_on_gpu())
-			glDeleteTextures(1, &texture->handle);
-
-		delete texture;
+	void free_texture(texture& texture) override {
+		if(texture.is_on_gpu())
+			glDeleteTextures(1, &texture.handle);
 	}
 
 	void clear(color background) override {
@@ -4487,7 +4513,6 @@ public:
 		const std::vector<vec2>& uvs,
 		const material& material
 	) override {
-		int t;
 		int i;
 		int v;
 		vec3 vertex;

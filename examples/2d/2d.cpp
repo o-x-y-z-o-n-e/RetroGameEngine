@@ -51,31 +51,28 @@ public:
     void on_init() override {
 		renderer = get_renderer();
 
-		triangle = load_triangle();
-
-		background->texture = rge::texture::read_from_disk("background.png");
+		background->texture = rge::texture::load("background.png");
 		background->transform->position = rge::vec3(0, 0, 1);
 		background->pixels_per_unit = 16;
-		renderer->upload_texture(background->texture);
+		renderer->upload_texture(*background->texture);
 
-		smile->texture = rge::texture::read_from_disk("smile.bmp");
+		smile->texture = rge::texture::load("smile.bmp");
 		smile->material = new rge::material();
 		smile->material->diffuse = rge::color(1, 0, 1, 0.5F);
 		smile->pixels_per_unit = 16;
 		smile->centered = true;
-		renderer->upload_texture(smile->texture);
+		renderer->upload_texture(*smile->texture);
+
+		triangle = load_triangle();
+		material->diffuse = rge::color(1, 0, 1);
+		material->texture = rge::texture::load("smile.bmp");
+		renderer->upload_texture(*material->texture);
 
 		camera->set_orthographic(-8, 8, 6, -6, 0.0F, 100.0F);
 		camera->transform->position = rge::vec3(0, 0, -1);
 
         renderer->set_camera(camera);
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
-
-		rge::texture* test_tex = rge::texture::read_from_disk("smile.bmp");
-		renderer->upload_texture(test_tex);
-
-		material->diffuse = rge::color(1, 0, 1);
-		material->texture = test_tex;
     }
 
 	void on_update(float delta_time) override {

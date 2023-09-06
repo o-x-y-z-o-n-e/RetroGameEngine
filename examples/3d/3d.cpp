@@ -174,10 +174,10 @@ public:
         renderer->set_camera(camera);
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
 
-		material->texture = rge::texture::read_from_disk("floor.png");
-		renderer->upload_texture(material->texture);
+		material->texture = rge::texture::load("floor.png");
+		renderer->upload_texture(*material->texture);
 
-		s = new rge::sprite(rge::texture::read_from_disk("floor.png"));
+		s = new rge::sprite(rge::texture::load("floor.png"));
 		s->transform->position = rge::vec3(2, 0, 0);
 		s->centered = true;
 		s->billboard = true;
