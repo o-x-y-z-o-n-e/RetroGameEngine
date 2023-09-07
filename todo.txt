@@ -1,4 +1,6 @@
 ==CURRENT==
+	add final to classes
+	add shutdown procedures [mainly for platform & renderer]
 	[3D] fix quaternions + fix camera view
 	[3D] opengl 1.0 lighting
 
@@ -6,17 +8,14 @@
 	get software_gl fully working
 	
 	macosx platform
-	linux platform
-
-	macosx keyboard & mouse input
-	linux keyboard & mouse input
-
+	
 	obj loading
 	yaml parsing & writer
 	multithreaded command queue
 ==CURRENT==
 
 ==FUTURE==
+	linux platform
 	entity component system
 	physics
 	audio
