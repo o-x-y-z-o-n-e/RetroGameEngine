@@ -102,7 +102,7 @@ enum result {
 //********************************************//
 //* Rectangle Struct                         *//
 //********************************************//
-struct rect {
+struct rect final {
 	float x, y, w, h;
 
 	rect(float x, float y, float w, float h);
@@ -120,7 +120,7 @@ struct rect {
 //********************************************//
 //* Vector2 Struct                           *//
 //********************************************//
-struct vec2 {
+struct vec2 final {
 	float x, y;
 
 	vec2();
@@ -166,7 +166,7 @@ struct vec2 {
 //********************************************//
 //* Vector3 Struct                           *//
 //********************************************//
-struct vec3 {
+struct vec3 final {
 	float x, y, z;
 
 	vec3();
@@ -213,7 +213,7 @@ struct vec3 {
 //********************************************//
 //* Vector4 Struct                           *//
 //********************************************//
-struct vec4 {
+struct vec4 final {
 	float x, y, z, w;
 
 	vec4();
@@ -252,7 +252,7 @@ struct vec4 {
 //********************************************//
 //* Quaternion Struct                        *//
 //********************************************//
-struct quaternion {
+struct quaternion final {
 	float x, y, z, w;
 
 	quaternion();
@@ -275,7 +275,7 @@ struct quaternion {
 //********************************************//
 //* Matrix 4x4 Struct                        *//
 //********************************************//
-struct mat4 {
+struct mat4 final {
 	float m[4][4]; // Rows by columns.
 
 	mat4();
@@ -309,7 +309,7 @@ struct mat4 {
 //********************************************//
 //* Color Struct                             *//
 //********************************************//
-struct color {
+struct color final {
 	float r, g, b, a;
 
 	color();
@@ -517,14 +517,14 @@ namespace input {
 	#endif
 }
 //********************************************//
-//* Input module                             *//
+//* Input Module                             *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::event */
 //********************************************//
-//* Event class                              *//
+//* Event Base Class                         *//
 //********************************************//
 enum class event_type {
 	NONE = 0,
@@ -544,14 +544,14 @@ public:
 	virtual event_type get_event_type() const = 0;
 };
 //********************************************//
-//* Event class                              *//
+//* Event Base Class                         *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::window_event */
 //********************************************//
-//* Window events                            *//
+//* Window Events                            *//
 //********************************************//
 class window_close_requested_event : public event {
 	EVENT_ENUM_TYPE(WINDOW_CLOSE_REQUESTED)
@@ -577,14 +577,14 @@ class window_unfocused_event : public event {
 	EVENT_ENUM_TYPE(WINDOW_UNFOCUSED)
 };
 //********************************************//
-//* Window events                            *//
+//* Window Events                            *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::key_event */
 //********************************************//
-//* Key events                               *//
+//* Key Events                               *//
 //********************************************//
 class key_pressed_event : public event {
 	EVENT_ENUM_TYPE(KEY_PRESSED)
@@ -598,14 +598,14 @@ public:
 	input::code input_code;
 };
 //********************************************//
-//* Key events                               *//
+//* Key Events                               *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::mouse_event */
 //********************************************//
-//* Mouse events                             *//
+//* Mouse Events                             *//
 //********************************************//
 class mouse_pressed_event : public event {
 	EVENT_ENUM_TYPE(MOUSE_PRESSED)
@@ -631,14 +631,14 @@ public:
 	int scroll;
 };
 //********************************************//
-//* Mouse events                             *//
+//* Mouse Events                             *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::mouse_event */
 //********************************************//
-//* Gamepad events                           *//
+//* Gamepad Events                           *//
 //********************************************//
 class gamepad_pressed_event : public event {
 	EVENT_ENUM_TYPE(GAMEPAD_PRESSED)
@@ -662,14 +662,14 @@ public:
 	float value;
 };
 //********************************************//
-//* Gamepad events                           *//
+//* Gamepad Events                           *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::engine */
 //********************************************//
-//* Core Engine class.                       *//
+//* Core Engine Class                        *//
 //********************************************//
 class engine {
 public:
@@ -728,16 +728,16 @@ private:
 	float frame_timer;
 };
 //********************************************//
-//* Core Engine class.                       *//
+//* Core Engine Class                        *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::transform */
 //********************************************//
-//* Transform class.                         *//
+//* Transform Class                          *//
 //********************************************//
-class transform {
+class transform final {
 public:
 	transform();
 	transform(transform* parent);
@@ -775,16 +775,16 @@ public:
 	vec3 scale;
 };
 //********************************************//
-//* Transform class.                         *//
+//* Transform Class                          *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::camera */
 //********************************************//
-//* Camera class.                            *//
+//* Camera Class                             *//
 //********************************************//
-class camera {
+class camera final {
 public:
 	camera();
 	~camera();
@@ -809,7 +809,7 @@ private:
 	mat4 projection;
 };
 //********************************************//
-//* Camera class.                            *//
+//* Camera Class                             *//
 //********************************************//
 #pragma endregion
 
@@ -824,7 +824,7 @@ enum class light_mode {
 	SPOT
 };
 
-class light {
+class light final {
 public:
 	light();
 	~light();
@@ -846,7 +846,7 @@ public:
 //********************************************//
 //* Mesh Class                               *//
 //********************************************//
-class mesh {
+class mesh final {
 public:
 	mesh();
 	~mesh();
@@ -865,14 +865,14 @@ public:
 
 #pragma region /* rge::texture */
 //********************************************//
-//* Texture class.                           *//
+//* Texture Class                            *//
 //********************************************//
 enum class texture_filter {
 	NEAREST = 0,
 	BILINEAR = 1,
 	// TRILINEAR = 2
 };
-class texture {
+class texture final {
 public:
 	typedef std::shared_ptr<rge::texture> ptr;
 
@@ -938,7 +938,7 @@ private:
 	// ==Internal Members==
 };
 //********************************************//
-//* Texture class.                           *//
+//* Texture Class                            *//
 //********************************************//
 #pragma endregion
 
@@ -947,7 +947,7 @@ private:
 //********************************************//
 //* Sprite Class                             *//
 //********************************************//
-class sprite {
+class sprite final {
 public:
 	sprite();
 	sprite(const rge::texture::ptr& texture);
@@ -970,9 +970,9 @@ public:
 
 #pragma region /* rge::material */
 //********************************************//
-//* Material class.                          *//
+//* Material Class                           *//
 //********************************************//
-class material {
+class material final {
 public:
 	material();
 	~material();
@@ -984,16 +984,16 @@ public:
 	float shininess;
 };
 //********************************************//
-//* Material class.                          *//
+//* Material Class                           *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::render_target */
 //********************************************//
-//* Render Target class.                     *//
+//* Render Target                            *//
 //********************************************//
-class render_target {
+class render_target final {
 public:
 	static render_target* create(renderer* renderer, int width, int height);
 	rge::result resize(int width, int height);
@@ -1018,7 +1018,7 @@ private:
 	texture::ptr depth_buffer;
 };
 //********************************************//
-//* Render Target class.                     *//
+//* Render Target                            *//
 //********************************************//
 #pragma endregion
 
@@ -1036,6 +1036,7 @@ public:
 	virtual void poll_gamepads() = 0;
 	virtual void refresh_window() = 0;
 	virtual bool is_focused() const = 0;
+	virtual void clean_up() = 0;
 
 public:
 	virtual ~platform() {}
@@ -1059,7 +1060,7 @@ protected:
 
 #pragma region /* rge::renderer */
 //********************************************//
-//* Base Renderer class                      *//
+//* Base Renderer Class                      *//
 //********************************************//
 class renderer {
 public:
@@ -1163,7 +1164,7 @@ protected:
 	color ambient_color;
 };
 //********************************************//
-//* Base Renderer class                      *//
+//* Base Renderer Class                      *//
 //********************************************//
 #pragma endregion
 
@@ -1352,7 +1353,7 @@ namespace rge {
 
 #pragma region /* rge::rect */
 //********************************************//
-//* Rectangle struct.                        *//
+//* Rectangle Struct                         *//
 //********************************************//
 rect::rect(float x, float y, float w, float h) {
 	this->x = x;
@@ -1369,14 +1370,14 @@ vec2 rect::get_max() const {
 	return vec2(x+w, y+h);
 }
 //********************************************//
-//* Rectangle struct.                        *//
+//* Rectangle Struct                         *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::vec2 */
 //********************************************//
-//* Vector2 struct.                          *//
+//* Vector2 Struct                           *//
 //********************************************//
 vec2::vec2() {
 	this->x = 0;
@@ -1480,14 +1481,14 @@ vec2::operator vec4() const {
 	return vec4(x, y, 0, 0);
 }
 //********************************************//
-//* Vector2 struct.                          *//
+//* Vector2 Struct                           *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::vec3 */
 //********************************************//
-//* Vector3 struct.                          *//
+//* Vector3 Struct                           *//
 //********************************************//
 vec3::vec3() {
 	this->x = 0;
@@ -1597,14 +1598,14 @@ vec3::operator vec4() const {
 	return vec4(x, y, z, 0);
 }
 //********************************************//
-//* Vector3 struct.                          *//
+//* Vector3 Struct                           *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::vec4 */
 //********************************************//
-//* Vector4 struct.                          *//
+//* Vector4 Struct                           *//
 //********************************************//
 vec4::vec4() {
 	this->x = 0;
@@ -1692,14 +1693,14 @@ vec4::operator vec2() const {
 	return vec2(x, y);
 }
 //********************************************//
-//* Vector4 struct.                          *//
+//* Vector4 Struct                           *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::quaternion */
 //********************************************//
-//* Quaternion struct.                       *//
+//* Quaternion Struct                        *//
 //********************************************//
 quaternion::quaternion() {
 	this->x = 0;
@@ -1821,7 +1822,7 @@ vec3 quaternion::operator * (const vec3& rhs) const {
 	return result;
 }
 //********************************************//
-//* Quaternion struct.                       *//
+//* Quaternion Struct                        *//
 //********************************************//
 #pragma endregion
 
@@ -2605,7 +2606,6 @@ rge::result engine::start() {
 	}
 
 	log::info("Starting RGE...");
-	// TODO
 	
 	on_start();
 	
@@ -2697,6 +2697,8 @@ rge::result engine::exit() {
 	printf("\n[Press any key to exit]");
 
 	is_running = false;
+
+	platform_impl->clean_up();
 	return rge::OK;
 }
 
@@ -2978,8 +2980,8 @@ texture::texture(int width, int height) {
 }
 
 texture::~texture() {
-	// TODO: Make sure GPU side is cleared as well.
-	if(data) delete[] data;
+	if(is_on_gpu()) engine::get_instance()->get_renderer()->free_texture(*this);
+	if(is_on_cpu()) delete[] data;
 }
 
 int texture::get_width() const {
@@ -3101,8 +3103,6 @@ texture::ptr texture::load(const std::string& path, bool load_to_gpu) {
 			engine::get_renderer()->upload_texture(*t);
 		return t;
 	}
-
-	// TODO: Check if file exists.
 
 	#ifdef RGE_USE_STB_IMAGE
 
@@ -3370,8 +3370,6 @@ public:
 		#ifdef SYS_SOFTWARE_GL
 		device_context = CreateCompatibleDC(0);
 		#endif /* SYS_SOFTWARE_GL */
-
-		// TODO: Key mapping
 		
 		has_init = true;
 		return rge::OK;
@@ -3494,7 +3492,10 @@ public:
 		#ifdef SYS_SOFTWARE_GL
 		InvalidateRect(handle, NULL, FALSE);
 		UpdateWindow(handle);
-		#endif /* SYS_SOFTWARE_GL */
+		#elif SYS_OPENGL_1_0
+		// TODO
+		// SwapBuffers();
+		#endif
 	}
 
 	static LRESULT CALLBACK on_event(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -3744,8 +3745,12 @@ public:
 		return (uint8_t*)frame.buffer;
 	}
 
-	bool is_focused() const {
+	bool is_focused() const override {
 		return has_focus;
+	}
+
+	void clean_up() override {
+
 	}
 };
 #endif /* SYS_WINDOWS */
@@ -3982,6 +3987,10 @@ public:
 	bool is_focused() const override {
 		// TODO
 		return true;
+	}
+
+	void clean_up() override {
+
 	}
 };
 #endif /* SYS_MACOSX */
@@ -4623,9 +4632,6 @@ public:
 		);
 
 		glClear(GL_COLOR_BUFFER_BIT);
-
-		// TODO: Clear depth.
-		// if(bDepth) glClear(GL_DEPTH_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 	}
 
@@ -5046,9 +5052,6 @@ public:
 		);
 
 		glClear(GL_COLOR_BUFFER_BIT);
-
-		// TODO: Clear depth.
-		// if(bDepth) glClear(GL_DEPTH_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 	}
 

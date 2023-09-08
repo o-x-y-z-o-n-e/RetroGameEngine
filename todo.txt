@@ -1,20 +1,28 @@
 ==CURRENT==
-	add final to classes
-	add shutdown procedures [mainly for platform & renderer]
+	switch to shared_ptr
+	set custom window params by lib user
+	set light params to 3d draw function
+	implement:
+		quaternion::euler
+		transform::set_global_position
+		transform::set_global_rotation
+		texture::copy
+		texture::flush_registry
+	
 	[3D] fix quaternions + fix camera view
 	[3D] opengl 1.0 lighting
 
 	windows WM_PAINT platform event for software_gl
 	get software_gl fully working
 	
-	macosx platform
-	
+	text rendering
 	obj loading
 	yaml parsing & writer
-	multithreaded command queue
+	multithreaded console & command queue
 ==CURRENT==
 
 ==FUTURE==
+	macosx platform
 	linux platform
 	entity component system
 	physics
