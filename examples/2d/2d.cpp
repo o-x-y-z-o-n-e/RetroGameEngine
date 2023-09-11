@@ -6,8 +6,8 @@
 #include <iostream>
 #include <fstream>
 
-static rge::mesh* load_triangle() {
-	rge::mesh* mdl = new rge::mesh;
+static rge::mesh::ptr load_triangle() {
+	rge::mesh::ptr mdl = rge::mesh::create();
 
 	mdl->vertices.push_back(rge::vec3(-1, -1, 0));
 	mdl->vertices.push_back(rge::vec3(0, 1, 0));
@@ -30,20 +30,21 @@ static rge::mesh* load_triangle() {
 
 class game : public rge::engine {
 private:
-    rge::material* material;
 	rge::renderer* renderer;
-    rge::camera* camera;
-	rge::sprite* smile;
-	rge::sprite* background;
-	rge::mesh* triangle;
+    rge::material::ptr material;
+    rge::camera::ptr camera;
+	rge::sprite::ptr smile;
+	rge::sprite::ptr background;
+	rge::mesh::ptr triangle;
 	float counter;
 
 public:
     game() : rge::engine() {
-        material = new rge::material();
-		camera = new rge::camera();
-		smile = new rge::sprite();
-		background = new rge::sprite();
+		renderer = nullptr;
+        material = rge::material::create();
+		camera = rge::camera::create();
+		smile = rge::sprite::create();
+		background = rge::sprite::create();
 		triangle = nullptr;
 		counter = 0;
     }
@@ -56,7 +57,7 @@ public:
 		background->pixels_per_unit = 16;
 
 		smile->texture = rge::texture::load("smile.bmp");
-		smile->material = new rge::material();
+		smile->material = rge::material::create();
 		smile->material->diffuse = rge::color(1, 0, 1, 0.5F);
 		smile->pixels_per_unit = 16;
 		smile->centered = true;
@@ -124,8 +125,8 @@ public:
 
 
 int main(int argc, char** argv) {
-    game* gm = new game();
-	gm->create(true);
+	game* gm = rge::engine::create<game>();
+	gm->run();
 	gm->wait_for_exit();
 	delete gm;
     return 0;

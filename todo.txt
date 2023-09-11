@@ -1,7 +1,9 @@
 ==CURRENT==
-	switch to shared_ptr
+	switch to shared_ptr for transforms
 	set custom window params by lib user
 	set light params to 3d draw function
+	gamepad button events for axis
+
 	implement:
 		quaternion::euler
 		transform::set_global_position
@@ -14,7 +16,7 @@
 
 	windows WM_PAINT platform event for software_gl
 	get software_gl fully working
-	
+
 	text rendering
 	obj loading
 	yaml parsing & writer

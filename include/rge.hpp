@@ -48,6 +48,7 @@ SOFTWARE.
 #include <set>
 #include <unordered_map>
 #include <memory>
+#include <type_traits>
 
 
 #define RGE_BIND_EVENT_HANDLER(fn, T) [this](const T& e) -> bool { return this->fn(e); }
@@ -84,9 +85,9 @@ class transform;
 class camera;
 class light;
 class mesh;
-class sprite;
 class texture;
 class material;
+class sprite;
 class render_target;
 class renderer;
 class platform;
@@ -482,6 +483,8 @@ namespace input {
 		GAMEPAD_LEFT_STICK_Y = 183,
 		GAMEPAD_RIGHT_STICK_X = 184,
 		GAMEPAD_RIGHT_STICK_Y = 185,
+
+		ANY = 255
 	};
 
 	// Returns true if a control is being held down.
@@ -673,11 +676,16 @@ public:
 //********************************************//
 class engine {
 public:
-	engine();
-	~engine();
+	template<typename T>
+	static T* create() {
+		static_assert(std::is_base_of<engine, T>::value, "T must be a derived class of rge::engine in create<T>");
+		if(!can_create_instance()) return nullptr;
+		T* t = new T();
+		static_cast<engine*>(t)->init();
+		return t;
+	}
 
-public:
-	void create(bool wait_until_exit = true);
+	void run(bool wait_until_exit = true);
 	rge::result exit();
 	rge::result command(const std::string& cmd);
 	void post_event(const event& e);
@@ -687,6 +695,7 @@ public:
 	static engine* get_instance();
 	static platform* get_platform();
 	static renderer* get_renderer();
+	~engine();
 
 public:
 	float update_interval;
@@ -694,6 +703,7 @@ public:
 	float render_interval;
 
 protected:
+	engine();
 	virtual void on_init() {}
 	virtual bool on_command(const std::string& cmd) { return false; }
 	virtual void on_start() {}
@@ -703,7 +713,9 @@ protected:
 	virtual void on_exit() {}
 	virtual bool on_window_close_requested(const window_close_requested_event& e);
 
+
 private:
+	static bool can_create_instance();
 	void configure();
 	void procedure();
 	rge::result init();
@@ -738,6 +750,9 @@ private:
 //* Transform Class                          *//
 //********************************************//
 class transform final {
+public:
+	typedef std::shared_ptr<texture> ptr;
+
 public:
 	transform();
 	transform(transform* parent);
@@ -786,6 +801,10 @@ public:
 //********************************************//
 class camera final {
 public:
+	typedef std::shared_ptr<camera> ptr;
+
+public:
+	static camera::ptr create();
 	camera();
 	~camera();
 
@@ -826,6 +845,10 @@ enum class light_mode {
 
 class light final {
 public:
+	typedef std::shared_ptr<light> ptr;
+
+public:
+	static light::ptr create();
 	light();
 	~light();
 
@@ -848,6 +871,10 @@ public:
 //********************************************//
 class mesh final {
 public:
+	typedef std::shared_ptr<mesh> ptr;
+
+public:
+	static mesh::ptr create();
 	mesh();
 	~mesh();
 
@@ -943,37 +970,16 @@ private:
 #pragma endregion
 
 
-#pragma region /* rge::sprite */
-//********************************************//
-//* Sprite Class                             *//
-//********************************************//
-class sprite final {
-public:
-	sprite();
-	sprite(const rge::texture::ptr& texture);
-	~sprite();
-
-public:
-	bool centered;
-	bool billboard;
-	int pixels_per_unit;
-
-	texture::ptr texture;
-	material* material;
-	transform* transform;
-};
-//********************************************//
-//* Sprite Class                             *//
-//********************************************//
-#pragma endregion
-
-
 #pragma region /* rge::material */
 //********************************************//
 //* Material Class                           *//
 //********************************************//
 class material final {
 public:
+	typedef std::shared_ptr<material> ptr;
+
+public:
+	static material::ptr create();
 	material();
 	~material();
 
@@ -989,13 +995,50 @@ public:
 #pragma endregion
 
 
+#pragma region /* rge::sprite */
+//********************************************//
+//* Sprite Class                             *//
+//********************************************//
+class sprite final {
+public:
+	typedef std::shared_ptr<sprite> ptr;
+
+public:
+	static sprite::ptr create();
+	static sprite::ptr create(const rge::texture::ptr& texture);
+	sprite();
+	sprite(const rge::texture::ptr& texture);
+	~sprite();
+
+public:
+	bool centered;
+	bool billboard;
+	int pixels_per_unit;
+
+	texture::ptr texture;
+	material::ptr material;
+	transform* transform;
+};
+//********************************************//
+//* Sprite Class                             *//
+//********************************************//
+#pragma endregion
+
+
 #pragma region /* rge::render_target */
 //********************************************//
 //* Render Target                            *//
 //********************************************//
 class render_target final {
 public:
-	static render_target* create(renderer* renderer, int width, int height);
+	typedef std::shared_ptr<render_target> ptr;
+
+public:
+	static render_target::ptr create(renderer* renderer, int width, int height);
+	render_target(renderer* renderer, int width, int height);
+	~render_target();
+
+public:
 	rge::result resize(int width, int height);
 
 	int get_width() const;
@@ -1003,12 +1046,6 @@ public:
 
 	texture* get_frame_buffer() const;
 	texture* get_depth_buffer() const;
-
-public:
-	~render_target();
-
-private:
-	render_target(renderer* renderer);
 
 private:
 	int width;
@@ -1064,10 +1101,10 @@ protected:
 //********************************************//
 class renderer {
 public:
-	void set_camera(camera* camera);
+	void set_camera(camera::ptr camera);
 	void set_ambience(const color& ambient_color);
-	rge::result set_target(render_target* target);
-	render_target* get_target() const;
+	rge::result set_target(render_target::ptr target);
+	render_target::ptr get_target() const;
 
 public:
 	virtual rge::result init(platform* platform) = 0;
@@ -1159,8 +1196,8 @@ protected:
 	renderer();
 
 protected:
-	camera* input_camera;
-	render_target* output_render;
+	camera::ptr input_camera;
+	render_target::ptr output_render;
 	color ambient_color;
 };
 //********************************************//
@@ -2212,6 +2249,18 @@ namespace input {
 			return get(&gamepad_buttons[input_code - GAMEPAD_UP][user], 0);
 		}
 
+		if(input_code == ANY) {
+			for(int i = 0; i < NUM_KEYBOARD_BUTTONS; i++)
+				if(get(&keyboard_buttons[i], 0)) return true;
+			
+			for(int i = 0; i < NUM_MOUSE_BUTTONS; i++)
+				if(get(&mouse_buttons[i], 0)) return true;
+
+			for(int i = 0; i < NUM_GAMEPAD_BUTTONS; i++)
+				for(int j = 0; j < MAX_GAMEPAD_COUNT; j++)
+					if(get(&gamepad_buttons[i][j], 0)) return true;
+		}
+
 		return false;
 	}
 
@@ -2232,6 +2281,18 @@ namespace input {
 			return get(&gamepad_buttons[input_code - GAMEPAD_UP][user], 1);
 		}
 
+		if(input_code == ANY) {
+			for(int i = 0; i < NUM_KEYBOARD_BUTTONS; i++)
+				if(get(&keyboard_buttons[i], 1)) return true;
+
+			for(int i = 0; i < NUM_MOUSE_BUTTONS; i++)
+				if(get(&mouse_buttons[i], 1)) return true;
+
+			for(int i = 0; i < NUM_GAMEPAD_BUTTONS; i++)
+				for(int j = 0; j < MAX_GAMEPAD_COUNT; j++)
+					if(get(&gamepad_buttons[i][j], 1)) return true;
+		}
+
 		return false;
 	}
 
@@ -2246,6 +2307,18 @@ namespace input {
 
 		if(input_code >= GAMEPAD_UP && input_code <= GAMEPAD_START && user >= 0 && user < MAX_GAMEPAD_COUNT) {
 			return get(&gamepad_buttons[input_code - GAMEPAD_UP][user], 2);
+		}
+
+		if(input_code == ANY) {
+			for(int i = 0; i < NUM_KEYBOARD_BUTTONS; i++)
+				if(get(&keyboard_buttons[i], 2)) return true;
+
+			for(int i = 0; i < NUM_MOUSE_BUTTONS; i++)
+				if(get(&mouse_buttons[i], 2)) return true;
+
+			for(int i = 0; i < NUM_GAMEPAD_BUTTONS; i++)
+				for(int j = 0; j < MAX_GAMEPAD_COUNT; j++)
+					if(get(&gamepad_buttons[i][j], 2)) return true;
 		}
 
 		return false;
@@ -2502,6 +2575,10 @@ public:
 //********************************************//
 engine* engine::instance = nullptr;
 
+bool engine::can_create_instance() {
+	return instance == nullptr;
+}
+
 engine::engine() {
 	has_init = false;
 	is_running = false;
@@ -2520,16 +2597,17 @@ engine::engine() {
 	renderer_impl = nullptr;
 	multi_threaded = false;
 	events_impl = new event_manager();
-
-	configure();
 }
 
 engine::~engine() {
+	instance = nullptr;
 	delete renderer_impl;
 	delete platform_impl;
 }
 
-void engine::create(bool wait_until_exit) {
+void engine::run(bool wait_until_exit) {
+	if(is_running) return;
+
 	if(wait_until_exit) {
 		procedure();
 	} else {
@@ -2540,7 +2618,6 @@ void engine::create(bool wait_until_exit) {
 }
 
 void engine::procedure() {
-	if(init() != rge::OK) return;
 	if(start() != rge::OK) return;
 	if(platform_impl->use_custom_loop()) {
 		std::function<void()> f = [this]() { return this->loop(); };
@@ -2551,10 +2628,7 @@ void engine::procedure() {
 }
 
 rge::result engine::init() {
-	if(instance != nullptr) {
-		log::error("Another instance of RGE already exists!");
-		return rge::FAIL;
-	}
+	configure();
 
 	if(has_init) {
 		log::error("RGE core has already been initialised!");
@@ -2822,6 +2896,10 @@ void transform::set_global_rotation(const quaternion& rotation) {
 //********************************************//
 //* Camera class.                            *//
 //********************************************//
+camera::ptr camera::create() {
+	return std::make_shared<camera>();
+}
+
 camera::camera() {
 	transform = new rge::transform();
 }
@@ -2908,6 +2986,10 @@ void camera::set_orthographic(float left_plane, float right_plane, float top_pla
 //********************************************//
 //* Light class.                             *//
 //********************************************//
+light::ptr light::create() {
+	return std::make_shared<light>();
+}
+
 light::light() {
 	tint = color(1, 1, 1);
 	intensity = 1.0F;
@@ -2928,6 +3010,10 @@ light::~light() {
 //********************************************//
 //* Mesh Class                               *//
 //********************************************//
+mesh::ptr mesh::create() {
+	return std::make_shared<mesh>();
+}
+
 mesh::mesh() {
 
 }
@@ -2943,7 +3029,7 @@ mesh::~mesh() {
 
 #pragma region /* rge::texture */
 //********************************************//
-//* Texture class.                           *//
+//* Texture Class                            *//
 //********************************************//
 texture::table texture::registry;
 
@@ -2980,7 +3066,10 @@ texture::texture(int width, int height) {
 }
 
 texture::~texture() {
-	if(is_on_gpu()) engine::get_instance()->get_renderer()->free_texture(*this);
+	if(is_on_gpu()) {
+		if(engine::get_instance() && engine::get_instance()->get_renderer())
+			engine::get_instance()->get_renderer()->free_texture(*this);
+	}
 	if(is_on_cpu()) delete[] data;
 }
 
@@ -3158,7 +3247,30 @@ texture::ptr texture::load(const std::string& path, bool load_to_gpu) {
 	#endif
 }
 //********************************************//
-//* Texture class.                           *//
+//* Texture Class                            *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::material */
+//********************************************//
+//* Material Class                           *//
+//********************************************//
+material::ptr material::create() {
+	return std::make_shared<material>();
+}
+
+material::material() {
+	diffuse = color(1,1,1);
+	specular = color(1,1,1);
+	shininess = 0;
+}
+
+material::~material() {
+	
+}
+//********************************************//
+//* Material Class                           *//
 //********************************************//
 #pragma endregion
 
@@ -3167,8 +3279,15 @@ texture::ptr texture::load(const std::string& path, bool load_to_gpu) {
 //********************************************//
 //* Sprite Class                             *//
 //********************************************//
+sprite::ptr sprite::create() {
+	return std::make_shared<sprite>();
+}
+
+sprite::ptr sprite::create(const rge::texture::ptr& texture) {
+	return std::make_shared<sprite>(texture);
+}
+
 sprite::sprite() {
-	material = nullptr;
 	transform = new rge::transform();
 	centered = false;
 	billboard = false;
@@ -3189,39 +3308,16 @@ sprite::~sprite() {
 #pragma endregion
 
 
-#pragma region /* rge::material */
-//********************************************//
-//* Material class.                          *//
-//********************************************//
-material::material() {
-	diffuse = color(1,1,1);
-	specular = color(1,1,1);
-	shininess = 0;
-}
-
-material::~material() {
-	
-}
-//********************************************//
-//* Material class.                          *//
-//********************************************//
-#pragma endregion
-
-
 #pragma region /* rge::render_target */
 //********************************************//
 //* Render Target class.                     *//
 //********************************************//
-render_target* render_target::create(renderer* renderer, int width, int height) {
+render_target::ptr render_target::create(renderer* renderer, int width, int height) {
 	if(renderer == nullptr) return nullptr;
 	if(width < 1) return nullptr;
 	if(height < 1) return nullptr;
 
-	render_target* target = new render_target(renderer);
-
-	target->resize(width, height);
-
-	return target;
+	return std::make_shared<render_target>(renderer, width, height);
 }
 
 rge::result render_target::resize(int width, int height) {
@@ -3261,8 +3357,9 @@ render_target::~render_target() {
 	depth_buffer.reset();
 }
 
-render_target::render_target(renderer* renderer) {
+render_target::render_target(renderer* renderer, int width, int height) {
 	renderer_instance = renderer;
+	resize(width, height);
 }
 //********************************************//
 //* Render Target class.                     *//
@@ -3280,7 +3377,7 @@ renderer::renderer() {
 	ambient_color = color(0,0,0);
 }
 
-void renderer::set_camera(camera* camera) {
+void renderer::set_camera(camera::ptr camera) {
 	input_camera = camera;
 }
 
@@ -3288,12 +3385,12 @@ void renderer::set_ambience(const color& ambient_color) {
 	this->ambient_color = ambient_color;
 }
 
-rge::result renderer::set_target(render_target* target) {
+rge::result renderer::set_target(render_target::ptr target) {
 	output_render = target;
 	return rge::OK;
 }
 
-render_target* renderer::get_target() const {
+render_target::ptr renderer::get_target() const {
 	return output_render;
 }
 //********************************************//
@@ -4008,10 +4105,10 @@ public:
 class software_gl : public renderer {
 private:
 	std::vector<light*> lights; // TODO: Move to rge::renderer.
-	render_target* output_window;
+	render_target::ptr output_window;
 	platform* platform_instance;
 
-	render_target* get_real_target() {
+	render_target::ptr get_real_target() {
 		return output_render != nullptr ? output_render : output_window;
 	}
 

@@ -21,7 +21,7 @@ static std::vector<std::string> str_split(std::string& s, char sep) {
 	return output;
 }
 
-static rge::mesh* load_obj(const char* fname) {
+static rge::mesh::ptr load_obj(const char* fname) {
 	std::ifstream fp_in;
 	fp_in.open(fname, std::ios::in);
 	if(!fp_in.is_open()) {
@@ -29,7 +29,7 @@ static rge::mesh* load_obj(const char* fname) {
 		return nullptr;
 	}
 
-	rge::mesh* mdl = new rge::mesh();
+	rge::mesh::ptr mdl = rge::mesh::ptr();
 
 	std::vector<rge::vec3> vertices;
 	std::vector<rge::vec3> normals;
@@ -88,8 +88,8 @@ static rge::mesh* load_obj(const char* fname) {
 	return mdl;
 }
 
-static rge::mesh* load_triangle() {
-	rge::mesh* mdl = new rge::mesh;
+static rge::mesh::ptr load_triangle() {
+	rge::mesh::ptr mdl = rge::mesh::create();
 
 	mdl->vertices.push_back(rge::vec3(-1, -1, 0));
 	mdl->vertices.push_back(rge::vec3(0, 1, 0));
@@ -110,8 +110,8 @@ static rge::mesh* load_triangle() {
 	return mdl;
 }
 
-static rge::mesh* load_floor() {
-	rge::mesh* mdl = new rge::mesh;
+static rge::mesh::ptr load_floor() {
+	rge::mesh::ptr mdl = rge::mesh::create();
 
 	mdl->vertices.push_back(rge::vec3(-1, 0, -1));
 	mdl->vertices.push_back(rge::vec3(1, 0, -1));
@@ -140,19 +140,19 @@ static rge::mesh* load_floor() {
 
 class game : public rge::engine {
 private:
-    rge::material* material;
+    rge::material::ptr material;
 	rge::renderer* renderer;
-    rge::camera* camera;
-	rge::mesh* model;
-	rge::mesh* triangle;
-	rge::mesh* floor;
+    rge::camera::ptr camera;
+	rge::mesh::ptr model;
+	rge::mesh::ptr triangle;
+	rge::mesh::ptr floor;
 
 	float counter;
 
 public:
     game() : rge::engine() {
-        material = new rge::material();
-		camera = new rge::camera();
+        material = rge::material::create();
+		camera = rge::camera::create();
 		model = nullptr;
 		floor = nullptr;
 		triangle = nullptr;
@@ -232,8 +232,8 @@ public:
 
 
 int main(int argc, char** argv) {
-    game* gm = new game();
-	gm->create(true);
+	game* gm = rge::engine::create<game>();
+	gm->run();
 	gm->wait_for_exit();
 	delete gm;
     return 0;

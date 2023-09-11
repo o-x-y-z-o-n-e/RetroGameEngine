@@ -10,13 +10,16 @@ This project is inspired by:
 
 
 ## Core System Features
-- Windows, Linux, & MacOS platform support.
-- Software & OpenGL 2D/3D renderers.
-- Entity component system [**planned**].
-- Serialization system [**planned**].
-- Audio playback [**planned**].
-- Physics system [**planned**].
-- UI & text rendering [**planned**].
+- Windows platform
+- OpenGL 1.0 renderer
+- OpenGL 3.3 renderer [**planned**]
+- Software renderer [**WIP**]
+- Linux, & MacOS platform support [**planned**]
+- Entity component system [**planned**]
+- Serialization system [**planned**]
+- Audio playback [**planned**]
+- Physics system [**planned**]
+- UI & text rendering [**planned**]
 
 
 ## How to use
@@ -40,6 +43,10 @@ public:
 	void on_update(float delta_time) override {
 		
 	}
+
+	void on_physics(float delta_time) override {
+		
+	}
 	
 	void on_render() override {
 		
@@ -47,8 +54,8 @@ public:
 };
 
 int main(int argc, char** argv) {
-	game* gm = new game();
-	gm->create(true);
+	game* gm = rge::engine::create<game>();
+	gm->run();
 	gm->wait_for_exit();
 	delete gm;
 	return 0;
