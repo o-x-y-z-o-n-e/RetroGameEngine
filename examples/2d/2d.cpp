@@ -30,7 +30,6 @@ static rge::mesh::ptr load_triangle() {
 
 class game : public rge::engine {
 private:
-	rge::renderer* renderer;
     rge::material::ptr material;
     rge::camera::ptr camera;
 	rge::sprite::ptr smile;
@@ -40,7 +39,6 @@ private:
 
 public:
     game() : rge::engine() {
-		renderer = nullptr;
         material = rge::material::create();
 		camera = rge::camera::create();
 		smile = rge::sprite::create();
@@ -49,9 +47,14 @@ public:
 		counter = 0;
     }
 
-    void on_init() override {
-		renderer = get_renderer();
+	void get_default_window_params(std::string& title, int& width, int& height, bool& fullscreen) override {
+		title = "2D Example for Retro Game Engine";
+		width = 800;
+		height = 600;
+		fullscreen = false;
+	}
 
+    void on_init() override {
 		background->texture = rge::texture::load("background.png");
 		background->transform->position = rge::vec3(0, 0, 1);
 		background->pixels_per_unit = 16;
@@ -69,8 +72,8 @@ public:
 		camera->set_orthographic(-8, 8, 6, -6, 0.0F, 100.0F);
 		camera->transform->position = rge::vec3(0, 0, -1);
 
-        renderer->set_camera(camera);
-		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
+		get_renderer()->set_camera(camera);
+		get_renderer()->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
     }
 
 	void on_update(float delta_time) override {
@@ -106,20 +109,30 @@ public:
 	}
 
     void on_render() override {
-		renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
+		get_renderer()->clear(rge::color(0.8F, 0.4F, 0.4F));
 		
-		renderer->draw(*background);
-		renderer->draw(*smile);
+		get_renderer()->draw(*background);
+		get_renderer()->draw(*smile);
 
 		if(triangle) {
-			renderer->draw(
-				rge::mat4::trs(rge::vec3(0, 0, 0), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
+			get_renderer()->draw(
+				rge::mat4::trs(
+					rge::vec3(0, 0, 0),
+					rge::quaternion::yaw_pitch_roll(counter, 0, 0),
+					rge::vec3(1, 1, 1)
+				),
 				*triangle,
 				*material
 			);
 		}
 
-		renderer->draw(*material->texture, rge::vec2(0.0F, 0.0F), rge::vec2(0.5F, 0.25F), rge::vec2(0.0F, 0.0F), rge::vec2(1.0F, 1.0F));
+		get_renderer()->draw(
+			*material->texture,
+			rge::vec2(0.0F, 0.0F),
+			rge::vec2(0.5F, 0.25F),
+			rge::vec2(0.0F, 0.0F),
+			rge::vec2(1.0F, 1.0F)
+		);
     }
 };
 

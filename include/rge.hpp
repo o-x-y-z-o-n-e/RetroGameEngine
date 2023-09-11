@@ -119,7 +119,7 @@ struct rect final {
 
 #pragma region /* rge::vec2 */
 //********************************************//
-//* Vector2 Struct                           *//
+//* Vector2 Struct                           *// 
 //********************************************//
 struct vec2 final {
 	float x, y;
@@ -453,6 +453,8 @@ namespace input {
 		MOUSE_LEFT = 100,
 		MOUSE_RIGHT = 101,
 		MOUSE_MIDDLE = 102,
+
+		// Mouse axis.
 		MOUSE_SCROLL = 103,
 
 		// Gamepad buttons.
@@ -474,6 +476,16 @@ namespace input {
 
 		GAMEPAD_OPTIONS = 162,
 		GAMEPAD_START = 163,
+
+		GAMEPAD_LEFT_STICK_UP = 164,
+		GAMEPAD_LEFT_STICK_DOWN = 165,
+		GAMEPAD_LEFT_STICK_LEFT = 166,
+		GAMEPAD_LEFT_STICK_RIGHT = 167,
+
+		GAMEPAD_RIGHT_STICK_UP = 168,
+		GAMEPAD_RIGHT_STICK_DOWN = 169,
+		GAMEPAD_RIGHT_STICK_LEFT = 170,
+		GAMEPAD_RIGHT_STICK_RIGHT = 171,
 
 		// Gamepad axis.
 		GAMEPAD_LEFT_TRIGGER = 180,
@@ -712,7 +724,7 @@ protected:
 	virtual void on_render() {}
 	virtual void on_exit() {}
 	virtual bool on_window_close_requested(const window_close_requested_event& e);
-
+	virtual void get_default_window_params(std::string& title, int& width, int& height, bool& fullscreen) {}
 
 private:
 	static bool can_create_instance();
@@ -751,13 +763,17 @@ private:
 //********************************************//
 class transform final {
 public:
-	typedef std::shared_ptr<texture> ptr;
+	typedef std::shared_ptr<transform> ptr;
 
 public:
+	static transform::ptr create();
+	static transform::ptr create(transform::ptr parent);
+	static transform::ptr create(vec3 position, quaternion rotation, vec3 scale);
+	static transform::ptr create(vec3 position, quaternion rotation, vec3 scale, transform::ptr parent);
 	transform();
-	transform(transform* parent);
+	transform(transform::ptr parent);
 	transform(vec3 position, quaternion rotation, vec3 scale);
-	transform(vec3 position, quaternion rotation, vec3 scale, transform* parent);
+	transform(vec3 position, quaternion rotation, vec3 scale, transform::ptr parent);
 
 public:
 	mat4 get_global_matrix() const;
@@ -784,7 +800,7 @@ public:
 	void set_global_rotation(const quaternion& rotation);
 
 public:
-	transform* parent;
+	transform::ptr parent;
 	vec3 position;
 	quaternion rotation;
 	vec3 scale;
@@ -822,7 +838,7 @@ public:
 	void set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane);
 
 public:
-	transform* transform;
+	transform::ptr transform;
 
 private:
 	mat4 projection;
@@ -857,7 +873,7 @@ public:
 	float intensity;
 	float range;
 	light_mode type;
-	transform* transform;
+	transform::ptr transform;
 };
 //********************************************//
 //* Light Class                              *//
@@ -1017,7 +1033,7 @@ public:
 
 	texture::ptr texture;
 	material::ptr material;
-	transform* transform;
+	transform::ptr transform;
 };
 //********************************************//
 //* Sprite Class                             *//
@@ -1067,8 +1083,10 @@ private:
 class platform {
 public:
 	virtual rge::result init(rge::engine* engine) = 0;
-	virtual rge::result create_window() = 0;
+	virtual rge::result create_window(const std::string& title, int width, int height, bool fullscreen) = 0;
 	virtual void set_window_title(const std::string& title) = 0;
+	virtual void set_window_size(int width, int height) = 0;
+	virtual void set_fullscreen(bool fullscreen) = 0;
 	virtual void poll_events() = 0;
 	virtual void poll_gamepads() = 0;
 	virtual void refresh_window() = 0;
@@ -1111,10 +1129,13 @@ public:
 
 	// Creates a texture with allocated space on gpu.
 	virtual texture::ptr create_texture(int width, int height) = 0;
+
 	// Allocates space on gpu for texture.
 	virtual void alloc_texture(texture& texture) = 0;
+
 	// Copies the texture data, on cpu, to gpu.
 	virtual void upload_texture(texture& texture) = 0;
+
 	// Frees the allocated texture data on gpu.
 	virtual void free_texture(texture& texture) = 0;
 
@@ -1158,6 +1179,17 @@ public:
 		int src_max_x,
 		int src_max_y
 	) = 0;
+
+	// Draw Render Target onto window [0, w/h] space.
+	/* TODO
+	virtual void draw(
+		const render_target& render,
+		int dest_min_x,
+		int dest_min_y,
+		int dest_max_x,
+		int dest_max_y
+	) = 0;
+	*/
 
 public: // Inline macro short args functions.
 	// Draw 3D geometry, using local/model space data.
@@ -2208,10 +2240,19 @@ void log::error(const char* msg, ...) {
 //* Input Module                             *//
 //********************************************//
 namespace input {
+	const code KY_BUT_FIRST = KEY_A;
+	const code KY_BUT_LAST = KEY_ESC;
+	const code MS_BUT_FIRST = MOUSE_LEFT;
+	const code MS_BUT_LAST = MOUSE_MIDDLE;
+	const code GP_BUT_FIRST = GAMEPAD_UP;
+	const code GP_BUT_LAST = GAMEPAD_RIGHT_STICK_RIGHT;
+	const code GP_AXS_FIRST = GAMEPAD_LEFT_TRIGGER;
+	const code GP_AXS_LAST = GAMEPAD_RIGHT_STICK_Y;
+
 	typedef uint8_t button;
 	const int NUM_KEYBOARD_BUTTONS = 60;
 	const int NUM_MOUSE_BUTTONS = 3;
-	const int NUM_GAMEPAD_BUTTONS = 14;
+	const int NUM_GAMEPAD_BUTTONS = 24;
 	const int NUM_GAMEPAD_AXIS = 6;
 	const int MAX_GAMEPAD_COUNT = 4;
 
@@ -2237,16 +2278,16 @@ namespace input {
 	}
 
 	bool is_down(input::code input_code, int user) {
-		if(input_code >= KEY_A && input_code <= KEY_ESC) {
-			return get(&keyboard_buttons[input_code - KEY_A], 0);
+		if(input_code >= KY_BUT_FIRST && input_code <= KY_BUT_LAST) {
+			return get(&keyboard_buttons[input_code - KY_BUT_FIRST], 0);
 		}
 
-		if(input_code >= MOUSE_LEFT && input_code <= MOUSE_MIDDLE) {
-			return get(&mouse_buttons[input_code - MOUSE_LEFT], 0);
+		if(input_code >= MS_BUT_FIRST && input_code <= MS_BUT_LAST) {
+			return get(&mouse_buttons[input_code - MS_BUT_FIRST], 0);
 		}
 
-		if(input_code >= GAMEPAD_UP && input_code <= GAMEPAD_START && user >= 0 && user < MAX_GAMEPAD_COUNT) {
-			return get(&gamepad_buttons[input_code - GAMEPAD_UP][user], 0);
+		if(input_code >= GP_BUT_FIRST && input_code <= GP_BUT_LAST && user >= 0 && user < MAX_GAMEPAD_COUNT) {
+			return get(&gamepad_buttons[input_code - GP_BUT_FIRST][user], 0);
 		}
 
 		if(input_code == ANY) {
@@ -2269,16 +2310,16 @@ namespace input {
 	}
 
 	bool has_pressed(input::code input_code, int user) {
-		if(input_code >= KEY_A && input_code <= KEY_ESC) {
-			return get(&keyboard_buttons[input_code - KEY_A], 1);
+		if(input_code >= KY_BUT_FIRST && input_code <= KY_BUT_LAST) {
+			return get(&keyboard_buttons[input_code - KY_BUT_FIRST], 1);
 		}
 
-		if(input_code >= MOUSE_LEFT && input_code <= MOUSE_MIDDLE) {
-			return get(&mouse_buttons[input_code - MOUSE_LEFT], 1);
+		if(input_code >= MS_BUT_FIRST && input_code <= MS_BUT_LAST) {
+			return get(&mouse_buttons[input_code - MS_BUT_FIRST], 1);
 		}
 
-		if(input_code >= GAMEPAD_UP && input_code <= GAMEPAD_START && user >= 0 && user < MAX_GAMEPAD_COUNT) {
-			return get(&gamepad_buttons[input_code - GAMEPAD_UP][user], 1);
+		if(input_code >= GP_BUT_FIRST && input_code <= GP_BUT_LAST && user >= 0 && user < MAX_GAMEPAD_COUNT) {
+			return get(&gamepad_buttons[input_code - GP_BUT_FIRST][user], 1);
 		}
 
 		if(input_code == ANY) {
@@ -2297,16 +2338,16 @@ namespace input {
 	}
 
 	bool has_released(rge::input::code input_code, int user) {
-		if(input_code >= KEY_A && input_code <= KEY_ESC) {
-			return get(&keyboard_buttons[input_code], 2);
+		if(input_code >= KY_BUT_FIRST && input_code <= KY_BUT_LAST) {
+			return get(&keyboard_buttons[input_code - KY_BUT_FIRST], 2);
 		}
 
-		if(input_code >= MOUSE_LEFT && input_code <= MOUSE_MIDDLE) {
-			return get(&mouse_buttons[input_code - MOUSE_LEFT], 2);
+		if(input_code >= MS_BUT_FIRST && input_code <= MS_BUT_LAST) {
+			return get(&mouse_buttons[input_code - MS_BUT_FIRST], 2);
 		}
 
-		if(input_code >= GAMEPAD_UP && input_code <= GAMEPAD_START && user >= 0 && user < MAX_GAMEPAD_COUNT) {
-			return get(&gamepad_buttons[input_code - GAMEPAD_UP][user], 2);
+		if(input_code >= GP_BUT_FIRST && input_code <= GP_BUT_LAST && user >= 0 && user < MAX_GAMEPAD_COUNT) {
+			return get(&gamepad_buttons[input_code - GP_BUT_FIRST][user], 2);
 		}
 
 		if(input_code == ANY) {
@@ -2333,34 +2374,34 @@ namespace input {
 			return mouse_scroll;
 		}
 
-		if(input_code >= GAMEPAD_LEFT_TRIGGER && input_code <= GAMEPAD_RIGHT_STICK_Y && user >= 0 && user < MAX_GAMEPAD_COUNT) {
-			return gamepad_axis[input_code - GAMEPAD_LEFT_TRIGGER][user];
+		if(input_code >= GP_AXS_FIRST && input_code <= GP_AXS_LAST && user >= 0 && user < MAX_GAMEPAD_COUNT) {
+			return gamepad_axis[input_code - GP_AXS_FIRST][user];
 		}
 
 		return 0;
 	}
 
 	bool on_key_pressed(const key_pressed_event& e) {
-		set(&keyboard_buttons[e.input_code - KEY_A], 1);
-		set(&keyboard_buttons[e.input_code - KEY_A], 0);
+		set(&keyboard_buttons[e.input_code - KY_BUT_FIRST], 1);
+		set(&keyboard_buttons[e.input_code - KY_BUT_FIRST], 0);
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
 	bool on_key_released(const key_released_event& e) {
-		set(&keyboard_buttons[e.input_code - KEY_A], 2);
-		clear(&keyboard_buttons[e.input_code - KEY_A], 0);
+		set(&keyboard_buttons[e.input_code - KY_BUT_FIRST], 2);
+		clear(&keyboard_buttons[e.input_code - KY_BUT_FIRST], 0);
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
 	bool on_mouse_pressed(const mouse_pressed_event& e) {
-		set(&mouse_buttons[e.input_code - MOUSE_LEFT], 1);
-		set(&mouse_buttons[e.input_code - MOUSE_LEFT], 0);
+		set(&mouse_buttons[e.input_code - MS_BUT_FIRST], 1);
+		set(&mouse_buttons[e.input_code - MS_BUT_FIRST], 0);
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
 	bool on_mouse_released(const mouse_released_event& e) {
-		set(&mouse_buttons[e.input_code - MOUSE_LEFT], 2);
-		clear(&mouse_buttons[e.input_code - MOUSE_LEFT], 0);
+		set(&mouse_buttons[e.input_code - MS_BUT_FIRST], 2);
+		clear(&mouse_buttons[e.input_code - MS_BUT_FIRST], 0);
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
@@ -2375,19 +2416,61 @@ namespace input {
 	}
 
 	bool on_gamepad_pressed(const gamepad_pressed_event& e) {
-		set(&gamepad_buttons[e.input_code - GAMEPAD_UP][e.user], 1);
-		set(&gamepad_buttons[e.input_code - GAMEPAD_UP][e.user], 0);
+		set(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 1);
+		set(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 0);
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
 	bool on_gamepad_released(const gamepad_released_event& e) {
-		set(&gamepad_buttons[e.input_code - GAMEPAD_UP][e.user], 2);
-		clear(&gamepad_buttons[e.input_code - GAMEPAD_UP][e.user], 0);
+		set(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 2);
+		clear(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 0);
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
+	static void set_gp_axis_but_state(button* s, bool on) {
+		if(on && !get(s, 0)) {
+			set(s, 1);
+		} else if(!on && get(s, 0)) {
+			set(s, 2);
+		}
+
+		if(on) set(s, 0);
+		else clear(s, 0);
+	}
+
 	bool on_gamepad_axis(const gamepad_axis_event& e) {
-		gamepad_axis[e.input_code - GAMEPAD_LEFT_TRIGGER][e.user] = e.value;
+		gamepad_axis[e.input_code - GP_AXS_FIRST][e.user] = e.value;
+		
+		switch(e.input_code) {
+		case GAMEPAD_LEFT_TRIGGER:
+			set_gp_axis_but_state(&gamepad_buttons[22][e.user], e.value > 0.5F);
+			break;
+
+		case GAMEPAD_RIGHT_TRIGGER:
+			set_gp_axis_but_state(&gamepad_buttons[23][e.user], e.value > 0.5F);
+			break;
+
+		case GAMEPAD_LEFT_STICK_X:
+			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_LEFT_STICK_LEFT - GP_BUT_FIRST][e.user], e.value < -0.5F);
+			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_LEFT_STICK_RIGHT - GP_BUT_FIRST][e.user], e.value > 0.5F);
+			break;
+
+		case GAMEPAD_LEFT_STICK_Y:
+			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_LEFT_STICK_DOWN - GP_BUT_FIRST][e.user], e.value < -0.5F);
+			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_LEFT_STICK_UP - GP_BUT_FIRST][e.user], e.value > 0.5F);
+			break;
+
+		case GAMEPAD_RIGHT_STICK_X:
+			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_RIGHT_STICK_LEFT - GP_BUT_FIRST][e.user], e.value < -0.5F);
+			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_RIGHT_STICK_RIGHT - GP_BUT_FIRST][e.user], e.value > 0.5F);
+			break;
+
+		case GAMEPAD_RIGHT_STICK_Y:
+			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_RIGHT_STICK_DOWN - GP_BUT_FIRST][e.user], e.value < -0.5F);
+			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_RIGHT_STICK_UP - GP_BUT_FIRST][e.user], e.value > 0.5F);
+			break;
+		}
+
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
@@ -2646,7 +2729,16 @@ rge::result engine::init() {
 		return rge::FAIL;
 	}
 
-	if(platform_impl->create_window() != rge::OK) {
+	std::string window_title = "Retro Game Engine";
+	int window_width = 800;
+	int window_height = 600;
+	bool fullscreen = false;
+
+	get_default_window_params(window_title, window_width, window_height, fullscreen);
+	if(window_width < 1) window_width = 1;
+	if(window_height < 1) window_height = 1;
+
+	if(platform_impl->create_window(window_title, window_width, window_height, fullscreen) != rge::OK) {
 		log::error("Failed to create window!");
 		return rge::FAIL;
 	}
@@ -2689,7 +2781,7 @@ rge::result engine::start() {
 }
 
 void engine::loop() {
-	// Handle all events.
+	// Handle all events (except gamepad, that is polled jsut before main loop update call).
 	platform_impl->poll_events();
 	events_impl->process();
 
@@ -2810,6 +2902,22 @@ void engine::wait_for_exit() {
 //********************************************//
 //* Transform class.                         *//
 //********************************************//
+transform::ptr transform::create() {
+	return std::make_shared<transform>();
+}
+
+transform::ptr transform::create(transform::ptr parent) {
+	return std::make_shared<transform>(parent);
+}
+
+transform::ptr transform::create(vec3 position, quaternion rotation, vec3 scale) {
+	return std::make_shared<transform>(position, rotation, scale);
+}
+
+transform::ptr transform::create(vec3 position, quaternion rotation, vec3 scale, transform::ptr parent) {
+	return std::make_shared<transform>(position, rotation, scale, parent);
+}
+
 transform::transform() {
 	parent = nullptr;
 	this->position = vec3();
@@ -2817,7 +2925,7 @@ transform::transform() {
 	this->scale = vec3(1, 1, 1);
 }
 
-transform::transform(transform* parent) {
+transform::transform(transform::ptr parent) {
 	this->parent = parent;
 	this->position = vec3();
 	this->rotation = quaternion::identity();
@@ -2831,7 +2939,7 @@ transform::transform(vec3 position, quaternion rotation, vec3 scale) {
 	this->scale = scale;
 }
 
-transform::transform(vec3 position, quaternion rotation, vec3 scale, transform* parent) {
+transform::transform(vec3 position, quaternion rotation, vec3 scale, transform::ptr parent) {
 	this->parent = parent;
 	this->position = position;
 	this->rotation = rotation;
@@ -2901,11 +3009,11 @@ camera::ptr camera::create() {
 }
 
 camera::camera() {
-	transform = new rge::transform();
+	transform = rge::transform::create();
 }
 
 camera::~camera() {
-	delete transform;
+	
 }
 
 mat4 camera::get_view_matrix() const {
@@ -3288,7 +3396,7 @@ sprite::ptr sprite::create(const rge::texture::ptr& texture) {
 }
 
 sprite::sprite() {
-	transform = new rge::transform();
+	transform = rge::transform::create();
 	centered = false;
 	billboard = false;
 	pixels_per_unit = 32;
@@ -3299,8 +3407,7 @@ sprite::sprite(const rge::texture::ptr& texture) : sprite() {
 }
 
 sprite::~sprite() {
-	texture.reset();
-	delete transform;
+
 }
 //********************************************//
 //* Sprite Class                             *//
@@ -3414,7 +3521,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 class windows : public platform {
 public:
 	const LPCWSTR CLASS_NAME = L"RETRO_GAME_ENGINE_CLASS";
-	const LPCWSTR WINDOW_NAME = L"RETRO_GAME_ENGINE_WINDOW";
 	WNDCLASS config;
 	HWND handle;
 	HDC device_context;
@@ -3472,15 +3578,13 @@ public:
 		return rge::OK;
 	}
 
-	rge::result create_window() override {
+	rge::result create_window(const std::string& title, int width, int height, bool fullscreen) override {
 		if(!has_init) return rge::FAIL;
 		if(has_window) return rge::FAIL;
 
 		DWORD style_ex = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
 		DWORD style = WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_THICKFRAME;
 
-		int width = 800; // TODO: Temp
-		int height = 600;
 		RECT rWndRect = { 0, 0, width, height };
 		AdjustWindowRectEx(&rWndRect, style, FALSE, style_ex);
 		width = rWndRect.right - rWndRect.left;
@@ -3489,7 +3593,7 @@ public:
 		handle = CreateWindowEx(
 			style_ex,
 			CLASS_NAME,
-			WINDOW_NAME,
+			convert_str_to_wstr(title).c_str(),
 			style,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
@@ -3506,7 +3610,7 @@ public:
 			return rge::FAIL;
 		}
 
-		//SendMessage(handle, WM_SIZE, 0, (window_width) + (window_height << 16));
+		// TODO: Add fullscreen
 
 		has_window = true;
 		return rge::OK;
@@ -3570,6 +3674,14 @@ public:
 		#else
 		SetWindowText(handle, title.c_str());
 		#endif
+	}
+
+	void set_window_size(int width, int height) override {
+		// TODO
+	}
+
+	void set_fullscreen(bool fullscreen) override {
+		// TODO
 	}
 
 	void poll_events() override {
