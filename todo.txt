@@ -1,4 +1,5 @@
 ==CURRENT==
+	move gamepad axis_to_button detection to platform & generate press/release events
 	set light params to 3d draw function
 
 	implement:
@@ -11,7 +12,6 @@
 	[3D] fix quaternions + fix camera view
 	[3D] opengl 1.0 lighting
 
-	windows resize function
 	windows fullscreen
 
 	windows WM_PAINT platform event for software_gl

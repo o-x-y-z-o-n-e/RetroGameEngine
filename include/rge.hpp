@@ -3587,8 +3587,8 @@ public:
 
 		RECT rWndRect = { 0, 0, width, height };
 		AdjustWindowRectEx(&rWndRect, style, FALSE, style_ex);
-		width = rWndRect.right - rWndRect.left;
-		height = rWndRect.bottom - rWndRect.top;
+		window_width = rWndRect.right - rWndRect.left;
+		window_height = rWndRect.bottom - rWndRect.top;
 
 		handle = CreateWindowEx(
 			style_ex,
@@ -3597,8 +3597,8 @@ public:
 			style,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
-			width,
-			height,
+			window_width,
+			window_height,
 			nullptr,
 			nullptr,
 			config.hInstance,
@@ -3677,7 +3677,12 @@ public:
 	}
 
 	void set_window_size(int width, int height) override {
-		// TODO
+		// TODO: Test
+		if(width < 1) width = 1;
+		if(height < 1) height = 1;
+		window_width = width;
+		window_height = height;
+		SetWindowPos(handle, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
 	}
 
 	void set_fullscreen(bool fullscreen) override {
