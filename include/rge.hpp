@@ -499,6 +499,14 @@ namespace input {
 		ANY = 255
 	};
 
+	struct action {
+		std::vector<input::code> bindings;
+
+		void add_binding(input::code binding);
+		void remove_binding(input::code binding);
+		void clear_bindings();
+	};
+
 	// Returns true if a control is being held down.
 	bool is_down(input::code input_code, int user = 0);
 
@@ -506,13 +514,28 @@ namespace input {
 	bool is_up(input::code input_code, int user = 0);
 
 	// Returns true if a control has been pressed within last update.
-	bool has_pressed(input::code input_code, int user = 0);
+	bool was_pressed(input::code input_code, int user = 0);
 
 	// Returns true if a control has been released within last update.
-	bool has_released(input::code input_code, int user = 0);
+	bool was_released(input::code input_code, int user = 0);
 
 	// Return input axis value [-1, 1] of a control.
 	float get_axis(input::code input_code, int user = 0);
+
+	// Returns true if a control is being held down.
+	bool is_down(const input::action& input_action, int user = 0);
+
+	// Returns true if a control is not being touched.
+	bool is_up(const input::action& input_action, int user = 0);
+
+	// Returns true if a control has been pressed within last update.
+	bool was_pressed(const input::action& input_action, int user = 0);
+
+	// Returns true if a control has been released within last update.
+	bool was_released(const input::action& input_action, int user = 0);
+
+	// Return input axis value [-1, 1] of a control.
+	float get_axis(const input::action& input_action, int user = 0);
 
 	// Returns the position of the mouse cursor in window-space. 
 	vec2 get_mouse_position();
@@ -2277,6 +2300,69 @@ namespace input {
 		return (*d & (1 << b)) != 0;
 	}
 
+	void action::add_binding(input::code binding) {
+		bindings.push_back(binding);
+	}
+
+	void action::remove_binding(input::code binding) {
+		std::vector<code>::iterator it;
+		for(it = bindings.begin(); it != bindings.end(); it++) {
+			if(*it == binding) {
+				bindings.erase(it);
+			}
+		}
+	}
+
+	void action::clear_bindings() {
+		bindings.clear();
+	}
+
+	bool is_down(const input::action& input_action, int user) {
+		std::vector<code> b = input_action.bindings;
+		std::vector<code>::iterator it;
+		for(it = b.begin(); it != b.end(); it++) {
+			if(is_down(*it, user)) return true;
+		}
+		return false;
+	}
+
+	bool is_up(const input::action& input_action, int user) {
+		return !is_down(input_action, user);
+	}
+
+	bool was_pressed(const input::action& input_action, int user) {
+		std::vector<code> b = input_action.bindings;
+		std::vector<code>::iterator it;
+		for(it = b.begin(); it != b.end(); it++) {
+			if(was_pressed(*it, user)) return true;
+		}
+		return false;
+	}
+
+	bool was_released(const input::action& input_action, int user) {
+		std::vector<code> b = input_action.bindings;
+		std::vector<input::code>::iterator it;
+		for(it = b.begin(); it != b.end(); it++) {
+			if(was_released(*it, user)) return true;
+		}
+		return false;
+	}
+
+	float get_axis(const input::action& input_action, int user) {
+		float value = 0;
+
+		std::vector<code> b = input_action.bindings;
+		std::vector<code>::iterator it;
+		for(it = b.begin(); it != b.end(); it++) {
+			value += get_axis(*it, user);
+		}
+
+		if(value < -1.0F) value = -1.0F;
+		if(value > 1.0F) value = 1.0F;
+
+		return value;
+	}
+
 	bool is_down(input::code input_code, int user) {
 		if(input_code >= KY_BUT_FIRST && input_code <= KY_BUT_LAST) {
 			return get(&keyboard_buttons[input_code - KY_BUT_FIRST], 0);
@@ -2288,6 +2374,14 @@ namespace input {
 
 		if(input_code >= GP_BUT_FIRST && input_code <= GP_BUT_LAST && user >= 0 && user < MAX_GAMEPAD_COUNT) {
 			return get(&gamepad_buttons[input_code - GP_BUT_FIRST][user], 0);
+		}
+
+		if(input_code == GAMEPAD_LEFT_TRIGGER) {
+			return get(&gamepad_buttons[22][user], 0);
+		}
+
+		if(input_code == GAMEPAD_RIGHT_TRIGGER) {
+			return get(&gamepad_buttons[23][user], 0);
 		}
 
 		if(input_code == ANY) {
@@ -2309,7 +2403,7 @@ namespace input {
 		return !is_down(input_code, user);
 	}
 
-	bool has_pressed(input::code input_code, int user) {
+	bool was_pressed(input::code input_code, int user) {
 		if(input_code >= KY_BUT_FIRST && input_code <= KY_BUT_LAST) {
 			return get(&keyboard_buttons[input_code - KY_BUT_FIRST], 1);
 		}
@@ -2320,6 +2414,14 @@ namespace input {
 
 		if(input_code >= GP_BUT_FIRST && input_code <= GP_BUT_LAST && user >= 0 && user < MAX_GAMEPAD_COUNT) {
 			return get(&gamepad_buttons[input_code - GP_BUT_FIRST][user], 1);
+		}
+
+		if(input_code == GAMEPAD_LEFT_TRIGGER) {
+			return get(&gamepad_buttons[22][user], 1);
+		}
+
+		if(input_code == GAMEPAD_RIGHT_TRIGGER) {
+			return get(&gamepad_buttons[23][user], 1);
 		}
 
 		if(input_code == ANY) {
@@ -2337,7 +2439,7 @@ namespace input {
 		return false;
 	}
 
-	bool has_released(rge::input::code input_code, int user) {
+	bool was_released(rge::input::code input_code, int user) {
 		if(input_code >= KY_BUT_FIRST && input_code <= KY_BUT_LAST) {
 			return get(&keyboard_buttons[input_code - KY_BUT_FIRST], 2);
 		}
@@ -2348,6 +2450,14 @@ namespace input {
 
 		if(input_code >= GP_BUT_FIRST && input_code <= GP_BUT_LAST && user >= 0 && user < MAX_GAMEPAD_COUNT) {
 			return get(&gamepad_buttons[input_code - GP_BUT_FIRST][user], 2);
+		}
+
+		if(input_code == GAMEPAD_LEFT_TRIGGER) {
+			return get(&gamepad_buttons[22][user], 2);
+		}
+
+		if(input_code == GAMEPAD_RIGHT_TRIGGER) {
+			return get(&gamepad_buttons[23][user], 2);
 		}
 
 		if(input_code == ANY) {
@@ -2365,10 +2475,6 @@ namespace input {
 		return false;
 	}
 
-	vec2 get_mouse_position() {
-		return mouse_position;
-	}
-
 	float get_axis(input::code input_code, int user) {
 		if(input_code == MOUSE_SCROLL) {
 			return mouse_scroll;
@@ -2379,6 +2485,10 @@ namespace input {
 		}
 
 		return 0;
+	}
+
+	vec2 get_mouse_position() {
+		return mouse_position;
 	}
 
 	bool on_key_pressed(const key_pressed_event& e) {
@@ -2416,60 +2526,79 @@ namespace input {
 	}
 
 	bool on_gamepad_pressed(const gamepad_pressed_event& e) {
-		set(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 1);
-		set(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 0);
+		if(e.input_code >= GP_BUT_FIRST && e.input_code <= GP_BUT_LAST) {
+			set(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 1);
+			set(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 0);
+		} else if(e.input_code == GAMEPAD_LEFT_TRIGGER) {
+			set(&gamepad_buttons[22][e.user], 1);
+			set(&gamepad_buttons[22][e.user], 0);
+		} else if(e.input_code == GAMEPAD_RIGHT_TRIGGER) {
+			set(&gamepad_buttons[23][e.user], 1);
+			set(&gamepad_buttons[23][e.user], 0);
+		}
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
 	bool on_gamepad_released(const gamepad_released_event& e) {
-		set(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 2);
-		clear(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 0);
+		if(e.input_code >= GP_BUT_FIRST && e.input_code <= GP_BUT_LAST) {
+			set(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 2);
+			clear(&gamepad_buttons[e.input_code - GP_BUT_FIRST][e.user], 0);
+		} else if(e.input_code == GAMEPAD_LEFT_TRIGGER) {
+			set(&gamepad_buttons[22][e.user], 2);
+			clear(&gamepad_buttons[22][e.user], 0);
+		} else if(e.input_code == GAMEPAD_RIGHT_TRIGGER) {
+			set(&gamepad_buttons[23][e.user], 2);
+			clear(&gamepad_buttons[23][e.user], 0);
+		}
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
-	static void set_gp_axis_but_state(button* s, bool on) {
-		if(on && !get(s, 0)) {
-			set(s, 1);
-		} else if(!on && get(s, 0)) {
-			set(s, 2);
+	static void gen_gp_axis_to_but_event(bool was, bool on, code c, int u) {
+		if(on && !was) {
+			gamepad_pressed_event e;
+			e.input_code = c;
+			e.user = u;
+			engine::get_instance()->post_event(e);
+		} else if(!on && was) {
+			gamepad_released_event e;
+			e.input_code = c;
+			e.user = u;
+			engine::get_instance()->post_event(e);
 		}
-
-		if(on) set(s, 0);
-		else clear(s, 0);
 	}
 
 	bool on_gamepad_axis(const gamepad_axis_event& e) {
-		gamepad_axis[e.input_code - GP_AXS_FIRST][e.user] = e.value;
-		
 		switch(e.input_code) {
 		case GAMEPAD_LEFT_TRIGGER:
-			set_gp_axis_but_state(&gamepad_buttons[22][e.user], e.value > 0.5F);
+			gen_gp_axis_to_but_event(get_axis(GAMEPAD_LEFT_TRIGGER, e.user) > 0.5F, e.value > 0.5F, GAMEPAD_LEFT_TRIGGER, e.user);
 			break;
 
 		case GAMEPAD_RIGHT_TRIGGER:
-			set_gp_axis_but_state(&gamepad_buttons[23][e.user], e.value > 0.5F);
+			gen_gp_axis_to_but_event(get_axis(GAMEPAD_RIGHT_TRIGGER, e.user) > 0.5F, e.value > 0.5F, GAMEPAD_RIGHT_TRIGGER, e.user);
 			break;
 
 		case GAMEPAD_LEFT_STICK_X:
-			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_LEFT_STICK_LEFT - GP_BUT_FIRST][e.user], e.value < -0.5F);
-			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_LEFT_STICK_RIGHT - GP_BUT_FIRST][e.user], e.value > 0.5F);
+			gen_gp_axis_to_but_event(get_axis(GAMEPAD_LEFT_STICK_X, e.user) < -0.5F, e.value < -0.5F, GAMEPAD_LEFT_STICK_LEFT, e.user);
+			gen_gp_axis_to_but_event(get_axis(GAMEPAD_LEFT_STICK_X, e.user) > 0.5F, e.value > 0.5F, GAMEPAD_LEFT_STICK_RIGHT, e.user);
 			break;
 
 		case GAMEPAD_LEFT_STICK_Y:
-			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_LEFT_STICK_DOWN - GP_BUT_FIRST][e.user], e.value < -0.5F);
-			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_LEFT_STICK_UP - GP_BUT_FIRST][e.user], e.value > 0.5F);
+			gen_gp_axis_to_but_event(get_axis(GAMEPAD_LEFT_STICK_Y, e.user) < -0.5F, e.value < -0.5F, GAMEPAD_LEFT_STICK_DOWN, e.user);
+			gen_gp_axis_to_but_event(get_axis(GAMEPAD_LEFT_STICK_Y, e.user) > 0.5F, e.value > 0.5F, GAMEPAD_LEFT_STICK_UP, e.user);
 			break;
 
 		case GAMEPAD_RIGHT_STICK_X:
-			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_RIGHT_STICK_LEFT - GP_BUT_FIRST][e.user], e.value < -0.5F);
-			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_RIGHT_STICK_RIGHT - GP_BUT_FIRST][e.user], e.value > 0.5F);
+			gen_gp_axis_to_but_event(get_axis(GAMEPAD_RIGHT_STICK_X, e.user) < -0.5F, e.value < -0.5F, GAMEPAD_RIGHT_STICK_LEFT, e.user);
+			gen_gp_axis_to_but_event(get_axis(GAMEPAD_RIGHT_STICK_X, e.user) > 0.5F, e.value > 0.5F, GAMEPAD_RIGHT_STICK_RIGHT, e.user);
 			break;
 
 		case GAMEPAD_RIGHT_STICK_Y:
-			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_RIGHT_STICK_DOWN - GP_BUT_FIRST][e.user], e.value < -0.5F);
-			set_gp_axis_but_state(&gamepad_buttons[GAMEPAD_RIGHT_STICK_UP - GP_BUT_FIRST][e.user], e.value > 0.5F);
+			gen_gp_axis_to_but_event(get_axis(GAMEPAD_RIGHT_STICK_Y, e.user) < -0.5F, e.value < -0.5F, GAMEPAD_RIGHT_STICK_DOWN, e.user);
+			gen_gp_axis_to_but_event(get_axis(GAMEPAD_RIGHT_STICK_Y, e.user) > 0.5F, e.value > 0.5F, GAMEPAD_RIGHT_STICK_UP, e.user);
 			break;
 		}
+
+		gamepad_axis[e.input_code - GP_AXS_FIRST][e.user] = e.value;
 
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
