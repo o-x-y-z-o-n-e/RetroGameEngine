@@ -354,10 +354,10 @@ namespace math {
 	float inverse_lerp(float a, float b, float v);
 
 	// Returns smallest integer.
-	int min(int a, int b) { return a < b ? a : b; }
+	inline int min(int a, int b) { return a < b ? a : b; }
 
 	// Returns largest integer.
-	int max(int a, int b) { return a > b ? a : b; }
+	inline int max(int a, int b) { return a > b ? a : b; }
 }
 //********************************************//
 //* Math Module                              *//
@@ -5001,12 +5001,8 @@ public:
 			glDisable(GL_TEXTURE_2D);
 		}
 
-		if(diffuse.a < 1.0F) {
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		} else {
-			glDisable(GL_BLEND);
-		}
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glColor4f(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
 

@@ -2,6 +2,8 @@
 	move gamepad axis_to_button detection to platform & generate press/release events
 	set light params to 3d draw function
 
+	material alpha blending option
+
 	implement:
 		quaternion::euler
 		transform::set_global_position
@@ -16,6 +18,8 @@
 
 	windows WM_PAINT platform event for software_gl
 	get software_gl fully working
+
+	input action bindings
 
 	text rendering
 	obj loading

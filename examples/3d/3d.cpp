@@ -1,5 +1,4 @@
 #define RGE_IMPL
-#define RGE_USE_STB_IMAGE_WRITE
 #define RGE_USE_STB_IMAGE
 #include "rge.hpp"
 
