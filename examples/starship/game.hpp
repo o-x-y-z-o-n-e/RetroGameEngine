@@ -3,6 +3,13 @@
 
 #include "rge.hpp"
 #include "spaceship.hpp"
+#include "asteroid.hpp"
+#include "laser.hpp"
+
+#define BACKGROUND_LAYER -1.0F
+#define SPACESHIP_LAYER 0.0F
+#define ASTEROID_LAYER 0.5F
+#define LASER_LAYER 0.75F
 
 enum class game_state {
 	MAIN_MENU,
@@ -20,11 +27,14 @@ public:
 	void on_update(float delta_time) override;
 	void on_render() override;
 
+	void start_game();
+
 private:
 	void scroll_bg(float delta_time);
 
 private:
-	rge::texture::ptr bg_texture;
+	rge::sprite::ptr title_sprite;
+	rge::sprite::ptr press_key_sprite_0;
 	rge::sprite::ptr bg_sprite_0;
 	rge::sprite::ptr bg_sprite_1;
 	float bg_scroll_0;

@@ -13,6 +13,9 @@ public:
 	void update(float delta_time);
 
 private:
+	rge::input::action shoot_action;
+	int shoot_side;
+	float shoot_cooldown;
 	std::vector<rge::texture::ptr> textures;
 	rge::transform::ptr transform;
 	rge::sprite::ptr sprite;

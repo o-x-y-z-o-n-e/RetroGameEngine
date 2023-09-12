@@ -3,7 +3,7 @@
 #include "rge.hpp"
 #include "game.hpp"
 
-/* Assets Needed:
+/* TODO:
 	==SPRITES==
 	Title
 	"Press any key to start"
@@ -11,16 +11,24 @@
 	"End Reached"
 	"You Died"
 	Progress Meter
-	Scrolling Background
-	Spaceship + flame anim
-	Plasma Bolt
+	Spaceship Flame
 	Explode
-	Asteroid 1
 	Asteroid 2
 	Asteroid 3
 	Enemy 1
 	Enemy 2
 	Enemy 3
+	==CODE==
+	Spaceship health + hud
+	Spaceship damage flash & procedure
+	Asteroid mixed sprites
+	Asteroid placement
+	Asteroid collision
+	Enemy 1
+	Enemy 2
+	Enemy 3
+	Death screen
+	Win screen
 */
 
 int main(int argc, char** argv) {
