@@ -5,29 +5,18 @@
 
 /* TODO:
 	==SPRITES==
-	Title
-	"Press any key to start"
-	"Press any key to play again"
-	"End Reached"
-	"You Died"
+	Pause Screen
 	Progress Meter
-	Spaceship Flame
 	Explode
-	Asteroid 2
-	Asteroid 3
 	Enemy 1
 	Enemy 2
 	Enemy 3
 	==CODE==
-	Spaceship health + hud
-	Spaceship damage flash & procedure
-	Asteroid mixed sprites
-	Asteroid collision
+	Pause State
+	Progress Meter
 	Enemy 1
 	Enemy 2
 	Enemy 3
-	Death screen
-	Win screen
 */
 
 int main(int argc, char** argv) {

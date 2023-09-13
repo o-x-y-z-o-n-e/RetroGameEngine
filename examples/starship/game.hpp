@@ -10,6 +10,7 @@
 #define SPACESHIP_LAYER 0.0F
 #define ASTEROID_LAYER 0.5F
 #define LASER_LAYER 0.75F
+#define UI_LAYER 0.9F
 
 enum class game_state {
 	MAIN_MENU,
@@ -28,9 +29,12 @@ public:
 	void on_render() override;
 
 	void start_game();
+	void end(bool win);
 
 	rge::random* get_random() { return &random; }
 	static game* get() { return (game*)get_instance(); }
+
+	spaceship* get_ship();
 
 private:
 	void scroll_bg(float delta_time);
@@ -39,7 +43,10 @@ private:
 private:
 	rge::random random;
 	rge::sprite::ptr title_sprite;
+	rge::sprite::ptr win_sprite;
+	rge::sprite::ptr lose_sprite;
 	rge::sprite::ptr press_key_sprite_0;
+	rge::sprite::ptr press_key_sprite_1;
 	rge::sprite::ptr bg_sprite_0;
 	rge::sprite::ptr bg_sprite_1;
 	float bg_scroll_0;
@@ -48,6 +55,7 @@ private:
 	game_state state;
 	rge::camera::ptr camera;
 	spaceship* ship;
+	bool did_win;
 };
 
 #endif /* _GAME_HPP_ */

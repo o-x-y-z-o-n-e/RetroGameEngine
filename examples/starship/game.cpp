@@ -24,6 +24,32 @@ void game::on_init() {
 	title_sprite = rge::sprite::create();
 	title_sprite->texture = rge::texture::load("res/title.png");
 	title_sprite->pixels_per_unit = 16;
+	title_sprite->centered = true;
+	title_sprite->transform->position = rge::vec3(0, 0, -UI_LAYER);
+
+	win_sprite = rge::sprite::create();
+	win_sprite->texture = rge::texture::load("res/won.png");
+	win_sprite->pixels_per_unit = 16;
+	win_sprite->centered = true;
+	win_sprite->transform->position = rge::vec3(0, 0, -UI_LAYER);
+
+	lose_sprite = rge::sprite::create();
+	lose_sprite->texture = rge::texture::load("res/lost.png");
+	lose_sprite->pixels_per_unit = 16;
+	lose_sprite->centered = true;
+	lose_sprite->transform->position = rge::vec3(0, 0, -UI_LAYER);
+
+	press_key_sprite_0 = rge::sprite::create();
+	press_key_sprite_0->texture = rge::texture::load("res/press_any_key_to_start.png");
+	press_key_sprite_0->pixels_per_unit = 16;
+	press_key_sprite_0->centered = true;
+	press_key_sprite_0->transform->position = rge::vec3(0, -4, -UI_LAYER);
+
+	press_key_sprite_1 = rge::sprite::create();
+	press_key_sprite_1->texture = rge::texture::load("res/press_esc_key_to_return.png");
+	press_key_sprite_1->pixels_per_unit = 16;
+	press_key_sprite_1->centered = true;
+	press_key_sprite_1->transform->position = rge::vec3(0, -4, -UI_LAYER);
 
 	bg_sprite_0 = rge::sprite::create();
 	bg_sprite_0->texture = rge::texture::load("res/background.png");
@@ -34,15 +60,14 @@ void game::on_init() {
 }
 
 void game::on_start() {
-	// state = game_state::MAIN_MENU;
-	start_game();
+	state = game_state::MAIN_MENU;
 }
 
 void game::on_update(float delta_time) {
 	if(state == game_state::MAIN_MENU) {
-		if(rge::input::was_pressed(rge::input::KEY_ESC)) {
+		if(rge::input::was_released(rge::input::KEY_ESC)) {
 			exit();
-		} else if(rge::input::was_pressed(rge::input::ANY)) {
+		} else if(rge::input::was_released(rge::input::ANY)) {
 			start_game();
 		}
 	} else if(state == game_state::IN_GAME) {
@@ -58,7 +83,7 @@ void game::on_update(float delta_time) {
 		asteroid::update_all(delta_time);
 		laser::update_all(delta_time);
 	} else if(state == game_state::END_SCREEN) {
-		if(rge::input::was_pressed(rge::input::KEY_ESC)) {
+		if(rge::input::was_released(rge::input::KEY_ESC)) {
 			state = game_state::MAIN_MENU;
 		}
 	}
@@ -78,7 +103,13 @@ void game::on_render() {
 		laser::draw_all();
 		ship->draw();
 	} else if(state == game_state::END_SCREEN) {
+		if(did_win) {
+			get_renderer()->draw(*win_sprite);
+		} else {
+			get_renderer()->draw(*lose_sprite);
+		}
 
+		get_renderer()->draw(*press_key_sprite_1);
 	}
 }
 
@@ -89,6 +120,15 @@ void game::start_game() {
 	bg_scroll_1 = 0.5F;
 	set_rand_asteroid_wait();
 	ship->reset();
+}
+
+void game::end(bool win) {
+	did_win = win;
+	state = game_state::END_SCREEN;
+}
+
+spaceship* game::get_ship() {
+	return ship;
 }
 
 void game::scroll_bg(float delta_time) {

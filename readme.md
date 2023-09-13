@@ -81,9 +81,17 @@ You can build the engine & all example projects within VS.
 Make sure to link Cocoa & GLUT if you are targeting the macosx platform. In addition, if selecting the opengl 1.0 renderer,also link OpenGL
 
 ## Extra Included Projects
-### Example Project
-Cinematic scene to show off sprite rendering & input.
-
+### Starship
+A vertical scrolling shooter game.
+### Basic 2D Setup
+A scenic view using rge::sprite.
+### Basic 3D Setup
+...
 
 ## Extra Credits
 - Software renderer is a port of Adrian Clark's renderer for UC PROD321
+
+## System Limitations & Extra Steps
+- OpenGL 1.0 renderer does not support render targets & scriptable pipelines
+- For texture loading stb_image.h library is required to be include during compilation & RGE_USE_STB_IMAGE defined before rge implementation is included
+- For texture writing stb_image_write.h library is required to be include during compilation & RGE_USE_STB_IMAGE_WRITE defined before rge implementation is included

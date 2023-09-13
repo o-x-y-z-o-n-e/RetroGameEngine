@@ -1,7 +1,7 @@
 /* RetroGameEngine (RGE)
 
 Author: Jeremy Kiel
-Version: 0.00.1
+Version: 0.1.0
 License: MIT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Copyright (c) 2023 Jeremy Kiel
@@ -27,8 +27,9 @@ SOFTWARE.
 */
 
 
-#define RGE_VERSION 0001
-
+#define RGE_VERSION_MAJOR 0
+#define RGE_VERSION_MINOR 1
+#define RGE_VERSION_PATCH 0
 
 #ifndef RGE_API
 #define RGE_API
@@ -500,9 +501,10 @@ namespace input {
 	};
 
 	struct action {
-		std::vector<input::code> bindings;
+		typedef std::pair<input::code, float> entry;
+		std::vector<entry> bindings;
 
-		void add_binding(input::code binding);
+		void add_binding(input::code binding, float value = 1.0F);
 		void remove_binding(input::code binding);
 		void clear_bindings();
 	};
@@ -1203,6 +1205,12 @@ public:
 	// Frees the allocated texture data on gpu.
 	virtual void free_texture(texture& texture) = 0;
 
+	// Get width of currently set frame buffer.
+	virtual int get_width() const = 0;
+
+	// Get height of currently set frame buffer.
+	virtual int get_height() const = 0;
+
 	// Clears the depth & frame buffers.
 	virtual void clear(color background) = 0;
 
@@ -1222,7 +1230,7 @@ public:
 	// Draw a 2D sprite onto camera space.
 	virtual void draw(const sprite& sprite) = 0;
 
-	// Draw a 2D texture onto view [0,1] space.
+	// Draw a 2D texture onto (dest)[0, 1] view space, from (src)[0, 1] uv space.
 	virtual void draw(
 		const texture& texture,
 		vec2 dest_min,
@@ -1231,7 +1239,7 @@ public:
 		vec2 src_max
 	) = 0;
 
-	// Draw a 2D texture onto window [0, w/h] space.
+	// Draw a 2D texture onto (dest)[0, w/h] frame space, from (src)[0, w/h] texel space.
 	virtual void draw(
 		const texture& texture,
 		int dest_min_x,
@@ -1243,20 +1251,8 @@ public:
 		int src_max_x,
 		int src_max_y
 	) = 0;
-
-	// Draw Render Target onto window [0, w/h] space.
-	/* TODO
-	virtual void draw(
-		const render_target& render,
-		int dest_min_x,
-		int dest_min_y,
-		int dest_max_x,
-		int dest_max_y
-	) = 0;
-	*/
-
 public: // Inline macro short args functions.
-	// Draw 3D geometry, using local/model space data.
+	// Draw 3D geometry, using model space data.
 	rge::result draw(
 		const mat4& local_to_world,
 		const mesh& mesh,
@@ -1272,14 +1268,29 @@ public: // Inline macro short args functions.
 		);
 	}
 
-	// Draw a 2D texture onto view [0,1] space.
+	// Draw a 2D texture onto (dest)[0, 1] view space.
 	void draw(const texture& texture, const vec2& dest_min, const vec2& dest_max) {
 		draw(texture, dest_min, dest_max, vec2(0, 0), vec2(1, 1));
 	}
 
-	// Draw a 2D texture onto window [0, w/h] space.
+	// Draw a 2D texture onto (dest)[0, w/h] frame space.
 	void draw(const texture& texture, int dest_min_x, int dest_min_y, int dest_max_x, int dest_max_y) {
 		draw(texture, dest_min_x, dest_min_y, dest_max_x, dest_max_y, 0, 0, texture.get_width(), texture.get_height());
+	}
+
+	// Draw a render target onto (dest)[0, 1] view space.
+	void draw(const render_target& render, const vec2& dest_min, const vec2& dest_max) {
+		draw(*render.get_frame_buffer(), dest_min, dest_max, vec2(0, 0), vec2(1, 1));
+	}
+
+	// Draw a render target onto (dest)[0, w/h] frame space.
+	void draw(const render_target& render, int dest_min_x, int dest_min_y, int dest_max_x, int dest_max_y) {
+		draw(*render.get_frame_buffer(), dest_min_x, dest_min_y, dest_max_x, dest_max_y);
+	}
+
+	// Draw a texture onto (pos)[-i32, +i32] frame space.
+	void draw(const texture& texture, int pos_x, int pos_y) {
+		draw(texture, pos_x, pos_y, pos_x + texture.get_width(), pos_y + texture.get_height(), 0, 0, texture.get_width(), texture.get_height());
 	}
 
 public: // Events handlers.
@@ -2341,14 +2352,26 @@ namespace input {
 		return (*d & (1 << b)) != 0;
 	}
 
-	void action::add_binding(input::code binding) {
-		bindings.push_back(binding);
+	static bool has_axis(input::code input_code) {
+		if(input_code == MOUSE_SCROLL) {
+			return true;
+		}
+
+		if(input_code >= GP_AXS_FIRST && input_code <= GP_AXS_LAST) {
+			return true;
+		}
+
+		return false;
+	}
+
+	void action::add_binding(input::code binding, float value) {
+		bindings.push_back(entry(binding, value));
 	}
 
 	void action::remove_binding(input::code binding) {
-		std::vector<code>::iterator it;
+		std::vector<entry>::iterator it;
 		for(it = bindings.begin(); it != bindings.end(); it++) {
-			if(*it == binding) {
+			if(it->first == binding) {
 				bindings.erase(it);
 			}
 		}
@@ -2359,10 +2382,10 @@ namespace input {
 	}
 
 	bool is_down(const input::action& input_action, int user) {
-		std::vector<code> b = input_action.bindings;
-		std::vector<code>::iterator it;
+		std::vector<action::entry> b = input_action.bindings;
+		std::vector<action::entry>::iterator it;
 		for(it = b.begin(); it != b.end(); it++) {
-			if(is_down(*it, user)) return true;
+			if(is_down(it->first, user)) return true;
 		}
 		return false;
 	}
@@ -2372,19 +2395,19 @@ namespace input {
 	}
 
 	bool was_pressed(const input::action& input_action, int user) {
-		std::vector<code> b = input_action.bindings;
-		std::vector<code>::iterator it;
+		std::vector<action::entry> b = input_action.bindings;
+		std::vector<action::entry>::iterator it;
 		for(it = b.begin(); it != b.end(); it++) {
-			if(was_pressed(*it, user)) return true;
+			if(was_pressed(it->first, user)) return true;
 		}
 		return false;
 	}
 
 	bool was_released(const input::action& input_action, int user) {
-		std::vector<code> b = input_action.bindings;
-		std::vector<input::code>::iterator it;
+		std::vector<action::entry> b = input_action.bindings;
+		std::vector<action::entry>::iterator it;
 		for(it = b.begin(); it != b.end(); it++) {
-			if(was_released(*it, user)) return true;
+			if(was_released(it->first, user)) return true;
 		}
 		return false;
 	}
@@ -2392,10 +2415,14 @@ namespace input {
 	float get_axis(const input::action& input_action, int user) {
 		float value = 0;
 
-		std::vector<code> b = input_action.bindings;
-		std::vector<code>::iterator it;
+		std::vector<action::entry> b = input_action.bindings;
+		std::vector<action::entry>::iterator it;
 		for(it = b.begin(); it != b.end(); it++) {
-			value += get_axis(*it, user);
+			if(has_axis(it->first)) {
+				value += get_axis(it->first, user);
+			} else if(is_down(it->first)) {
+				value += it->second;
+			}
 		}
 
 		if(value < -1.0F) value = -1.0F;
@@ -2659,8 +2686,8 @@ namespace input {
 		}
 
 		for(int i = 0; i < NUM_MOUSE_BUTTONS; i++) {
-			clear(&keyboard_buttons[i], 1);
-			clear(&keyboard_buttons[i], 2);
+			clear(&mouse_buttons[i], 1);
+			clear(&mouse_buttons[i], 2);
 		}
 
 		for(int i = 0; i < NUM_GAMEPAD_BUTTONS; i++) {
@@ -5087,6 +5114,14 @@ public:
 			glDeleteTextures(1, &texture.handle);
 	}
 
+	int get_width() const override {
+		return window_width;
+	}
+
+	int get_height() const override {
+		return window_height;
+	}
+
 	void clear(color background) override {
 		glClearColor(
 			float(background.r),
@@ -5121,6 +5156,7 @@ public:
 		#endif
 	}
 
+	// Draw 3D geometry, using model space data.
 	rge::result draw(
 		const mat4& local_to_world,
 		const std::vector<vec3>& vertices,
@@ -5279,7 +5315,7 @@ public:
 		glDisable(GL_TEXTURE_2D);
 	}
 
-	// Draw a 2D texture onto view [0,1] space.
+	// Draw a 2D texture onto (dest)[0, 1] view space, from (src)[0, 1] uv space.
 	void draw(const texture& texture, vec2 dest_min, vec2 dest_max, vec2 src_min, vec2 src_max) override {
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
@@ -5291,6 +5327,17 @@ public:
 		dest_min.y = (dest_min.y * 2.0F) - 1.0F;
 		dest_max.x = (dest_max.x * 2.0F) - 1.0F;
 		dest_max.y = (dest_max.y * 2.0F) - 1.0F;
+
+		// Check if completely out of bounds.
+		if(dest_min.x > 1.0F) {
+			return;
+		} else if(dest_max.x < -1.0F) {
+			return;
+		} else if(dest_min.y > 1.0F) {
+			return;
+		} else if(dest_max.y < -1.0F) {
+			return;
+		}
 
 		if(texture.is_on_gpu()) {
 			glEnable(GL_TEXTURE_2D);
@@ -5323,7 +5370,7 @@ public:
 		glDisable(GL_TEXTURE_2D);
 	}
 
-	// Draw a 2D texture onto window [0, w/h] space.
+	// Draw a 2D texture onto (dest)[0, w/h] frame space, from (src)[0, w/h] texel space.
 	void draw(
 		const texture& texture,
 		int dest_min_x,

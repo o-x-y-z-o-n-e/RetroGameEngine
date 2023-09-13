@@ -1,14 +1,9 @@
 ==CURRENT==
-	composite axis input [from buttons]
-
-	rework render pipeline & api
-	set light params to 3d draw function
-	material alpha blending option
-
 	fix quaternions
 	
-	[3D] fix camera view
+	set light params to 3d draw function
 	[3D] opengl 1.0 lighting
+	material alpha blending option
 
 	implement:
 		quaternion::euler
@@ -21,10 +16,13 @@
 	win32 WM_PAINT platform event for software_gl
 	get software_gl fully working
 
+	add camera aspect ratio adjustment & black bar option in renderer
+
 	asset manager
 ==CURRENT==
 
 ==FUTURE==
+	scriptable software renderer
 	text rendering
 	zip reading
 	obj loading

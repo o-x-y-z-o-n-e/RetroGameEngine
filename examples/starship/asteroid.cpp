@@ -1,6 +1,12 @@
 #include "game.hpp"
 #include "asteroid.hpp"
 
+const std::string textures[3] = {
+	"res/asteroid_0.png",
+	"res/asteroid_1.png",
+	"res/asteroid_2.png"
+};
+
 asteroid::asteroid_table asteroid::pool;
 
 asteroid::asteroid() {
@@ -48,6 +54,16 @@ void asteroid::update(float delta_time) {
 			return;
 		}
 	}
+
+	spaceship* ship = game::get()->get_ship();
+	float dist = rge::vec2::distance(ship->get_position(), transform->get_global_position());
+	dist -= radius;
+	dist -= ship->get_radius();
+	if(dist < 0.0F) {
+		ship->damage(1);
+		destroy(this);
+		return;
+	}
 }
 
 void asteroid::draw() {
@@ -56,7 +72,7 @@ void asteroid::draw() {
 }
 
 void asteroid::gen_starting_params() {
-	sprite->texture = rge::texture::load("res/asteroid_0.png");
+	sprite->texture = rge::texture::load(textures[game::get()->get_random()->next_u8() % 3]);
 	radius = 1.0F;
 	transform->position = rge::vec3(game::get()->get_random()->range(-10.0F, 10.0F), 8, 0);
 	if(transform->position.x < 0.0F) {

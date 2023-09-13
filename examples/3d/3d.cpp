@@ -5,8 +5,6 @@
 #include <iostream>
 #include <fstream>
 
-static rge::sprite* s;
-
 static std::vector<std::string> str_split(std::string& s, char sep) {
 	std::vector<std::string> output;
 	std::string::size_type prev_pos = 0, pos = 0;
@@ -112,10 +110,10 @@ static rge::mesh::ptr load_triangle() {
 static rge::mesh::ptr load_floor() {
 	rge::mesh::ptr mdl = rge::mesh::create();
 
-	mdl->vertices.push_back(rge::vec3(-1, 0, -1));
-	mdl->vertices.push_back(rge::vec3(1, 0, -1));
-	mdl->vertices.push_back(rge::vec3(1, 0, 1));
-	mdl->vertices.push_back(rge::vec3(-1, 0, 1));
+	mdl->vertices.push_back(rge::vec3(-10, 0, -10));
+	mdl->vertices.push_back(rge::vec3(10, 0, -10));
+	mdl->vertices.push_back(rge::vec3(10, 0, 10));
+	mdl->vertices.push_back(rge::vec3(-10, 0, 10));
 
 	mdl->normals.push_back(rge::vec3(0, 1, 0));
 	mdl->normals.push_back(rge::vec3(0, 1, 0));
@@ -146,7 +144,10 @@ private:
 	rge::mesh::ptr triangle;
 	rge::mesh::ptr floor;
 
+	rge::input::action turn_action;
+
 	float counter;
+	float r;
 
 public:
     game() : rge::engine() {
@@ -156,6 +157,7 @@ public:
 		floor = nullptr;
 		triangle = nullptr;
 		counter = 0;
+		r = 0;
     }
 
     void on_init() override {
@@ -166,20 +168,16 @@ public:
 		floor = load_floor();
 
         camera->set_perspective(60, 1.6F, 0.0F, 1000.0F);
-		camera->transform->position = rge::vec3(0, 2, -10);
-		camera->transform->rotation = rge::quaternion::yaw_pitch_roll(0, 22.5F * DEG_2_RAD, 0);
+		camera->transform->position = rge::vec3(0, 1, 0);
 
-        // renderer->set_target(render);
         renderer->set_camera(camera);
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
 
 		material->texture = rge::texture::load("floor.png");
 		renderer->upload_texture(*material->texture);
 
-		s = new rge::sprite(rge::texture::load("floor.png"));
-		s->transform->position = rge::vec3(2, 0, 0);
-		s->centered = true;
-		s->billboard = true;
+		turn_action.add_binding(rge::input::KEY_LEFT, -1.0F);
+		turn_action.add_binding(rge::input::KEY_RIGHT, 1.0F);
     }
 
 	void on_update(float delta_time) override {
@@ -204,12 +202,14 @@ public:
 
 			camera->transform->position += velocity * 10.0F * delta_time;
 		}
+
+		r += rge::input::get_axis(turn_action) * 90.0F * delta_time;
+		//camera->transform->rotation = rge::quaternion::yaw_pitch_roll(r * DEG_2_RAD, 0, 0);
+		camera->transform->rotation = rge::quaternion::look(rge::vec3(sinf(r * DEG_2_RAD), 0, cosf(r * DEG_2_RAD)), rge::vec3(0, 1, 0));
 	}
 
     void on_render() override {
 		renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
-
-		renderer->draw(*s);
 
 		if(floor) {
 			renderer->draw(
@@ -221,7 +221,7 @@ public:
 
 		if(triangle) {
 			renderer->draw(
-				rge::mat4::trs(rge::vec3(0, 0, 0), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
+				rge::mat4::trs(rge::vec3(0, 1, 5), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
 				*triangle,
 				*material
 			);
