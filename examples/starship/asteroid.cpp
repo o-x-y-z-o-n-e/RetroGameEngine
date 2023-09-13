@@ -24,7 +24,7 @@ void asteroid::reset() {
 void asteroid::update(float delta_time) {
 	// Move...
 	transform->position += velocity * delta_time;
-	rotation += turn * delta_time;
+	rotation += turn * DEG_2_RAD * delta_time;
 	transform->rotation = rge::quaternion::yaw_pitch_roll(0, 0, rotation); // TODO: Add rge::quaternion::rotate(flaot angle, vec3 axis);
 
 	// Detect collision...
@@ -58,10 +58,15 @@ void asteroid::draw() {
 void asteroid::gen_starting_params() {
 	sprite->texture = rge::texture::load("res/asteroid_0.png");
 	radius = 1.0F;
-	velocity = rge::vec2();
-	turn = 10;
-
-	transform->position = rge::vec3(0, 0, 0);
+	transform->position = rge::vec3(game::get()->get_random()->range(-10.0F, 10.0F), 8, 0);
+	if(transform->position.x < 0.0F) {
+		velocity = rge::vec2(game::get()->get_random()->range(0.0F, 10.0F), game::get()->get_random()->range(-4.0F, -8.0F));
+	} else {
+		velocity = rge::vec2(game::get()->get_random()->range(-10.0F, 0.0F), game::get()->get_random()->range(-4.0F, -8.0F));
+	}
+	
+	rotation = game::get()->get_random()->range(0.0F, 360.0F * DEG_2_RAD);
+	turn = game::get()->get_random()->range(-90.0F, 90.0F);
 }
 
 asteroid* asteroid::create() {

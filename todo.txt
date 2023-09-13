@@ -1,9 +1,14 @@
 ==CURRENT==
-	random number generator
 	composite axis input [from buttons]
 
+	rework render pipeline & api
 	set light params to 3d draw function
 	material alpha blending option
+
+	fix quaternions
+	
+	[3D] fix camera view
+	[3D] opengl 1.0 lighting
 
 	implement:
 		quaternion::euler
@@ -11,30 +16,28 @@
 		transform::set_global_rotation
 		texture::copy
 		texture::flush_registry
-	
-	[3D] fix quaternions + fix camera view
-	[3D] opengl 1.0 lighting
 
-	windows fullscreen
-
-	windows WM_PAINT platform event for software_gl
+	win32 fullscreen
+	win32 WM_PAINT platform event for software_gl
 	get software_gl fully working
 
-	text rendering
-	obj loading
-	yaml parsing & writer
-	multithreaded console & command queue
+	asset manager
 ==CURRENT==
 
 ==FUTURE==
+	text rendering
+	zip reading
+	obj loading
+	yaml parsing & writer
+	multithreaded console & command queue
 	macosx platform
 	linux platform
-	entity component system
-	physics
-	audio
 ==FUTURE==
 
 ==PENDING==
+entity component system
+physics
+audio
 macosx gamepad support
 linux gamepad support
 ==PENDING==

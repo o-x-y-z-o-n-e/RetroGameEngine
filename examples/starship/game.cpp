@@ -46,6 +46,13 @@ void game::on_update(float delta_time) {
 			start_game();
 		}
 	} else if(state == game_state::IN_GAME) {
+		asteroid_countdown -= delta_time;
+		if(asteroid_countdown <= 0.0F) {
+			set_rand_asteroid_wait();
+
+			asteroid::create();
+		}
+
 		scroll_bg(delta_time);
 		ship->update(delta_time);
 		asteroid::update_all(delta_time);
@@ -77,10 +84,11 @@ void game::on_render() {
 
 void game::start_game() {
 	state = game_state::IN_GAME;
+	random = rge::random();
 	bg_scroll_0 = 0.0F;
 	bg_scroll_1 = 0.5F;
+	set_rand_asteroid_wait();
 	ship->reset();
-	asteroid::create();
 }
 
 void game::scroll_bg(float delta_time) {
@@ -91,4 +99,8 @@ void game::scroll_bg(float delta_time) {
 
 	bg_sprite_0->transform->position = rge::vec3(-8, rge::math::lerp(6, -18, bg_scroll_0), -BACKGROUND_LAYER);
 	bg_sprite_1->transform->position = rge::vec3(-8, rge::math::lerp(6, -18, bg_scroll_1), -BACKGROUND_LAYER);
+}
+
+void game::set_rand_asteroid_wait() {
+	asteroid_countdown = random.range(1.0F, 2.0F);
 }

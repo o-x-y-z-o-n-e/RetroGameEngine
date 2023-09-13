@@ -22,7 +22,6 @@
 	Spaceship health + hud
 	Spaceship damage flash & procedure
 	Asteroid mixed sprites
-	Asteroid placement
 	Asteroid collision
 	Enemy 1
 	Enemy 2

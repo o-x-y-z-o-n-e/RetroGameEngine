@@ -29,16 +29,22 @@ public:
 
 	void start_game();
 
-private:
-	void scroll_bg(float delta_time);
+	rge::random* get_random() { return &random; }
+	static game* get() { return (game*)get_instance(); }
 
 private:
+	void scroll_bg(float delta_time);
+	void set_rand_asteroid_wait();
+
+private:
+	rge::random random;
 	rge::sprite::ptr title_sprite;
 	rge::sprite::ptr press_key_sprite_0;
 	rge::sprite::ptr bg_sprite_0;
 	rge::sprite::ptr bg_sprite_1;
 	float bg_scroll_0;
 	float bg_scroll_1;
+	float asteroid_countdown;
 	game_state state;
 	rge::camera::ptr camera;
 	spaceship* ship;

@@ -560,6 +560,47 @@ namespace input {
 #pragma endregion
 
 
+#pragma region /* rge::random */
+//********************************************//
+//* Random Number Generator                  *//
+//********************************************//
+class random {
+public:
+	random(uint64_t seed);
+	random();
+
+	float range(float min, float max);
+	double range(double min, double max);
+
+	/* Generates number between min [inclusive] & max [exclusive] */
+	int range(int min, int max);
+
+	float next_f32();
+	double next_f64();
+
+	uint8_t next_u8();
+	uint16_t next_u16();
+	uint32_t next_u32();
+	uint64_t next_u64();
+
+	int8_t next_i8();
+	int16_t next_i16();
+	int32_t next_i32();
+	int64_t next_i64();
+
+	uint64_t get_seed() { return seed; }
+	
+private:
+	uint64_t state;
+	uint64_t seed;
+
+};
+//********************************************//
+//* Random Number Generator                  *//
+//********************************************//
+#pragma endregion
+
+
 #pragma region /* rge::event */
 //********************************************//
 //* Event Base Class                         *//
@@ -2632,6 +2673,86 @@ namespace input {
 }
 //********************************************//
 //* Input Module                             *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::random */
+//********************************************//
+//* Random Number Generator                  *//
+//********************************************//
+random::random(uint64_t seed) {
+	this->seed = seed;
+	this->state = seed;
+}
+
+random::random() {
+	std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	this->seed = t;
+	this->state = t;
+}
+
+float random::range(float min, float max) {
+	float t = next_f32();
+	return min * (1 - t) + max * t;
+}
+
+double random::range(double min, double max) {
+	double t = next_f64();
+	return min * (1 - t) + max * t;
+}
+
+int random::range(int min, int max) {
+	double t = next_f64();
+	int i = int(min * (1 - t) + max * t);
+	if(i == max) i--;
+	return i;
+}
+
+float random::next_f32() {
+	return float(next_u16()) / float(0xFFFF);
+}
+
+double random::next_f64() {
+	return double(next_u32()) / double(0xFFFFFFFF);
+}
+
+uint8_t random::next_u8() {
+	return next_u64() % 0xFF;
+}
+
+uint16_t random::next_u16() {
+	return next_u64() % 0xFFFF;
+}
+
+uint32_t random::next_u32() {
+	return next_u64() % 0xFFFFFFFF;
+}
+
+uint64_t random::next_u64() {
+	state ^= state << 13;
+	state ^= state >> 7;
+	state ^= state << 17;
+	return state;
+}
+
+int8_t random::next_i8() {
+	return (int8_t)next_u8();
+}
+
+int16_t random::next_i16() {
+	return (int16_t)next_u16();
+}
+
+int32_t random::next_i32() {
+	return (int32_t)next_u32();
+}
+
+int64_t random::next_i64() {
+	return (int64_t)next_u64();
+}
+//********************************************//
+//* Random Number Generator                  *//
 //********************************************//
 #pragma endregion
 
