@@ -3320,9 +3320,9 @@ mat4 camera::get_view_matrix() const {
 	r.m[0][2] = fwd.x;
 	r.m[1][2] = fwd.y;
 	r.m[2][2] = fwd.z;
-	r.m[0][3] = -vec3::dot(rgt, pos);
-	r.m[1][3] = -vec3::dot(up, pos);
-	r.m[2][3] = -vec3::dot(fwd, pos);
+	r.m[3][0] = -vec3::dot(rgt, pos);
+	r.m[3][1] = -vec3::dot(up, pos);
+	r.m[3][2] = -vec3::dot(fwd, pos);
 
 	// NOTE: Debugging
 	// printf("px: %f\n", pos.x);
