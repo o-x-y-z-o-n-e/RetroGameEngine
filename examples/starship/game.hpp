@@ -15,6 +15,7 @@
 enum class game_state {
 	MAIN_MENU,
 	IN_GAME,
+	PAUSED,
 	END_SCREEN
 };
 
@@ -45,6 +46,7 @@ private:
 	rge::sprite::ptr title_sprite;
 	rge::sprite::ptr win_sprite;
 	rge::sprite::ptr lose_sprite;
+	rge::sprite::ptr pause_sprite;
 	rge::sprite::ptr press_key_sprite_0;
 	rge::sprite::ptr press_key_sprite_1;
 	rge::sprite::ptr bg_sprite_0;

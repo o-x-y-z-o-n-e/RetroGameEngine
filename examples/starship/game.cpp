@@ -39,6 +39,12 @@ void game::on_init() {
 	lose_sprite->centered = true;
 	lose_sprite->transform->position = rge::vec3(0, 0, -UI_LAYER);
 
+	pause_sprite = rge::sprite::create();
+	pause_sprite->texture = rge::texture::load("res/pause.png");
+	pause_sprite->pixels_per_unit = 16;
+	pause_sprite->centered = true;
+	pause_sprite->transform->position = rge::vec3(0, 0, -UI_LAYER);
+
 	press_key_sprite_0 = rge::sprite::create();
 	press_key_sprite_0->texture = rge::texture::load("res/press_any_key_to_start.png");
 	press_key_sprite_0->pixels_per_unit = 16;
@@ -71,6 +77,11 @@ void game::on_update(float delta_time) {
 			start_game();
 		}
 	} else if(state == game_state::IN_GAME) {
+		if(rge::input::was_released(rge::input::KEY_ESC)) {
+			state = game_state::PAUSED;
+			return;
+		}
+
 		asteroid_countdown -= delta_time;
 		if(asteroid_countdown <= 0.0F) {
 			set_rand_asteroid_wait();
@@ -82,6 +93,11 @@ void game::on_update(float delta_time) {
 		ship->update(delta_time);
 		asteroid::update_all(delta_time);
 		laser::update_all(delta_time);
+	} else if(state == game_state::PAUSED) {
+		if(rge::input::was_released(rge::input::KEY_ESC)) {
+			state = game_state::IN_GAME;
+			return;
+		}
 	} else if(state == game_state::END_SCREEN) {
 		if(rge::input::was_released(rge::input::KEY_ESC)) {
 			state = game_state::MAIN_MENU;
@@ -102,6 +118,9 @@ void game::on_render() {
 		asteroid::draw_all();
 		laser::draw_all();
 		ship->draw();
+	} else if(state == game_state::PAUSED) {
+		get_renderer()->draw(*pause_sprite);
+		get_renderer()->draw(*press_key_sprite_1);
 	} else if(state == game_state::END_SCREEN) {
 		if(did_win) {
 			get_renderer()->draw(*win_sprite);
