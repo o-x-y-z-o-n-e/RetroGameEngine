@@ -48,6 +48,7 @@ project "2d"
 
     includedirs {
 		"include/",
+        "ext/",
 		"vendor/",
         "%{prj.location}/"
     }
@@ -66,6 +67,9 @@ project "2d"
             "-framework Carbon",
             "-framework GLUT",
             "-framework OpenGL"
+        }
+        files {
+            "ext/macosx.mm"
         }
 	
 	filter "system:linux"
@@ -106,6 +110,7 @@ project "3d"
 
     includedirs {
 		"include/",
+        "ext/",
 		"vendor/",
         "%{prj.location}/"
     }
@@ -124,6 +129,9 @@ project "3d"
             "-framework Carbon",
             "-framework GLUT",
             "-framework OpenGL"
+        }
+        files {
+            "ext/macosx.mm"
         }
 	
 	filter "system:linux"
@@ -164,6 +172,7 @@ project "starship"
 
     includedirs {
 		"include/",
+        "ext/",
 		"vendor/",
         "%{prj.location}/"
     }
@@ -182,6 +191,9 @@ project "starship"
             "-framework Carbon",
             "-framework GLUT",
             "-framework OpenGL"
+        }
+        files {
+            "ext/macosx.mm"
         }
 	
 	filter "system:linux"

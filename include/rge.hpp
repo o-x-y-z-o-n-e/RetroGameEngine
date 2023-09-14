@@ -1162,14 +1162,6 @@ public:
 public:
 	virtual ~platform() {}
 
-#ifdef RGE_IMPL
-public:
-#else
-private:
-#endif
-	virtual bool use_custom_loop() const { return false; }
-	virtual void enter_loop(std::function<void()> loop) {}
-
 protected:
 	platform() {}
 };
@@ -1485,6 +1477,23 @@ class opengl_3_3;
 #endif /* RGE_USE_STB_IMAGE */
 //********************************************//
 //* Extra Feature Dependancies               *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::macosx */
+//********************************************//
+//* MacOS X Platform Class                   *//
+//********************************************//
+#ifdef SYS_MACOSX
+/*
+This is just a interface to the macosx platform.
+Actual implementation is contained in 'macosx.mm'.
+*/
+#include "macosx.hpp"
+#endif /* SYS_MACOSX */
+//********************************************//
+//* MacOS X Platform Class                   *//
 //********************************************//
 #pragma endregion
 
@@ -2664,6 +2673,9 @@ namespace input {
 			gen_gp_axis_to_but_event(get_axis(GAMEPAD_RIGHT_STICK_Y, e.user) < -0.5F, e.value < -0.5F, GAMEPAD_RIGHT_STICK_DOWN, e.user);
 			gen_gp_axis_to_but_event(get_axis(GAMEPAD_RIGHT_STICK_Y, e.user) > 0.5F, e.value > 0.5F, GAMEPAD_RIGHT_STICK_UP, e.user);
 			break;
+
+		default:
+			break;
 		}
 
 		gamepad_axis[e.input_code - GP_AXS_FIRST][e.user] = e.value;
@@ -2979,12 +2991,7 @@ void engine::run(bool wait_until_exit) {
 
 void engine::procedure() {
 	if(start() != rge::OK) return;
-	if(platform_impl->use_custom_loop()) {
-		std::function<void()> f = [this]() { return this->loop(); };
-		platform_impl->enter_loop(f);
-	} else {
-		while(is_running) loop();
-	}
+	while(is_running) loop();
 }
 
 rge::result engine::init() {
@@ -3694,7 +3701,7 @@ sprite::~sprite() {
 
 #pragma region /* rge::render_target */
 //********************************************//
-//* Render Target class.                     *//
+//* Render Target Class                      *//
 //********************************************//
 render_target::ptr render_target::create(renderer* renderer, int width, int height) {
 	if(renderer == nullptr) return nullptr;
@@ -3746,14 +3753,14 @@ render_target::render_target(renderer* renderer, int width, int height) {
 	resize(width, height);
 }
 //********************************************//
-//* Render Target class.                     *//
+//* Render Target Class                      *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::renderer */
 //********************************************//
-//* Renderer class.                          *//
+//* Renderer Class                           *//
 //********************************************//
 renderer::renderer() {
 	input_camera = nullptr;
@@ -3778,14 +3785,14 @@ render_target::ptr renderer::get_target() const {
 	return output_render;
 }
 //********************************************//
-//* Renderer class.                          *//
+//* Renderer Class                           *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::windows */
 //********************************************//
-//* Windows platform class.                  *//
+//* Windows Platform Class                   *//
 //********************************************//
 #ifdef SYS_WINDOWS
 // Real win32 entry point for release mode (DesktopApp).
@@ -4246,14 +4253,14 @@ public:
 };
 #endif /* SYS_WINDOWS */
 //********************************************//
-//* Windows platform class.                  *//
+//* Windows Platform Class                   *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::linux */
 //********************************************//
-//* Linux platform class.                    *//
+//* Linux Platform Class                     *//
 //********************************************//
 #ifdef SYS_LINUX
 class linux : public platform {
@@ -4261,232 +4268,7 @@ class linux : public platform {
 };
 #endif /* SYS_LINUX */
 //********************************************//
-//* Linux platform class.                    *//
-//********************************************//
-#pragma endregion
-
-
-#pragma region /* rge::macosx */
-//********************************************//
-//* MacOS X platform class.                  *//
-//********************************************//
-#ifdef SYS_MACOSX
-class macosx : public platform {
-private:
-	int window_width;
-	int window_height;
-	std::function<void()> loop_func;
-
-	static macosx* get_instance() {
-		return (macosx*)engine::get_platform();
-	}
-
-public:
-	macosx() {
-		window_width = 800;
-		window_height = 600;
-	}
-
-	rge::result init(rge::engine* engine) override {
-		Class GLUTViewClass = objc_getClass("GLUTView");
-
-		// SEL scrollWheelSel = sel_registerName("scrollWheel:");
-		// bool resultAddMethod = class_addMethod(GLUTViewClass, scrollWheelSel, (IMP)scrollWheelUpdate, "v@:@");
-		// assert(resultAddMethod);
-
-		int argc = 0;
-		char* argv[1] = { (char*)"" };
-		glutInit(&argc, argv);
-		glutInitWindowPosition(0, 0);
-		glutInitWindowSize(window_width, window_height);
-		glutInitDisplayMode(GLUT_SINGLE | GLUT_DEPTH | GLUT_RGBA);
-
-		return rge::OK;
-	}
-
-	rge::result create_window() override {
-		glutCreateWindow("Retro Game Engine");
-
-		if(false) {
-			window_width = glutGet(GLUT_SCREEN_WIDTH);
-			window_height = glutGet(GLUT_SCREEN_HEIGHT);
-			glutFullScreen();
-		}
-
-		glutIgnoreKeyRepeat(true);
-		glutDisplayFunc(update);
-		glutIdleFunc(idle);
-		glutReshapeFunc(on_window_reshape);
-		glutWMCloseFunc(on_window_try_close);
-
-		glutKeyboardFunc([](uint8_t sys_key, int x, int y) -> void {
-			key_pressed_event e;
-
-			if(sys_key >= 'a' && sys_key <= 'z') {
-				e.input_code = (input::code)(sys_key - 96);
-			} else if(sys_key >= 'A' && sys_key <= 'Z') {
-				e.input_code = (input::code)(sys_key - 64);
-			} else if(sys_key >= '0' && sys_key <= '9') {
-				e.input_code = (input::code)(sys_key - 18);
-			} else return;
-
-			engine::get_instance()->post_event(e);
-		});
-
-		glutKeyboardUpFunc([](uint8_t sys_key, int x, int y) -> void {
-			key_released_event e;
-
-			if(sys_key >= 'a' && sys_key <= 'z') {
-				e.input_code = (input::code)(sys_key - 96);
-			} else if(sys_key >= 'A' && sys_key <= 'Z') {
-				e.input_code = (input::code)(sys_key - 64);
-			} else if(sys_key >= '0' && sys_key <= '9') {
-				e.input_code = (input::code)(sys_key - 18);
-			} else return;
-
-			engine::get_instance()->post_event(e);
-		});
-
-		glutMouseFunc([](int button, int state, int x, int y) -> void {
-			switch (button) {
-			case GLUT_LEFT_BUTTON:
-				if(state == GLUT_UP) {
-					mouse_released_event e;
-					e.input_code = input::MOUSE_LEFT;
-					engine::get_instance()->post_event(e);
-				} else if(state == GLUT_DOWN) {
-					mouse_pressed_event e;
-					e.input_code = input::MOUSE_LEFT;
-					engine::get_instance()->post_event(e);
-				}
-				break;
-			case GLUT_MIDDLE_BUTTON:
-				if(state == GLUT_UP) {
-					mouse_released_event e;
-					e.input_code = input::MOUSE_MIDDLE;
-					engine::get_instance()->post_event(e);
-				} else if(state == GLUT_DOWN) {
-					mouse_pressed_event e;
-					e.input_code = input::MOUSE_MIDDLE;
-					engine::get_instance()->post_event(e);
-				}
-				break;
-			case GLUT_RIGHT_BUTTON:
-				if(state == GLUT_UP) {
-					mouse_released_event e;
-					e.input_code = input::MOUSE_RIGHT;
-					engine::get_instance()->post_event(e);
-				} else if(state == GLUT_DOWN) {
-					mouse_pressed_event e;
-					e.input_code = input::MOUSE_RIGHT;
-					engine::get_instance()->post_event(e);
-				}
-				break;
-			}
-		});
-
-		glutMotionFunc([](int x, int y) -> void {
-			mouse_moved_event e;
-			e.x = x;
-			e.y = y;
-			engine::get_instance()->post_event(e);
-		});
-
-		glutPassiveMotionFunc([](int x, int y) -> void {
-			mouse_moved_event e;
-			e.x = x;
-			e.y = y;
-			engine::get_instance()->post_event(e);
-		});
-
-		// TODO: Events to implement...
-		// 		window moved event
-		// 		window focus/unfocus event
-		// 		mouse scroll event
-
-		return rge::OK;
-	}
-
-	bool use_custom_loop() const override {
-		return true;
-	}
-
-	static void update() {
-		get_instance()->loop_func();
-	}
-
-	static void idle() {
-		static bool cocoa_enabled = false;
-		if(!cocoa_enabled) {
-			Class ns_app_class = objc_getClass("NSApplication");
-			SEL shared_app_sel = sel_registerName("sharedApplication");
-			id ns_app = ((id(*)(Class, SEL))objc_msgSend)(ns_app_class, shared_app_sel);
-			SEL main_window_sel = sel_registerName("mainWindow");
-			id window = ((id(*)(id, SEL))objc_msgSend)(ns_app, main_window_sel);
-			SEL set_style_mask_sel = sel_registerName("setStyleMask:");
-			int style_mask = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
-			// [window setStyleMask: NSWindowStyleMaskClosable | ~NSWindowStyleMaskResizable]
-			((void (*)(id, SEL, NSUInteger))objc_msgSend)(window, set_style_mask_sel, style_mask);
-			cocoa_enabled = true;
-		}
-
-		if(!engine::get_instance()->get_is_running()) {
-			exit(0);
-			return;
-		}
-
-		glutPostRedisplay();
-	}
-
-	static void on_window_reshape(int w, int h) {
-		get_instance()->window_width = w;
-		get_instance()->window_height = h;
-
-		window_resized_event e;
-		e.width = w;
-		e.height = h;
-		engine::get_instance()->post_event(e);
-	}
-
-	static void on_window_try_close() {
-		window_close_requested_event e;
-		engine::get_instance()->post_event(e);
-	}
-
-	void enter_loop(std::function<void()> loop) override {
-		this->loop_func = loop;
-		
-		glutMainLoop();
-	}
-
-	void set_window_title(const std::string& title) override {
-		glutSetWindowTitle(title.c_str());
-	}
-
-	void poll_gamepads() override {
-		// TODO
-	}
-
-	void poll_events() override {
-		// TODO
-	}
-
-	void refresh_window() override {
-		// TODO
-	}
-
-	bool is_focused() const override {
-		// TODO
-		return true;
-	}
-
-	void clean_up() override {
-
-	}
-};
-#endif /* SYS_MACOSX */
-//********************************************//
-//* MacOS X platform class.                  *//
+//* Linux Platform Class                     *//
 //********************************************//
 #pragma endregion
 
@@ -5014,7 +4796,7 @@ private:
 //* OpenGL 1.0 Renderer                      *//
 //********************************************//
 #ifdef SYS_OPENGL_1_0
-class opengl_1_0 : public rge::renderer {
+class opengl_1_0 : public renderer {
 private:
 	#ifdef SYS_WINDOWS
 	gl_device_context_t device = 0;
@@ -5029,7 +4811,7 @@ public:
 
 	}
 
-	rge::result init(platform* platform) override {
+	result init(platform* platform) override {
 		#ifdef SYS_WINDOWS
 		windows* winapi = (windows*)platform;
 		device = GetDC(winapi->handle);
@@ -5073,7 +4855,7 @@ public:
 
 		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
-		return rge::OK;
+		return OK;
 	}
 
 	texture::ptr create_texture(int width, int height) override {
@@ -5157,7 +4939,7 @@ public:
 	}
 
 	// Draw 3D geometry, using model space data.
-	rge::result draw(
+	result draw(
 		const mat4& local_to_world,
 		const std::vector<vec3>& vertices,
 		const std::vector<int>& triangles,
@@ -5171,7 +4953,7 @@ public:
 		vec3 normal;
 		GLfloat gl_m[16];
 
-		if(input_camera == nullptr) return rge::FAIL;
+		if(input_camera == nullptr) return FAIL;
 		
 		convert_matrix(gl_m, input_camera->get_view_matrix());
 		glMatrixMode(GL_MODELVIEW);
@@ -5224,7 +5006,7 @@ public:
 		glDisable(GL_BLEND);
 		glDisable(GL_TEXTURE_2D);
 
-		return rge::OK;
+		return OK;
 	}
 
 	// Draw a 2D sprite onto camera space.
@@ -5664,7 +5446,6 @@ void engine::configure() {
 //* Engine Configuration                     *//
 //********************************************//
 #pragma endregion
-
 
 } /* namespace rge */
 
