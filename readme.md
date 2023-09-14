@@ -11,9 +11,9 @@ This project is inspired by:
 
 ## Core System Features
 - Windows platform
+- Software renderer [**WIP**]
 - OpenGL 1.0 renderer
 - OpenGL 3.3 renderer [**planned**]
-- Software renderer [**WIP**]
 - Linux, & MacOS platform support [**planned**]
 - Entity component system [**planned**]
 - Serialization system [**planned**]

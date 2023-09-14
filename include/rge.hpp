@@ -4867,7 +4867,7 @@ public:
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
 		glDepthMask(GL_TRUE);
-		glDepthRange(1.0F, -1.0F);
+		glDepthRange(-1.0F, 1.0F);
 
 		glEnable(GL_COLOR_MATERIAL);
 		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
@@ -5036,11 +5036,7 @@ public:
 			glDisable(GL_TEXTURE_2D);
 		}
 
-		if(material.diffuse.a < 1.0F) {
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		} else {
-			glDisable(GL_BLEND);
-		}
+		glDepthRange(1.0F, -1.0F);
 
 		glColor4f(material.diffuse.r, material.diffuse.g, material.diffuse.b, material.diffuse.a);
 
@@ -5075,7 +5071,6 @@ public:
 		GLfloat gl_m[16];
 		mat4 sprite_matrix = sprite.transform->get_global_matrix();
 		mat4 camera_matrix = input_camera->transform->get_global_matrix();
-		mat4 view_matrix = input_camera->get_view_matrix();
 
 		float w = float(sprite.texture->get_width()) / sprite.pixels_per_unit;
 		float h = float(sprite.texture->get_height()) / sprite.pixels_per_unit;
