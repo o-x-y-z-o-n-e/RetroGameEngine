@@ -135,6 +135,9 @@ struct vec2 final {
 	static float cross(const vec2& a, const vec2& b);
 	static vec2 normalize(const vec2& v);
 
+	// Steps current towards target at most max_delta distance.
+	static vec2 move_towards(vec2 current, vec2 target, float max_delta);
+
 	vec2 operator + (const vec2& rhs) const;
 	vec2 operator - (const vec2& rhs) const;
 	vec2 operator * (const float& rhs) const;
@@ -180,6 +183,9 @@ struct vec3 final {
 	static float dot(const vec3& v1, const vec3& v2);
 	static vec3 cross(const vec3& v1, const vec3& v2);
 	static vec3 normalize(const vec3& v);
+
+	// Steps current towards target at most max_delta distance.
+	static vec3 move_towards(vec3 current, vec3 target, float max_delta);
 
 	vec3 operator + (const vec3& rhs) const;
 	vec3 operator - (const vec3& rhs) const;
@@ -289,6 +295,10 @@ struct mat4 final {
 	static mat4 rotate(const quaternion& rotation);
 	static mat4 scale(const vec3& scale);
 	static mat4 trs(const vec3& position, const quaternion& rotation, const vec3& scale);
+	static mat4 inverse(const mat4& m);
+
+	vec4 get_col(int i) const { return vec4(m[0][i], m[1][i], m[2][i], m[3][i]); };
+	vec4 get_row(int i) const { return vec4(m[i][0], m[i][1], m[i][2], m[i][3]); };
 
 	vec3 multiply_point_3x4(const vec3& v) const;
 	vec3 multiply_vector(const vec3& v) const;
@@ -297,6 +307,8 @@ struct mat4 final {
 	vec3 extract_right_axis() const;
 	vec3 extract_up_axis() const;
 	vec3 extract_forward_axis() const;
+
+	mat4 operator * (const float& rhs) const { return mat4(get_col(0) * rhs, get_col(1) * rhs, get_col(2) * rhs, get_col(3) * rhs); };
 
 	vec4 operator * (const vec4& rhs) const;
 	mat4 operator * (const mat4& rhs) const;
@@ -359,6 +371,9 @@ namespace math {
 
 	// Returns largest integer.
 	inline int max(int a, int b) { return a > b ? a : b; }
+
+	// Steps current towards target at most max_delta distance.
+	float move_towards(float current, float target, float max_delta);
 }
 //********************************************//
 //* Math Module                              *//
@@ -1562,6 +1577,12 @@ vec2 vec2::normalize(const vec2& v) {
 	return v / v.magnitude();
 }
 
+vec2 vec2::move_towards(vec2 current, vec2 target, float max_delta) {
+	current.x = math::move_towards(current.x, target.x, max_delta);
+	current.y = math::move_towards(current.y, target.y, max_delta);
+	return current;
+}
+
 vec2 vec2::operator + (const vec2& rhs) const {
 	return vec2(this->x + rhs.x, this->y + rhs.y);
 }
@@ -1677,6 +1698,13 @@ vec3 vec3::cross(const vec3& v1, const vec3& v2) {
 
 vec3 vec3::normalize(const vec3& v) {
 	return v / v.magnitude();
+}
+
+vec3 vec3::move_towards(vec3 current, vec3 target, float max_delta) {
+	current.x = math::move_towards(current.x, target.x, max_delta);
+	current.y = math::move_towards(current.y, target.y, max_delta);
+	current.z = math::move_towards(current.z, target.z, max_delta);
+	return current;
 }
 
 vec3 vec3::operator + (const vec3& rhs) const {
@@ -1982,7 +2010,7 @@ vec3 quaternion::operator * (const vec3& rhs) const {
 
 #pragma region /* rge::mat4 */
 //********************************************//
-//* Matrix 4x4 struct.                       *//
+//* Matrix 4x4 Struct                        *//
 //********************************************//
 mat4::mat4() {
 	m[0][0] = 1;
@@ -2070,6 +2098,57 @@ mat4 mat4::trs(const vec3& translation, const quaternion& rotation, const vec3& 
 	return (mat4::translate(translation) * mat4::rotate(rotation)) * mat4::scale(scale);
 }
 
+mat4 mat4::inverse(const mat4& m) {
+	float coef_00 = m.m[2][2] * m.m[3][3] - m.m[2][3] * m.m[3][2];
+	float coef_02 = m.m[2][1] * m.m[3][3] - m.m[2][3] * m.m[3][1];
+	float coef_03 = m.m[2][1] * m.m[3][2] - m.m[2][2] * m.m[3][1];
+	float coef_04 = m.m[1][2] * m.m[3][3] - m.m[1][3] * m.m[3][2];
+	float coef_06 = m.m[1][1] * m.m[3][3] - m.m[1][3] * m.m[3][1];
+	float coef_07 = m.m[1][1] * m.m[3][2] - m.m[1][2] * m.m[3][1];
+	float coef_08 = m.m[1][2] * m.m[2][3] - m.m[1][3] * m.m[2][2];
+	float coef_10 = m.m[1][1] * m.m[2][3] - m.m[1][3] * m.m[2][1];
+	float coef_11 = m.m[1][1] * m.m[2][2] - m.m[1][2] * m.m[2][1];
+	float coef_12 = m.m[0][2] * m.m[3][3] - m.m[0][3] * m.m[3][2];
+	float coef_14 = m.m[0][1] * m.m[3][3] - m.m[0][3] * m.m[3][1];
+	float coef_15 = m.m[0][1] * m.m[3][2] - m.m[0][2] * m.m[3][1];
+	float coef_16 = m.m[0][2] * m.m[2][3] - m.m[0][3] * m.m[2][2];
+	float coef_18 = m.m[0][1] * m.m[2][3] - m.m[0][3] * m.m[2][1];
+	float coef_19 = m.m[0][1] * m.m[2][2] - m.m[0][2] * m.m[2][1];
+	float coef_20 = m.m[0][2] * m.m[1][3] - m.m[0][3] * m.m[1][2];
+	float coef_22 = m.m[0][1] * m.m[1][3] - m.m[0][3] * m.m[1][1];
+	float coef_23 = m.m[0][1] * m.m[1][2] - m.m[0][2] * m.m[1][1];
+
+	vec4 Fac0(coef_00, coef_00, coef_02, coef_03);
+	vec4 Fac1(coef_04, coef_04, coef_06, coef_07);
+	vec4 Fac2(coef_08, coef_08, coef_10, coef_11);
+	vec4 Fac3(coef_12, coef_12, coef_14, coef_15);
+	vec4 Fac4(coef_16, coef_16, coef_18, coef_19);
+	vec4 Fac5(coef_20, coef_20, coef_22, coef_23);
+
+	vec4 Vec0(m.m[0][1], m.m[0][0], m.m[0][0], m.m[0][0]);
+	vec4 Vec1(m.m[1][1], m.m[1][0], m.m[1][0], m.m[1][0]);
+	vec4 Vec2(m.m[2][1], m.m[2][0], m.m[2][0], m.m[2][0]);
+	vec4 Vec3(m.m[3][1], m.m[3][0], m.m[3][0], m.m[3][0]);
+
+	vec4 Inv0(Vec1 * Fac0 - Vec2 * Fac1 + Vec3 * Fac2);
+	vec4 Inv1(Vec0 * Fac0 - Vec2 * Fac3 + Vec3 * Fac4);
+	vec4 Inv2(Vec0 * Fac1 - Vec1 * Fac3 + Vec3 * Fac5);
+	vec4 Inv3(Vec0 * Fac2 - Vec1 * Fac4 + Vec2 * Fac5);
+
+	vec4 SignA(+1, -1, +1, -1);
+	vec4 SignB(-1, +1, -1, +1);
+	mat4 Inverse(Inv0 * SignA, Inv1 * SignB, Inv2 * SignA, Inv3 * SignB);
+
+	vec4 Row0(Inverse.m[0][0], Inverse.m[0][1], Inverse.m[0][2], Inverse.m[0][3]);
+
+	vec4 Dot0(m.get_col(0) * Row0);
+	float Dot1 = (Dot0.x + Dot0.y) + (Dot0.z + Dot0.w);
+
+	float OneOverDeterminant = 1.0F / Dot1;
+
+	return Inverse * OneOverDeterminant;
+}
+
 vec3 mat4::multiply_point_3x4(const vec3& v) const {
 	vec3 result = vec3();
 	result.x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3];
@@ -2091,20 +2170,6 @@ vec3 mat4::extract_translation() const {
 }
 
 quaternion mat4::extract_rotation() const {
-	/*
-	quaternion q = quaternion();
-	
-	q.w = sqrtf(fmaxf(0, 1.0F + m[0][0] + m[1][1] + m[2][2])) / 2.0F;
-	q.x = sqrtf(fmaxf(0, 1.0F + m[0][0] - m[1][1] - m[2][2])) / 2.0F;
-	q.y = sqrtf(fmaxf(0, 1.0F - m[0][0] + m[1][1] - m[2][2])) / 2.0F;
-	q.z = sqrtf(fmaxf(0, 1.0F - m[0][0] - m[1][1] + m[2][2])) / 2.0F;
-	if(q.x * (m[2][1] - m[1][2]) < 0) q.x *= -1;
-	if(q.y * (m[0][2] - m[2][0]) < 0) q.y *= -1;
-	if(q.z * (m[1][0] - m[0][1]) < 0) q.z *= -1;
-	
-	return q;
-	*/
-	
 	vec3 forward;
 	forward.x = m[0][2];
 	forward.y = m[1][2];
@@ -2160,14 +2225,14 @@ mat4 mat4::operator * (const mat4& rhs) const {
 	return result;
 }
 //********************************************//
-//* Matrix 4x4 struct.                       *//
+//* Matrix 4x4 Struct                        *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::color */
 //********************************************//
-//* Color struct.                            *//
+//* Color Struct                             *//
 //********************************************//
 color::color() {
 	this->r = 1;
@@ -2242,14 +2307,14 @@ color& color::operator /= (const float& rhs) {
 	this->r /= rhs; this->g /= rhs; this->b /= rhs; this->a /= rhs; return *this;
 }
 //********************************************//
-//* Color struct.                            *//
+//* Color Struct                             *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::math */
 //********************************************//
-//* Math Module.                             *//
+//* Math Module                              *//
 //********************************************//
 float math::lerp(float a, float b, float t) {
 	if(t < 0) t = 0;
@@ -2263,15 +2328,29 @@ float math::inverse_lerp(float a, float b, float v) {
 	if(t > 1) t = 1;
 	return t;
 }
+
+float math::move_towards(float current, float target, float max_delta) {
+	if(current < target) {
+		current += max_delta;
+		if(current > target)
+			current = target;
+	} else if(current > target) {
+		current -= max_delta;
+		if(current < target)
+			current = target;
+	}
+
+	return current;
+}
 //********************************************//
-//* Logging Module.                          *//
+//* Math Module                              *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::log */
 //********************************************//
-//* Logging Module.                          *//
+//* Logging Module                           *//
 //********************************************//
 namespace log { const int BUFFER_SIZE = 512; }
 
@@ -2314,7 +2393,7 @@ void log::error(const char* msg, ...) {
 	std::cout << "[ERROR] " << buffer << std::endl;
 }
 //********************************************//
-//* Logging Module.                          *//
+//* Logging Module                           *//
 //********************************************//
 #pragma endregion
 
@@ -3301,44 +3380,9 @@ camera::~camera() {
 }
 
 mat4 camera::get_view_matrix() const {
-	mat4 r = mat4::identity();
-
-	if(transform == nullptr) return r;
-
+	if(transform == nullptr) return mat4::identity();
 	mat4 m = transform->get_global_matrix();
-	vec3 pos = m.extract_translation();
-	vec3 rgt = m.extract_right_axis();
-	vec3 up = m.extract_up_axis();
-	vec3 fwd = m.extract_forward_axis();
-	
-	r.m[0][0] = rgt.x;
-	r.m[1][0] = rgt.y;
-	r.m[2][0] = rgt.z;
-	r.m[0][1] = up.x;
-	r.m[1][1] = up.y;
-	r.m[2][1] = up.z;
-	r.m[0][2] = fwd.x;
-	r.m[1][2] = fwd.y;
-	r.m[2][2] = fwd.z;
-	r.m[3][0] = -vec3::dot(rgt, pos);
-	r.m[3][1] = -vec3::dot(up, pos);
-	r.m[3][2] = -vec3::dot(fwd, pos);
-
-	// NOTE: Debugging
-	// printf("px: %f\n", pos.x);
-	// printf("py: %f\n", pos.y);
-	// printf("pz: %f\n", pos.z);
-	// printf("rx: %f\n", rgt.x);
-	// printf("ry: %f\n", rgt.y);
-	// printf("rz: %f\n", rgt.z);
-	// printf("ux: %f\n", up.x);
-	// printf("uy: %f\n", up.y);
-	// printf("uz: %f\n", up.z);
-	// printf("fx: %f\n", fwd.x);
-	// printf("fy: %f\n", fwd.y);
-	// printf("fz: %f\n", fwd.z);
-
-	return r;
+	return mat4::inverse(m);
 }
 
 mat4 camera::get_projection_matrix() const {
@@ -4807,8 +4851,31 @@ private:
 	int window_height;
 
 public:
-	opengl_1_0() {
+	opengl_1_0() : renderer() {
 
+	}
+
+	static void load_default_draw_params() {
+		// glEnable(GL_LIGHTING);
+		// glEnable(GL_LIGHT0);
+
+		glEnable(GL_TEXTURE_2D);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+		glDepthMask(GL_TRUE);
+		glDepthRange(1.0F, -1.0F);
+
+		glEnable(GL_COLOR_MATERIAL);
+		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+		glColor4f(1, 1, 1, 1);
+
+		glEnable(GL_CULL_FACE);
+		glFrontFace(GL_CCW);
+		glCullFace(GL_BACK);
 	}
 
 	result init(platform* platform) override {
@@ -4847,13 +4914,7 @@ public:
 		
 		#endif
 
-		//glEnable(GL_LIGHTING);
-		glEnable(GL_LIGHT0);
-		glEnable(GL_COLOR_MATERIAL);
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_NORMALIZE);
-
-		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+		
 
 		return OK;
 	}
@@ -4911,9 +4972,9 @@ public:
 			float(background.b),
 			float(background.a)
 		);
-
-		glClear(GL_COLOR_BUFFER_BIT);
-		glClear(GL_DEPTH_BUFFER_BIT);
+		glClearDepth(2.0F);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
 	}
 
 	static void convert_matrix(GLfloat* gl, const mat4& m) {
@@ -4966,15 +5027,15 @@ public:
 		float lpos[4] = { 0, 1, 0, 1.0 };  //light's position
 		//glLightfv(GL_LIGHT0, GL_POSITION, lpos);   //Set light position
 
+		load_default_draw_params();
+
 		if(material.texture != nullptr && material.texture->is_on_gpu()) {
-			glEnable(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, material.texture->handle);
 		} else {
 			glDisable(GL_TEXTURE_2D);
 		}
 
 		if(material.diffuse.a < 1.0F) {
-			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		} else {
 			glDisable(GL_BLEND);
@@ -5001,10 +5062,6 @@ public:
 				}
 			}
 		} glEnd();
-
-		glColor4f(1, 1, 1, 1);
-		glDisable(GL_BLEND);
-		glDisable(GL_TEXTURE_2D);
 
 		return OK;
 	}
@@ -5062,15 +5119,13 @@ public:
 		glMatrixMode(GL_PROJECTION);
 		glLoadMatrixf(gl_m);
 
+		load_default_draw_params();
+
 		if(sprite.texture->is_on_gpu()) {
-			glEnable(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, sprite.texture->handle);
 		} else {
 			glDisable(GL_TEXTURE_2D);
 		}
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glColor4f(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
 
@@ -5091,10 +5146,6 @@ public:
 			glVertex3f(p_tl.x, p_tl.y, p_tl.z);
 			glNormal3f(n.x, n.y, n.z);
 		} glEnd();
-
-		glColor4f(1, 1, 1, 1);
-		glDisable(GL_BLEND);
-		glDisable(GL_TEXTURE_2D);
 	}
 
 	// Draw a 2D texture onto (dest)[0, 1] view space, from (src)[0, 1] uv space.
@@ -5121,12 +5172,15 @@ public:
 			return;
 		}
 
+		load_default_draw_params();
+
 		if(texture.is_on_gpu()) {
-			glEnable(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, texture.handle);
 		} else {
 			glDisable(GL_TEXTURE_2D);
 		}
+
+		glDisable(GL_LIGHTING);
 
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
@@ -5146,10 +5200,6 @@ public:
 		glVertex3f(dest_min.x, dest_max.y, 0.0F);
 
 		glEnd();
-
-		glDepthMask(GL_TRUE);
-		glEnable(GL_DEPTH_TEST);
-		glDisable(GL_TEXTURE_2D);
 	}
 
 	// Draw a 2D texture onto (dest)[0, w/h] frame space, from (src)[0, w/h] texel space.

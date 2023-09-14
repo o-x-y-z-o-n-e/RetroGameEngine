@@ -97,8 +97,8 @@ static rge::mesh::ptr load_triangle() {
 	mdl->normals.push_back(rge::vec3(0, 0, 1));
 
 	mdl->triangles.push_back(0);
-	mdl->triangles.push_back(2);
 	mdl->triangles.push_back(1);
+	mdl->triangles.push_back(2);
 
 	mdl->uvs.push_back(rge::vec2(0, 0));
 	mdl->uvs.push_back(rge::vec2(0.5F, 1.0F));
@@ -123,6 +123,7 @@ static rge::mesh::ptr load_floor() {
 	mdl->triangles.push_back(0);
 	mdl->triangles.push_back(1);
 	mdl->triangles.push_back(3);
+
 	mdl->triangles.push_back(2);
 	mdl->triangles.push_back(3);
 	mdl->triangles.push_back(1);
@@ -146,8 +147,10 @@ private:
 
 	rge::input::action turn_action;
 
+	rge::vec2 move_input;
 	float counter;
-	float r;
+	float rotation;
+	float turn;
 
 public:
     game() : rge::engine() {
@@ -157,18 +160,19 @@ public:
 		floor = nullptr;
 		triangle = nullptr;
 		counter = 0;
-		r = 0;
+		rotation = 0;
+		turn = 0;
     }
 
     void on_init() override {
 		renderer = get_renderer();
 
-		// model = load_obj("tests/cube.obj");
+		model = load_obj("cube.obj");
 		triangle = load_triangle();
 		floor = load_floor();
 
-        camera->set_perspective(60, 1.6F, 0.0F, 1000.0F);
-		camera->transform->position = rge::vec3(0, 1, 0);
+        camera->set_perspective(80, 1.6F, 0.01F, 100.0F);
+		camera->transform->position = rge::vec3(0, 2, 0);
 
         renderer->set_camera(camera);
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
@@ -186,26 +190,31 @@ public:
 			counter = 0;
 
 		{
-			rge::vec3 velocity = rge::vec3();
+			rge::vec2 input_target = rge::vec2();
 
 			if(rge::input::is_down(rge::input::KEY_A))
-				velocity.x -= 1;
+				input_target.x -= 1;
 
 			if(rge::input::is_down(rge::input::KEY_D))
-				velocity.x += 1;
+				input_target.x += 1;
 
 			if(rge::input::is_down(rge::input::KEY_W))
-				velocity.z += 1;
+				input_target.y += 1;
 
 			if(rge::input::is_down(rge::input::KEY_S))
-				velocity.z -= 1;
+				input_target.y -= 1;
 
-			camera->transform->position += velocity * 10.0F * delta_time;
+			move_input = rge::vec2::move_towards(move_input, input_target, delta_time * 4.0F);
+
+			rge::vec3 velocity = camera->transform->get_forward() * move_input.y + camera->transform->get_right() * move_input.x;
+			velocity *= 10.0F;
+
+			camera->transform->position += velocity * delta_time;
 		}
 
-		r += rge::input::get_axis(turn_action) * 90.0F * delta_time;
-		//camera->transform->rotation = rge::quaternion::yaw_pitch_roll(r * DEG_2_RAD, 0, 0);
-		camera->transform->rotation = rge::quaternion::look(rge::vec3(sinf(r * DEG_2_RAD), 0, cosf(r * DEG_2_RAD)), rge::vec3(0, 1, 0));
+		turn = rge::math::move_towards(turn, rge::input::get_axis(turn_action), delta_time * 4.0F);
+		rotation += turn * 90.0F * delta_time;
+		camera->transform->rotation = rge::quaternion::yaw_pitch_roll(rotation * DEG_2_RAD, 0, 0);
 	}
 
     void on_render() override {
@@ -221,7 +230,15 @@ public:
 
 		if(triangle) {
 			renderer->draw(
-				rge::mat4::trs(rge::vec3(0, 1, 5), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
+				rge::mat4::trs(rge::vec3(0, 2, 5), rge::quaternion::yaw_pitch_roll(counter, 0, 0), rge::vec3(1, 1, 1)),
+				*triangle,
+				*material
+			);
+		}
+
+		if(triangle) {
+			renderer->draw(
+				rge::mat4::trs(rge::vec3(1, 2, 4), rge::quaternion::identity(), rge::vec3(1, 1, 1)),
 				*triangle,
 				*material
 			);

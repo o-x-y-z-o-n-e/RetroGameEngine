@@ -1,6 +1,4 @@
 ==CURRENT==
-	fix quaternions
-	
 	set light params to 3d draw function
 	[3D] opengl 1.0 lighting
 	material alpha blending option
