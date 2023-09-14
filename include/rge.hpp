@@ -3875,6 +3875,8 @@ public:
 		has_init = false;
 		has_window = false;
 		has_focus = false;
+
+		frame.buffer = nullptr;
 	}
 
 public:
@@ -4054,11 +4056,42 @@ public:
 				break;
 			}
 
+			case WM_PAINT: {
+				PAINTSTRUCT ps;
+				HDC hdc = BeginPaint(hwnd, &ps);
+
+				if(wParam == 1) {
+					// Clears screen.
+					BitBlt(hdc, 0, 0, get_instance()->window_width, get_instance()->window_height, 0, 0, 0, BLACKNESS);
+				} else {
+					// Copies frame buffer to GDI.
+					int w = get_instance()->window_width;
+					int h = get_instance()->window_height;
+
+					StretchBlt(
+						hdc,
+						0,
+						0 + h,
+						w,
+						-h,
+						get_instance()->device_context,
+						0,
+						0,
+						w,
+						h,
+						SRCCOPY
+					);
+				}
+
+				EndPaint(hwnd, &ps);
+				break;
+			}
+
 			case WM_SIZE: {
 				window_resized_event e;
 				e.width = LOWORD(lParam);
 				e.height = HIWORD(lParam);
-
+				rge::log::info("New window dimensions [%u, %u]", e.width, e.height);
 				get_instance()->create_frame(e.width, e.height);
 				engine::get_instance()->post_event(e);
 				break;
@@ -4328,7 +4361,7 @@ private:
 	render_target::ptr output_window;
 	platform* platform_instance;
 
-	render_target::ptr get_real_target() {
+	render_target::ptr get_real_target() const {
 		return output_render != nullptr ? output_render : output_window;
 	}
 
@@ -4343,11 +4376,16 @@ public:
 	}
 
 	texture::ptr create_texture(int width, int height) override {
-		texture::ptr texture = std::make_shared<texture>(width, height);
+		texture::ptr texture = texture::create(width, height);
 
-		texture->allocate_gpu();
+		texture->allocate();
 
 		return texture;
+	}
+
+	void alloc_texture(texture& texture) override {
+		if(!texture.is_on_cpu())
+			texture.allocate();
 	}
 
 	void upload_texture(texture& texture) override {
@@ -4356,7 +4394,14 @@ public:
 
 	void free_texture(texture& texture) override {
 		// TODO: Deallocate cpu
-		delete texture;
+	}
+
+	int get_width() const override {
+		return get_real_target()->get_width();
+	}
+
+	int get_height() const override {
+		return get_real_target()->get_height();
 	}
 
 	bool on_window_resized(const window_resized_event& e) override {
@@ -4377,6 +4422,10 @@ public:
 		#ifdef SYS_WINDOWS
 		windows* winapi = (windows*)platform_instance;
 		uint8_t* buffer = winapi->get_frame_buffer();
+		if(buffer == nullptr) {
+			rge::log::error("no frame buffer win32");
+			return;
+		}
 		output_window->get_frame_buffer()->dump_to_raw_buffer(buffer);
 		#endif
 	}
@@ -4522,69 +4571,34 @@ public:
 		return rge::OK;
 	}
 
-	void draw(const texture& texture, const rect& dest, const rect& src) override {
-		draw(
-			texture,
-			int(dest.x * get_real_target()->get_width()),
-			int(dest.y * get_real_target()->get_height()),
-			int(dest.w * get_real_target()->get_width()),
-			int(dest.h * get_real_target()->get_height()),
-			int(src.x * get_real_target()->get_width()),
-			int(src.y * get_real_target()->get_height()),
-			int(src.w * get_real_target()->get_width()),
-			int(src.h * get_real_target()->get_height())
-		);
+	// Draw a 2D sprite onto camera space.
+	void draw(const sprite& sprite) override {
+		// TODO
 	}
 
+	// Draw a 2D texture onto (dest)[0, 1] view space, from (src)[0, 1] uv space.
 	void draw(
 		const texture& texture,
-		int dest_x,
-		int dest_y,
-		int dest_width,
-		int dest_height,
-		int src_x,
-		int src_y,
-		int src_width,
-		int src_height
+		vec2 dest_min,
+		vec2 dest_max,
+		vec2 src_min,
+		vec2 src_max
 	) override {
-		if(!texture.get_on_cpu()) return;
-
-		int x, y, ptr;
-		float u, v;
-		float ut, vt;
-
-		int wt = get_real_target()->get_width();
-		int ht = get_real_target()->get_height();
-
-		int x_min = dest_x;
-		int y_min = dest_y;
-		int x_max = dest_x + dest_width;
-		int y_max = dest_y + dest_height;
-
-		color* input_buffer = texture.get_data();
-		color* frame_buffer = get_real_target()->get_frame_buffer()->get_data();
-
-		if(x_min < 0) x_min = 0;
-		if(y_min < 0) y_min = 0;
-		if(x_max > wt) x_max = wt;
-		if(y_max > ht) y_max = ht;
-
-		for(y = y_min; y <= y_max; y++) {
-			for(x = x_min; x <= x_max; x++) {
-				if(x >= x_min && x < x_max && y >= y_min && y < y_max) {
-					ptr = x + (y * wt);
-					u = math::inverse_lerp(x_min, x_max, x);
-					v = math::inverse_lerp(y_min, y_max, y);
-					ut = math::lerp(src_x, src_x + src_width, u) / wt;
-					vt = math::lerp(src_y, src_y + src_height, u) / ht;
-					
-					frame_buffer[ptr] = texture.sample(ut, vt);
-				}
-			}
-		}
+		// TODO
 	}
 
-	void draw(const sprite& sprite) override {
+	// Draw a 2D texture onto (dest)[0, w/h] frame space, from (src)[0, w/h] texel space.
+	void draw(
+		const texture& texture,
+		int dest_min_x,
+		int dest_min_y,
+		int dest_max_x,
+		int dest_max_y,
+		int src_min_x,
+		int src_min_y,
+		int src_max_x,
+		int src_max_y
+	) override {
 		// TODO
 	}
 
@@ -4825,7 +4839,6 @@ private:
 		// The final color for this pixel is the sum of the ambient, diffuse and specular.
 		return ambient_lighting + diffuse_sum + specular_sum;
 	}
-
 
 };
 #endif /* SYS_SOFTWARE_GL */
