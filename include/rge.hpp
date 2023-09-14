@@ -4982,8 +4982,9 @@ public:
 	}
 
 	void display() override {
-		#ifdef SYS_WINDOWS
 		glFlush();
+
+		#ifdef SYS_WINDOWS
 		SwapBuffers(device);
 		// if(bSync) DwmFlush();
 		#endif
@@ -4994,8 +4995,8 @@ public:
 		#endif
 
 		#ifdef SYS_MACOSX
-		glFlush();
-		glutSwapBuffers();
+		// TODO
+		// glutSwapBuffers();
 		#endif
 	}
 

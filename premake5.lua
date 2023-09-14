@@ -64,8 +64,8 @@ project "2d"
         }
         linkoptions {
             "-F /Library/Frameworks",
-            "-framework Carbon",
-            "-framework GLUT",
+            "-framework Foundation",
+            "-framework Cocoa",
             "-framework OpenGL"
         }
         files {
@@ -126,8 +126,8 @@ project "3d"
         }
         linkoptions {
             "-F /Library/Frameworks",
-            "-framework Carbon",
-            "-framework GLUT",
+            "-framework Foundation",
+            "-framework Cocoa",
             "-framework OpenGL"
         }
         files {
@@ -188,8 +188,8 @@ project "starship"
         }
         linkoptions {
             "-F /Library/Frameworks",
-            "-framework Carbon",
-            "-framework GLUT",
+            "-framework Foundation",
+            "-framework Cocoa",
             "-framework OpenGL"
         }
         files {

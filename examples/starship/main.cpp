@@ -5,14 +5,12 @@
 
 /* TODO:
 	==SPRITES==
-	Pause Screen
 	Progress Meter
 	Explode
 	Enemy 1
 	Enemy 2
 	Enemy 3
 	==CODE==
-	Pause State
 	Progress Meter
 	Enemy 1
 	Enemy 2
