@@ -3351,11 +3351,20 @@ quaternion transform::get_global_rotation() const {
 }
 
 void transform::set_global_position(const vec3& position) {
-	// TODO
+	if(parent != nullptr){
+		this->position = mat4::inverse(parent->get_global_matrix()).multiply_point_3x4(position);
+	} else {
+		this->position = position;
+	}
 }
 
 void transform::set_global_rotation(const quaternion& rotation) {
-	// TODO
+	if(parent != nullptr) {
+		// TODO
+		// this->rotation = mat4::inverse(parent->get_global_matrix()).extract_rotation() * rotation;
+	} else {
+		this->rotation = rotation;
+	}
 }
 //********************************************//
 //* Transform class.                         *//
@@ -3481,12 +3490,10 @@ texture::ptr texture::copy(const texture::ptr& original) {
 
 	if(original->is_on_cpu()) {
 		texture->allocate();
-		// TODO: Copy cpu data.
-	}
-
-	if(original->is_on_gpu()) {
-		engine::get_renderer()->alloc_texture(*texture);
-		// TODO: Copy gpu data.
+		int n = texture->get_width() * texture->get_height();
+		for(int i = 0; i < n; i++) {
+			texture->data[i] = original->data[i];
+		}
 	}
 
 	return texture;
@@ -3616,7 +3623,8 @@ void texture::allocate() {
 void texture::flush_registry() {
 	for(auto it = registry.begin(); it != registry.end(); it++) {
 		if(it->second.use_count() <= 1) {
-			// TODO: Last ref texture is in table itself, therefore we free the memory.
+			// Last ref texture is in table itself, therefore we free the memory.
+			registry.erase(it);
 		}
 	}
 }
