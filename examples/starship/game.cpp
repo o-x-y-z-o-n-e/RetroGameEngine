@@ -1,6 +1,7 @@
 #include "game.hpp"
 
 const float BG_SCROLL_SPEED = 0.25F;
+const float GAME_DURATION = 60*5;
 
 game::game() : rge::engine() {
 	camera = rge::camera::create();
@@ -63,6 +64,11 @@ void game::on_init() {
 	bg_sprite_1 = rge::sprite::create();
 	bg_sprite_1->texture = rge::texture::load("res/background.png");
 	bg_sprite_1->pixels_per_unit = 16;
+
+	meter = rge::texture::create(1, 1);
+	meter->allocate();
+	meter->get_data()[0] = rge::color(1, 1, 1);
+	get_renderer()->upload_texture(*meter);
 }
 
 void game::on_start() {
@@ -93,6 +99,12 @@ void game::on_update(float delta_time) {
 		ship->update(delta_time);
 		asteroid::update_all(delta_time);
 		laser::update_all(delta_time);
+
+		progress += delta_time / GAME_DURATION;
+		if(progress >= 1.0F) {
+			progress = 1.0F;
+			end(true);
+		}
 	} else if(state == game_state::PAUSED) {
 		if(rge::input::was_released(rge::input::KEY_ESC)) {
 			state = game_state::IN_GAME;
@@ -114,7 +126,7 @@ void game::on_render() {
 	} else if(state == game_state::IN_GAME) {
 		get_renderer()->draw(*bg_sprite_0);
 		get_renderer()->draw(*bg_sprite_1);
-		
+
 		asteroid::draw_all();
 		laser::draw_all();
 		ship->draw();
@@ -126,6 +138,9 @@ void game::on_render() {
 			get_renderer()->draw(*win_sprite);
 		} else {
 			get_renderer()->draw(*lose_sprite);
+
+			progress = 0.5F;
+			get_renderer()->draw(*meter, rge::vec2(0.1F, 0.1F), rge::vec2(0.15F, rge::math::lerp(0.1F, 0.9F, progress)));
 		}
 
 		get_renderer()->draw(*press_key_sprite_1);
@@ -137,6 +152,8 @@ void game::start_game() {
 	random = rge::random();
 	bg_scroll_0 = 0.0F;
 	bg_scroll_1 = 0.5F;
+	did_win = false;
+	progress = 0.0F;
 	set_rand_asteroid_wait();
 	ship->reset();
 }

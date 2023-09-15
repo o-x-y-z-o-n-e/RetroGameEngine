@@ -51,12 +51,14 @@ private:
 	rge::sprite::ptr press_key_sprite_1;
 	rge::sprite::ptr bg_sprite_0;
 	rge::sprite::ptr bg_sprite_1;
+	rge::texture::ptr meter;
 	float bg_scroll_0;
 	float bg_scroll_1;
 	float asteroid_countdown;
 	game_state state;
 	rge::camera::ptr camera;
 	spaceship* ship;
+	float progress;
 	bool did_win;
 };
 

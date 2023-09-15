@@ -5,13 +5,11 @@
 
 /* TODO:
 	==SPRITES==
-	Progress Meter
 	Explode
 	Enemy 1
 	Enemy 2
 	Enemy 3
 	==CODE==
-	Progress Meter
 	Enemy 1
 	Enemy 2
 	Enemy 3
