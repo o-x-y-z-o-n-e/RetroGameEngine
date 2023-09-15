@@ -94,8 +94,8 @@ project "3d"
     cppdialect "C++11"
     location "examples/3d"
 
-    -- defines "SYS_SOFTWARE_GL"
-    defines "SYS_OPENGL_1_0"
+    defines "SYS_SOFTWARE_GL"
+    -- defines "SYS_OPENGL_1_0"
     -- defines "SYS_OPENGL_3_3"
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")

@@ -99,6 +99,7 @@ void game::on_update(float delta_time) {
 		ship->update(delta_time);
 		asteroid::update_all(delta_time);
 		laser::update_all(delta_time);
+		explode::update_all(delta_time);
 
 		progress += delta_time / GAME_DURATION;
 		if(progress >= 1.0F) {
@@ -129,6 +130,7 @@ void game::on_render() {
 
 		asteroid::draw_all();
 		laser::draw_all();
+		explode::draw_all();
 		ship->draw();
 	} else if(state == game_state::PAUSED) {
 		get_renderer()->draw(*pause_sprite);
@@ -140,7 +142,7 @@ void game::on_render() {
 			get_renderer()->draw(*lose_sprite);
 
 			progress = 0.5F;
-			get_renderer()->draw(*meter, rge::vec2(0.1F, 0.1F), rge::vec2(0.15F, rge::math::lerp(0.1F, 0.9F, progress)));
+			get_renderer()->draw(*meter, rge::vec2(0.01F, 0.01F), rge::vec2(0.04F, rge::math::lerp(0.01F, 0.99F, progress)));
 		}
 
 		get_renderer()->draw(*press_key_sprite_1);

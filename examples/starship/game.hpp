@@ -5,6 +5,7 @@
 #include "spaceship.hpp"
 #include "asteroid.hpp"
 #include "laser.hpp"
+#include "explode.hpp"
 
 #define BACKGROUND_LAYER -1.0F
 #define SPACESHIP_LAYER 0.0F

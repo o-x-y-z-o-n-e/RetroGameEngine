@@ -356,8 +356,8 @@ struct color final {
 //* Math Module                              *//
 //********************************************//
 namespace math {
-	#define DEG_2_RAD 0.0174532924F
-	#define RAD_2_DEG 57.29578F
+	#define DEG_TO_RAD 0.0174532924F
+	#define RAD_TO_DEG 57.29578F
 	#define PI 3.14159265F
 
 	// Linearly interpolate between numbers a & b.
@@ -3390,7 +3390,7 @@ mat4 camera::get_projection_matrix() const {
 }
 
 void camera::set_perspective(float fov, float aspect, float near_plane, float far_plane) {
-	fov *= DEG_2_RAD;
+	fov *= DEG_TO_RAD;
 
 	projection = mat4::zero();
 	projection.m[0][0] = aspect / tanf(fov / 2.0F);
@@ -3902,6 +3902,11 @@ public:
 
 		#ifdef SYS_SOFTWARE_GL
 		device_context = CreateCompatibleDC(0);
+
+		frame.bitmap_info.bmiHeader.biSize = sizeof(frame.bitmap_info.bmiHeader);
+		frame.bitmap_info.bmiHeader.biPlanes = 1;
+		frame.bitmap_info.bmiHeader.biBitCount = 32;
+		frame.bitmap_info.bmiHeader.biCompression = BI_RGB;
 		#endif /* SYS_SOFTWARE_GL */
 		
 		has_init = true;
@@ -4308,9 +4313,11 @@ public:
 		if(frame.bitmap)
 			DeleteObject(frame.bitmap);
 
-		frame.bitmap = CreateDIBSection(NULL, &frame.bitmap_info, DIB_RGB_COLORS, &frame.buffer, 0, 0);
-		if(frame.bitmap == NULL)
+		frame.bitmap = CreateDIBSection(NULL, &frame.bitmap_info, DIB_RGB_COLORS, &(frame.buffer), 0, 0);
+		if(frame.bitmap == NULL) {
+			rge::log::error("Failed to create win32 frame buffer.");
 			return;
+		}
 
 		SelectObject(device_context, frame.bitmap);
 		#endif /* SYS_SOFTWARE_GL */
@@ -4421,12 +4428,23 @@ public:
 	void display() override {
 		#ifdef SYS_WINDOWS
 		windows* winapi = (windows*)platform_instance;
-		uint8_t* buffer = winapi->get_frame_buffer();
-		if(buffer == nullptr) {
+		uint8_t* to_buffer = winapi->get_frame_buffer();
+		color* from_buffer = output_window->get_frame_buffer()->get_data();
+		if(to_buffer == nullptr) {
 			rge::log::error("no frame buffer win32");
 			return;
 		}
-		output_window->get_frame_buffer()->dump_to_raw_buffer(buffer);
+
+		int n = output_window->get_frame_buffer()->get_width() * output_window->get_frame_buffer()->get_height();
+		for(int i = 0; i < n; i++) {
+			color c = from_buffer[i];
+			to_buffer[i * 4] = (uint8_t)(c.a * 255);
+			to_buffer[i * 4 + 1] = (uint8_t)(c.r * 255);
+			to_buffer[i * 4 + 2] = (uint8_t)(c.g * 255);
+			to_buffer[i * 4 + 3] = (uint8_t)(c.b * 255);
+		}
+
+		winapi->refresh_window();
 		#endif
 	}
 
@@ -4525,14 +4543,14 @@ public:
 				// the camera to triangle centre vector - if the dot product is
 				// <=0, the normal and vector point at each other, and the triangle
 				// must be facing the camera, so we should render it. If the dot
-				// product is >0, the are facing the same direction, therefore
+				// product is >0, they are facing the same direction, therefore
 				// the triangle is facing away from the camera - don't render it.
 				float d = vec3::dot(proj_tri_normal, proj_tri_center - camera_position);
 
 				// NOTE: Debugging
 				// printf("d: %f\n", d);
 
-				if(d >= 0) {
+				if(d <= 0) {
 					// Normalize our projected vertices so that they are in the range
 					// Between 0 and 1 (instead of -1 and 1).
 					normalized_v1 = vec2((proj_v1.x + 1) / 2.0F, (proj_v1.y + 1) / 2.0F);

@@ -1,5 +1,6 @@
 #include "game.hpp"
 #include "asteroid.hpp"
+#include "explode.hpp"
 
 const std::string textures[3] = {
 	"res/asteroid_0.png",
@@ -30,7 +31,7 @@ void asteroid::reset() {
 void asteroid::update(float delta_time) {
 	// Move...
 	transform->position += velocity * delta_time;
-	rotation += turn * DEG_2_RAD * delta_time;
+	rotation += turn * DEG_TO_RAD * delta_time;
 	transform->rotation = rge::quaternion::yaw_pitch_roll(0, 0, rotation); // TODO: Add rge::quaternion::rotate(flaot angle, vec3 axis);
 
 	// Detect collision...
@@ -62,6 +63,8 @@ void asteroid::update(float delta_time) {
 	if(dist < 0.0F) {
 		ship->damage(1);
 		destroy(this);
+		explode* e = explode::create();
+		e->set(transform->get_global_position());
 		return;
 	}
 }
@@ -81,7 +84,7 @@ void asteroid::gen_starting_params() {
 		velocity = rge::vec2(game::get()->get_random()->range(-10.0F, 0.0F), game::get()->get_random()->range(-4.0F, -8.0F));
 	}
 	
-	rotation = game::get()->get_random()->range(0.0F, 360.0F * DEG_2_RAD);
+	rotation = game::get()->get_random()->range(0.0F, 360.0F * DEG_TO_RAD);
 	turn = game::get()->get_random()->range(-90.0F, 90.0F);
 }
 
