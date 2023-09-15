@@ -1,7 +1,11 @@
 #include "macosx.hpp"
 #include <Cocoa/Cocoa.h>
+#include <OpenGL/OpenGL.h>
 
-@interface RGEView : NSView
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
+@interface RGEView : NSOpenGLView
 
 @end
 
@@ -33,7 +37,7 @@ macosx::macosx() : platform() {
 }
 
 rge::result macosx::init(rge::engine* engine) {
-    return rge::FAIL;
+    return rge::OK;
 }
 
 rge::result macosx::create_window(const std::string& title, int width, int height, bool fullscreen) {
@@ -60,9 +64,9 @@ rge::result macosx::create_window(const std::string& title, int width, int heigh
 	rect = [window contentRectForFrameRect:[window frame]];
     view = [[RGEView alloc] initWithFrame:rect];
 	// [contentView setSDLWindow:window];
-
+	
 	[window setContentView:view];
-	return rge::FAIL;
+	return rge::OK;
 }
 
 void macosx::set_window_title(const std::string& title) {
@@ -115,7 +119,7 @@ void macosx::clean_up() {
 
 }
 
-@implementation RGEView : NSView
+@implementation RGEView
 
 @end
 
@@ -148,3 +152,5 @@ void macosx::clean_up() {
 	}
 }
 @end
+
+#pragma clang diagnostic pop
