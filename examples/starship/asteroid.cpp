@@ -8,7 +8,7 @@ const std::string textures[3] = {
 	"res/asteroid_2.png"
 };
 
-asteroid::asteroid_table asteroid::pool;
+asteroid::table asteroid::pool;
 
 asteroid::asteroid() {
 	transform = rge::transform::create();
@@ -89,7 +89,7 @@ void asteroid::gen_starting_params() {
 }
 
 asteroid* asteroid::create() {
-	asteroid_table::iterator it;
+	table::iterator it;
 	for(it = pool.begin(); it != pool.end(); it++) {
 		if(!it->second) {
 			it->second = true;
@@ -99,12 +99,12 @@ asteroid* asteroid::create() {
 	}
 
 	asteroid* ins = new asteroid();
-	pool.push_back(asteroid_entry(ins, true));
+	pool.push_back(entry(ins, true));
 	return ins;
 }
 
 void asteroid::destroy(asteroid* ins) {
-	asteroid_table::iterator it;
+	table::iterator it;
 	for(it = pool.begin(); it != pool.end(); it++) {
 		if(it->first == ins) {
 			it->second = false;
@@ -113,8 +113,15 @@ void asteroid::destroy(asteroid* ins) {
 	}
 }
 
+void asteroid::destroy_all() {
+	table::iterator it;
+	for(it = pool.begin(); it != pool.end(); it++) {
+		it->second = false;
+	}
+}
+
 void asteroid::update_all(float delta_time) {
-	asteroid_table::iterator it;
+	table::iterator it;
 	for(it = pool.begin(); it != pool.end(); it++) {
 		if(it->second) {
 			it->first->update(delta_time);
@@ -123,7 +130,7 @@ void asteroid::update_all(float delta_time) {
 }
 
 void asteroid::draw_all() {
-	asteroid_table::iterator it;
+	table::iterator it;
 	for(it = pool.begin(); it != pool.end(); it++) {
 		if(it->second) {
 			it->first->draw();

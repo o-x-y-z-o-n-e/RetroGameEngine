@@ -5,8 +5,8 @@
 
 class asteroid {
 public:
-	typedef std::pair<asteroid*, bool> asteroid_entry;
-	typedef std::vector<asteroid_entry> asteroid_table;
+	typedef std::pair<asteroid*, bool> entry;
+	typedef std::vector<entry> table;
 
 public:
 	asteroid();
@@ -19,6 +19,7 @@ public:
 
 	static asteroid* create();
 	static void destroy(asteroid* ins);
+	static void destroy_all();
 	static void update_all(float delta_time);
 	static void draw_all();
 
@@ -29,7 +30,7 @@ private:
 	float turn;
 	rge::transform::ptr transform;
 	rge::sprite::ptr sprite;
-	static asteroid_table pool;
+	static table pool;
 };
 
 #endif /* _ASTEROID_HPP_ */

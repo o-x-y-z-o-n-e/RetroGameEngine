@@ -169,7 +169,7 @@ public:
     void on_init() override {
 		renderer = get_renderer();
 
-		render = rge::render_target::create(renderer, 320, 200);
+		render = rge::render_target::create(renderer, 800, 600);
 
 		model = load_obj("cube.obj");
 		triangle = load_triangle();
@@ -267,7 +267,7 @@ public:
 
 		if(triangle) {
 			renderer->draw(
-				rge::mat4::trs(rge::vec3(1, 2, 4), rge::quaternion::yaw_pitch_roll(180 * DEG_TO_RAD, 0, 0), rge::vec3(1, 1, 1)),
+				rge::mat4::trs(rge::vec3(0, 2, 4), rge::quaternion::yaw_pitch_roll(180 * DEG_TO_RAD, 0, 0), rge::vec3(1, 1, 1)),
 				*triangle,
 				*material
 			);

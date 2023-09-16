@@ -156,6 +156,11 @@ void game::start_game() {
 	bg_scroll_1 = 0.5F;
 	did_win = false;
 	progress = 0.0F;
+
+	explode::destroy_all();
+	laser::destroy_all();
+	asteroid::destroy_all();
+
 	set_rand_asteroid_wait();
 	ship->reset();
 }

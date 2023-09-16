@@ -4386,7 +4386,7 @@ public:
 public:
 	rge::result init(platform* platform) override {
 		platform_instance = platform;
-		output_window = render_target::create(this, 1, 1);
+		output_window = render_target::create(this, 800, 600);
 		return rge::OK;
 	}
 
@@ -4446,10 +4446,18 @@ public:
 		int n = output_window->get_frame_buffer()->get_width() * output_window->get_frame_buffer()->get_height();
 		for(int i = 0; i < n; i++) {
 			color c = from_buffer[i];
-			to_buffer[i * 4] = (uint8_t)(c.a * 255);
-			to_buffer[i * 4 + 1] = (uint8_t)(c.r * 255);
-			to_buffer[i * 4 + 2] = (uint8_t)(c.g * 255);
-			to_buffer[i * 4 + 3] = (uint8_t)(c.b * 255);
+			if(c.r > 1.0F) c.r = 1.0F;
+			if(c.g > 1.0F) c.g = 1.0F;
+			if(c.b > 1.0F) c.b = 1.0F;
+			if(c.a > 1.0F) c.a = 1.0F;
+			if(c.r < 0.0F) c.r = 0.0F;
+			if(c.g < 0.0F) c.g = 0.0F;
+			if(c.b < 0.0F) c.b = 0.0F;
+			if(c.a < 0.0F) c.a = 0.0F;
+			to_buffer[i * 4] = (uint8_t)(c.b * 255);
+			to_buffer[i * 4 + 1] = (uint8_t)(c.g * 255);
+			to_buffer[i * 4 + 2] = (uint8_t)(c.r * 255);
+			to_buffer[i * 4 + 3] = (uint8_t)(c.a * 255);
 		}
 
 		winapi->refresh_window();
