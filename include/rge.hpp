@@ -4472,7 +4472,7 @@ public:
 		const std::vector<vec2>& uvs,
 		const material& material
 	) override {
-		if(input_camera == nullptr || output_render == nullptr) return rge::FAIL;
+		if(input_camera == nullptr || get_real_target() == nullptr) return rge::FAIL;
 
 		int i;
 		vec3 world_v1;
@@ -4524,19 +4524,11 @@ public:
 			proj_v3.z /= 2.0F;
 			proj_v3.z += 0.5F;
 
-			// NOTE: Debugging
-			// printf("p1x: %f, p1y: %f, p1z: %f\n", proj_v1.x, proj_v1.y, proj_v1.z);
-			// printf("p2x: %f, p2y: %f, p2z: %f\n", proj_v2.x, proj_v2.y, proj_v2.z);
-			// printf("p3x: %f, p3y: %f, p3z: %f\n", proj_v3.x, proj_v3.y, proj_v3.z);
-
 			if(/* Check if all three projected vertices are within homogeneous clip bounds. */
-			   proj_v1.x >= -1 && proj_v1.x <= 1 && proj_v1.y >= -1 && proj_v1.y <= 1 &&
-			   proj_v2.x >= -1 && proj_v2.x <= 1 && proj_v2.y >= -1 && proj_v2.y <= 1 &&
-			   proj_v3.x >= -1 && proj_v3.x <= 1 && proj_v3.y >= -1 && proj_v3.y <= 1
+			   (proj_v1.x >= -1 && proj_v1.x <= 1) || (proj_v1.y >= -1 && proj_v1.y <= 1) ||
+			   (proj_v2.x >= -1 && proj_v2.x <= 1) || (proj_v2.y >= -1 && proj_v2.y <= 1) ||
+			   (proj_v3.x >= -1 && proj_v3.x <= 1) || (proj_v3.y >= -1 && proj_v3.y <= 1)
 			   ) {
-				// NOTE: Debugging
-				// printf("inside bounds\n");
-
 				// Calculate the normal of the projected triangle from the cross
 				// product of two of its edges.
 				proj_tri_normal = vec3::cross(proj_v2 - proj_v1, proj_v3 - proj_v1);
@@ -4544,27 +4536,13 @@ public:
 				// Calculate the centre of the projected triangle.
 				proj_tri_center = (proj_v1 + proj_v2 + proj_v3) / 3;
 
-				// NOTE: Debugging
-				// printf("cx: %f\n", camera_position.x);
-				// printf("cy: %f\n", camera_position.y);
-				// printf("cz: %f\n", camera_position.z);
-				// printf("nx: %f\n", proj_tri_normal.x);
-				// printf("ny: %f\n", proj_tri_normal.y);
-				// printf("nz: %f\n", proj_tri_normal.z);
-				// printf("ax: %f\n", proj_tri_center.x);
-				// printf("ay: %f\n", proj_tri_center.y);
-				// printf("az: %f\n", proj_tri_center.z);
-
 				// Check the dot project of the projected triangle normal and
 				// the camera to triangle centre vector - if the dot product is
-				// <=0, the normal and vector point at each other, and the triangle
+				// <= 0, the normal and vector point at each other, and the triangle
 				// must be facing the camera, so we should render it. If the dot
 				// product is >0, they are facing the same direction, therefore
 				// the triangle is facing away from the camera - don't render it.
 				float d = vec3::dot(proj_tri_normal, proj_tri_center - camera_position);
-
-				// NOTE: Debugging
-				// printf("d: %f\n", d);
 
 				if(d <= 0) {
 					// Normalize our projected vertices so that they are in the range
@@ -4695,8 +4673,8 @@ private:
 		// vec2 e2 = v0 - v2;
 
 		// Loop through every pixel in the bounding rect.
-		for(y = y_min; y <= y_max; y++) {
-			for(x = x_min; x <= x_max; x++) {
+		for(y = y_min; y < y_max; y++) {
+			for(x = x_min; x < x_max; x++) {
 				vec2 p(x + 0.5F, y + 0.5F);
 
 				// TODO: Delete
@@ -4728,10 +4706,7 @@ private:
 				// on an edge, but either way, render the pixel).
 				if(weight_v1 >= 0.0F && weight_v2 >= 0.0F && weight_v3 >= 0.0F) {
 					// Calculate the position in our buffer based on our x and y values.
-					ptr = x + (y * get_real_target()->get_width());
-
-					// NOTE: Debugging
-					// printf("ptr: %d, x: %d, y: %d\n", ptr, x, y);
+					ptr = x + ((get_real_target()->get_height() - 1 - y) * get_real_target()->get_width());
 
 					// Calculate the depth value of this pixel.
 					depth = r_v1.z * weight_v1 + r_v2.z * weight_v2 + r_v3.z * weight_v3;

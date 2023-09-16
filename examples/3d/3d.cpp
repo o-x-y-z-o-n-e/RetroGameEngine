@@ -219,43 +219,20 @@ public:
 		turn = rge::math::move_towards(turn, rge::input::get_axis(turn_action), delta_time * 4.0F);
 		rotation += turn * 90.0F * delta_time;
 		camera->transform->rotation = rge::quaternion::yaw_pitch_roll(rotation * DEG_TO_RAD, 0, 0);
-
-		if(rge::input::was_pressed(rge::input::KEY_BACKSPACE)) {
-			rge::log::info("print");
-			renderer->set_target(render);
-			renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
-
-			if(floor) {
-				renderer->draw(
-					rge::mat4::identity(),
-					*floor,
-					*material
-				);
-			}
-
-			if(triangle) {
-				renderer->draw(
-					rge::mat4::trs(rge::vec3(0, 2, 4), rge::quaternion::yaw_pitch_roll(180 * DEG_TO_RAD, 0, 0), rge::vec3(1, 1, 1)),
-					*triangle,
-					*material
-				);
-			}
-			
-			render->get_frame_buffer()->write_to_disk("test_out.bmp");
-			renderer->set_target(nullptr);
-		}
 	}
 
     void on_render() override {
 		renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
 
+		
 		if(floor) {
 			renderer->draw(
-				rge::mat4::translate(rge::vec3(0,0,10)),
+				rge::mat4::translate(rge::vec3(0,0,0)),
 				*floor,
 				*material
 			);
 		}
+		
 		
 		if(triangle) {
 			renderer->draw(
@@ -267,7 +244,7 @@ public:
 
 		if(triangle) {
 			renderer->draw(
-				rge::mat4::trs(rge::vec3(0, 2, 4), rge::quaternion::yaw_pitch_roll(180 * DEG_TO_RAD, 0, 0), rge::vec3(1, 1, 1)),
+				rge::mat4::trs(rge::vec3(2, 2, 10), rge::quaternion::yaw_pitch_roll(180 * DEG_TO_RAD, 0, 0), rge::vec3(1, 1, 1)),
 				*triangle,
 				*material
 			);
