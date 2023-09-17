@@ -15,7 +15,7 @@ void game::get_default_window_params(std::string& title, int& width, int& height
 }
 
 void game::on_init() {
-	camera->set_orthographic(-8, 8, 6, -6, 0.01F, 100.0F);
+	camera->set_orthographic(0.0F, 100.0F, -8, 8, 6, -6);
 	camera->transform->position = rge::vec3(0, 0, -1);
 
 	get_renderer()->set_camera(camera);

@@ -175,7 +175,7 @@ public:
 		triangle = load_triangle();
 		floor = load_floor();
 
-        camera->set_perspective(80, 1.6F, 0.01F, 100.0F);
+        camera->set_perspective(80, 0.01F, 100.0F);
 		camera->transform->position = rge::vec3(0, 2, 0);
 
         renderer->set_camera(camera);

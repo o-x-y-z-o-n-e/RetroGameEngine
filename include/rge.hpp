@@ -913,9 +913,6 @@ public:
 	// Returns matrix used to convert world-space to view-space.
 	mat4 get_view_matrix() const;
 
-	// Returns matrix used to convert view-space to camera-space.
-	mat4 get_projection_matrix() const;
-
 	// Sets camera's projection to perspective.
 	void set_perspective(float fov, float near_plane, float far_plane);
 
@@ -928,15 +925,18 @@ public:
 	// Sets camera's projection to orthographic.
 	void set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane);
 
+	// Set's whether the width of the view frustum is automatically calculated from the view size in the renderer.
 	void set_auto_width_adjust(bool auto_width_adjust);
-	void calculate_projection();
+
+	// Returns matrix used to convert view-space to camera-space.
+	mat4 calculate_projection_matrix();
 
 public:
 	transform::ptr transform;
 
 private:
 	bool auto_width;
-	mat4 projection;
+	// mat4 projection;
 	projection_type type;
 	float near_plane;
 	float far_plane;
@@ -3420,29 +3420,25 @@ mat4 camera::get_view_matrix() const {
 	return mat4::inverse(m);
 }
 
-mat4 camera::get_projection_matrix() const {
-	return projection;
-}
-
 void camera::set_perspective(float fov, float near_plane, float far_plane) {
+	if(near_plane <= 0.0F) near_plane = 0.001F;
+
 	type = projection_type::PERSPECTIVE;
 	this->near_plane = near_plane;
 	this->far_plane = far_plane;
 	this->fov = fov;
 	this->auto_width = true;
-	
-	calculate_projection();
 }
 
 void camera::set_perspective(float fov, float near_plane, float far_plane, float aspect) {
+	if(near_plane <= 0.0F) near_plane = 0.001F;
+
 	type = projection_type::PERSPECTIVE;
 	this->near_plane = near_plane;
 	this->far_plane = far_plane;
 	this->fov = fov;
 	this->aspect = aspect;
 	this->auto_width = false;
-
-	calculate_projection();
 }
 
 void camera::set_orthographic(float near_plane, float far_plane, float vertical_size) {
@@ -3452,8 +3448,6 @@ void camera::set_orthographic(float near_plane, float far_plane, float vertical_
 	this->top_plane = vertical_size;
 	this->bottom_plane = -vertical_size;
 	this->auto_width = true;
-
-	calculate_projection();
 }
 
 void camera::set_orthographic(float near_plane, float far_plane, float left_plane, float right_plane, float top_plane, float bottom_plane) {
@@ -3465,19 +3459,18 @@ void camera::set_orthographic(float near_plane, float far_plane, float left_plan
 	this->near_plane = near_plane;
 	this->far_plane = far_plane;
 	this->auto_width = false;
-
-	calculate_projection();
 }
 
-void camera::calculate_projection() {
+mat4 camera::calculate_projection_matrix() {
+	mat4 projection = mat4::zero();
+
 	if(type == projection_type::ORTHOGRAPHIC) {
 		if(auto_width) {
-			aspect = 1.0F; // TODO: Get aspect from renderer
+			aspect = float(engine::get_renderer()->get_width()) / float(engine::get_renderer()->get_height());
 			left_plane = -top_plane * aspect;
 			right_plane = top_plane * aspect;
 		}
 
-		projection = mat4::zero();
 		projection.m[0][0] = 2.0F / (right_plane - left_plane);
 		projection.m[1][1] = 2.0F / (top_plane - bottom_plane);
 		projection.m[2][2] = 2.0F / (far_plane - near_plane);
@@ -3489,18 +3482,19 @@ void camera::calculate_projection() {
 		projection.m[3][3] = 1.0F;
 	} else if(type == projection_type::PERSPECTIVE) {
 		if(auto_width) {
-			aspect = 1.0F; // TODO: Get aspect from renderer
+			aspect = float(engine::get_renderer()->get_width()) / float(engine::get_renderer()->get_height());
 		}
 
 		float fov_rad = fov * DEG_TO_RAD;
 
-		projection = mat4::zero();
 		projection.m[0][0] = aspect / tanf(fov_rad / 2.0F);
 		projection.m[1][1] = 1.0F / tanf(fov_rad / 2.0F);
 		projection.m[2][2] = -(far_plane + near_plane) / (far_plane - near_plane);
 		projection.m[2][3] = (2 * far_plane * near_plane) / (far_plane - near_plane);
 		projection.m[3][2] = 1.0F;
 	}
+
+	return projection;
 }
 
 void camera::set_auto_width_adjust(bool auto_width_adjust) {
@@ -3923,7 +3917,7 @@ render_target::ptr renderer::get_target() const {
 }
 
 void renderer::prepare_render() {
-	// TODO
+	
 }
 //********************************************//
 //* Renderer Class                           *//
@@ -4582,7 +4576,7 @@ public:
 		vec4 texturespace_v2;
 		vec4 texturespace_v3;
 		vec3 camera_position = input_camera->transform != nullptr ? input_camera->transform->get_global_position() : vec3();
-		mat4 world_to_projection = input_camera->get_projection_matrix() * input_camera->get_view_matrix();
+		mat4 world_to_projection = input_camera->calculate_projection_matrix() * input_camera->get_view_matrix();
 
 		float w = (float)get_real_target()->get_width();
 		float h = (float)get_real_target()->get_height();
@@ -5132,7 +5126,7 @@ public:
 		glMatrixMode(GL_MODELVIEW);
 		glLoadMatrixf(gl_m);
 
-		convert_matrix(gl_m, input_camera->get_projection_matrix());
+		convert_matrix(gl_m, input_camera->calculate_projection_matrix());
 		glMatrixMode(GL_PROJECTION);
 		glLoadMatrixf(gl_m);
 
@@ -5222,7 +5216,7 @@ public:
 		glMatrixMode(GL_MODELVIEW);
 		glLoadMatrixf(gl_m);
 
-		convert_matrix(gl_m, input_camera->get_projection_matrix());
+		convert_matrix(gl_m, input_camera->calculate_projection_matrix());
 		glMatrixMode(GL_PROJECTION);
 		glLoadMatrixf(gl_m);
 

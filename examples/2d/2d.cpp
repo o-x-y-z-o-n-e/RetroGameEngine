@@ -68,7 +68,7 @@ public:
 		material->diffuse = rge::color(1, 0, 1);
 		material->texture = rge::texture::load("smile.bmp");
 
-		camera->set_orthographic(-8, 8, 6, -6, 0.0F, 100.0F);
+		camera->set_orthographic(0.0F, 100.0F, 6);
 		camera->transform->position = rge::vec3(0, 0, -1);
 
 		get_renderer()->set_camera(camera);
