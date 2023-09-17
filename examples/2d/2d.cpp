@@ -68,7 +68,7 @@ public:
 		material->diffuse = rge::color(1, 0, 1);
 		material->texture = rge::texture::load("smile.bmp");
 
-		camera->set_orthographic(0.0F, 100.0F, 6);
+		camera->set_orthographic(0.01F, 10.0F, 6);
 		camera->transform->position = rge::vec3(0, 0, -1);
 
 		get_renderer()->set_camera(camera);
@@ -80,7 +80,7 @@ public:
 		if(counter > PI * 2)
 			counter = 0;
 
-		smile->transform->position = rge::vec3(cosf(counter) * 3.0F, sinf(counter) * 3.0F, 0.0F);
+		smile->transform->position = rge::vec3(cosf(counter) * 3.0F, sinf(counter) * 3.0F, -0.1F);
 		smile->transform->rotation = rge::quaternion::yaw_pitch_roll(0, 0, -counter);
 
 		{
@@ -125,6 +125,7 @@ public:
 			);
 		}
 
+		
 		get_renderer()->draw(
 			*material->texture,
 			rge::vec2(0.0F, 0.0F),

@@ -1107,6 +1107,7 @@ public:
 	texture::ptr texture;
 	color diffuse;
 	color specular;
+	color emission;
 	float shininess;
 };
 //********************************************//
@@ -3482,7 +3483,7 @@ mat4 camera::calculate_projection_matrix() {
 		projection.m[3][3] = 1.0F;
 	} else if(type == projection_type::PERSPECTIVE) {
 		if(auto_width) {
-			aspect = float(engine::get_renderer()->get_width()) / float(engine::get_renderer()->get_height());
+			aspect = float(engine::get_renderer()->get_height()) / float(engine::get_renderer()->get_width());
 		}
 
 		float fov_rad = fov * DEG_TO_RAD;
@@ -3784,8 +3785,9 @@ material::ptr material::create() {
 }
 
 material::material() {
-	diffuse = color(1,1,1);
-	specular = color(1,1,1);
+	diffuse = color(1, 1, 1);
+	specular = color(1, 1, 1);
+	emission = color(0, 0, 0);
 	shininess = 0;
 }
 
@@ -4961,7 +4963,7 @@ public:
 	}
 
 	static void load_default_draw_params() {
-		// glEnable(GL_LIGHTING);
+		glEnable(GL_LIGHTING);
 		// glEnable(GL_LIGHT0);
 
 		glEnable(GL_TEXTURE_2D);
@@ -4970,8 +4972,8 @@ public:
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);
 		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
 		glDepthRange(-1.0F, 1.0F);
 
 		glEnable(GL_COLOR_MATERIAL);
@@ -5105,6 +5107,41 @@ public:
 		#endif
 	}
 
+	void apply_material(const rge::material& material) {
+		if(material.texture != nullptr && material.texture->is_on_gpu()) {
+			glBindTexture(GL_TEXTURE_2D, material.texture->handle);
+		} else {
+			glDisable(GL_TEXTURE_2D);
+		}
+
+		glShadeModel(GL_SMOOTH);
+
+		GLfloat ambient[] = { ambient_color.r, ambient_color.g, ambient_color.b, ambient_color.a };
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+		
+		GLfloat diffuse[] = { material.diffuse.r, material.diffuse.g, material.diffuse.b, material.diffuse.a };
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+
+		GLfloat specular[] = { material.specular.r, material.specular.g, material.specular.b, material.specular.a };
+		glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+
+		GLfloat emission[] = { material.emission.r, material.emission.g, material.emission.b, material.emission.a };
+		glMaterialfv(GL_FRONT, GL_EMISSION, emission);
+
+		GLint mask[] = { 1, 1, 1 };
+		glMaterialiv(GL_FRONT, GL_COLOR_INDEXES, mask);
+
+		glMaterialf(GL_FRONT, GL_SHININESS, material.shininess);
+
+		//glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
+		//glColor4f(material.diffuse.r, material.diffuse.g, material.diffuse.b, material.diffuse.a);
+
+		glColorMaterial(GL_FRONT, GL_DIFFUSE);
+		glEnable(GL_COLOR_MATERIAL);
+		//glEnable(GL_LIGHTING);
+		
+	}
+
 	// Draw 3D geometry, using model space data.
 	result draw(
 		const mat4& local_to_world,
@@ -5130,20 +5167,13 @@ public:
 		glMatrixMode(GL_PROJECTION);
 		glLoadMatrixf(gl_m);
 
-		float lpos[4] = { 0, 1, 0, 1.0 };  //light's position
-		//glLightfv(GL_LIGHT0, GL_POSITION, lpos);   //Set light position
-
 		load_default_draw_params();
-
-		if(material.texture != nullptr && material.texture->is_on_gpu()) {
-			glBindTexture(GL_TEXTURE_2D, material.texture->handle);
-		} else {
-			glDisable(GL_TEXTURE_2D);
-		}
-
+		apply_material(material);
 		glDepthRange(1.0F, -1.0F);
-
-		glColor4f(material.diffuse.r, material.diffuse.g, material.diffuse.b, material.diffuse.a);
+		
+		// glEnable(GL_LIGHT0);
+		float lpos[4] = { 0, 1, 0, 1.0 };
+		// glLightfv(GL_LIGHT0, GL_POSITION, lpos);
 
 		glBegin(GL_TRIANGLES); {
 			for(i = 0; i < triangles.size(); i++) {
@@ -5221,14 +5251,14 @@ public:
 		glLoadMatrixf(gl_m);
 
 		load_default_draw_params();
+		glDisable(GL_LIGHTING);
+		glColor4f(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
 
 		if(sprite.texture->is_on_gpu()) {
 			glBindTexture(GL_TEXTURE_2D, sprite.texture->handle);
 		} else {
 			glDisable(GL_TEXTURE_2D);
 		}
-
-		glColor4f(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
 
 		glBegin(GL_QUADS); {
 			glTexCoord2f(0.0F, 1.0F);
@@ -5274,6 +5304,8 @@ public:
 		}
 
 		load_default_draw_params();
+		glDisable(GL_LIGHTING);
+		glDisable(GL_DEPTH_TEST);
 
 		if(texture.is_on_gpu()) {
 			glBindTexture(GL_TEXTURE_2D, texture.handle);
@@ -5281,24 +5313,23 @@ public:
 			glDisable(GL_TEXTURE_2D);
 		}
 
-		glDisable(GL_LIGHTING);
-
-		glDisable(GL_DEPTH_TEST);
-		glDepthMask(GL_FALSE);
-
 		glBegin(GL_QUADS);
 
 		glTexCoord2f(src_min.x, 1.0F - src_min.y);
 		glVertex3f(dest_min.x, dest_min.y, 0.0F);
+		glNormal3f(0, 0, -1);
 
 		glTexCoord2f(src_max.x, 1.0F - src_min.y);
 		glVertex3f(dest_max.x, dest_min.y, 0.0F);
+		glNormal3f(0, 0, -1);
 
 		glTexCoord2f(src_max.x, 1.0F - src_max.y);
 		glVertex3f(dest_max.x, dest_max.y, 0.0F);
+		glNormal3f(0, 0, -1);
 
 		glTexCoord2f(src_min.x, 1.0F - src_max.y);
 		glVertex3f(dest_min.x, dest_max.y, 0.0F);
+		glNormal3f(0, 0, -1);
 
 		glEnd();
 	}

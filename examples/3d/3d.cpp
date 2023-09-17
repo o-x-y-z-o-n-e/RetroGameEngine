@@ -57,20 +57,27 @@ static rge::mesh::ptr load_obj(const char* fname) {
 				face_comps = str_split(comps[i], '/');
 				int vi = 0, vti = 0, vni = 0;
 
-				if(face_comps.size() > 0)
-					vi = std::stoi(face_comps[0]) - 1;
-				if(face_comps.size() > 1)
-					vti = std::stoi(face_comps[1]) - 1;
-				if(face_comps.size() > 2)
-					vni = std::stoi(face_comps[2]) - 1;
-
-				if(vti < 0) vti = vi;
-				if(vni < 0) vni = vi;
-
 				mdl->triangles.push_back(mdl->vertices.size());
-				mdl->vertices.push_back(vertices[vi]);
-				mdl->uvs.push_back(uvs[vti]);
-				mdl->normals.push_back(normals[vni]);
+
+				if(face_comps.size() > 0) {
+					vi = std::stoi(face_comps[0]) - 1;
+					mdl->vertices.push_back(vertices[vi]);
+				} else {
+					mdl->vertices.push_back(rge::vec3());
+				}
+				
+				if(face_comps.size() > 1) {
+					vti = std::stoi(face_comps[1]) - 1;
+					mdl->uvs.push_back(uvs[vti]);
+				} else {
+					mdl->uvs.push_back(rge::vec2());
+				}
+				if(face_comps.size() > 2) {
+					vni = std::stoi(face_comps[2]) - 1;
+					mdl->normals.push_back(normals[vni]);
+				} else {
+					mdl->normals.push_back(rge::vec3());
+				}				
 			}
 		}
 	}
@@ -171,7 +178,7 @@ public:
 
 		render = rge::render_target::create(renderer, 800, 600);
 
-		model = load_obj("cube.obj");
+		// model = load_obj("res/cube.obj");
 		triangle = load_triangle();
 		floor = load_floor();
 
@@ -182,6 +189,7 @@ public:
 		renderer->set_ambience(rge::color(0.2F, 0.2F, 0.2F));
 
 		material->texture = rge::texture::load("floor.png");
+		material->diffuse = rge::color(0.4F, 0.0F, 1.0F);
 		renderer->upload_texture(*material->texture);
 
 		turn_action.add_binding(rge::input::KEY_LEFT, -1.0F);
@@ -224,15 +232,13 @@ public:
     void on_render() override {
 		renderer->clear(rge::color(0.8F, 0.4F, 0.4F));
 
-		
 		if(floor) {
 			renderer->draw(
-				rge::mat4::translate(rge::vec3(0,0,0)),
+				rge::mat4::translate(rge::vec3(0, 0, 0)),
 				*floor,
 				*material
 			);
 		}
-		
 		
 		if(triangle) {
 			renderer->draw(
@@ -246,6 +252,14 @@ public:
 			renderer->draw(
 				rge::mat4::trs(rge::vec3(2, 2, 10), rge::quaternion::yaw_pitch_roll(180 * DEG_TO_RAD, 0, 0), rge::vec3(1, 1, 1)),
 				*triangle,
+				*material
+			);
+		}
+
+		if(model) {
+			renderer->draw(
+				rge::mat4::trs(rge::vec3(-2, 1, 5), rge::quaternion::yaw_pitch_roll(0, 0, 0), rge::vec3(1, 1, 1)),
+				*model,
 				*material
 			);
 		}
