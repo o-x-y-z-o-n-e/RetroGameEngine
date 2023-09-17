@@ -918,16 +918,24 @@ public:
 
 	// Sets camera's projection to perspective.
 	void set_perspective(float fov, float near_plane, float far_plane);
+
+	// Sets camera's projection to perspective.
+	void set_perspective(float fov, float near_plane, float far_plane, float aspect);
 	
+	// Sets camera's projection to orthographic.
+	void set_orthographic(float near_plane, float far_plane, float vertical_size);
+
 	// Sets camera's projection to orthographic.
 	void set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane);
 
+	void set_auto_width_adjust(bool auto_width_adjust);
 	void calculate_projection();
 
 public:
 	transform::ptr transform;
 
 private:
+	bool auto_width;
 	mat4 projection;
 	projection_type type;
 	float near_plane;
@@ -936,6 +944,7 @@ private:
 	float right_plane;
 	float top_plane;
 	float bottom_plane;
+	float aspect;
 	float fov;
 };
 //********************************************//
@@ -3398,6 +3407,7 @@ camera::ptr camera::create() {
 
 camera::camera() {
 	transform = rge::transform::create();
+	auto_width = true;
 }
 
 camera::~camera() {
@@ -3419,11 +3429,34 @@ void camera::set_perspective(float fov, float near_plane, float far_plane) {
 	this->near_plane = near_plane;
 	this->far_plane = far_plane;
 	this->fov = fov;
+	this->auto_width = true;
 	
 	calculate_projection();
 }
 
-void camera::set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane) {
+void camera::set_perspective(float fov, float near_plane, float far_plane, float aspect) {
+	type = projection_type::PERSPECTIVE;
+	this->near_plane = near_plane;
+	this->far_plane = far_plane;
+	this->fov = fov;
+	this->aspect = aspect;
+	this->auto_width = false;
+
+	calculate_projection();
+}
+
+void camera::set_orthographic(float near_plane, float far_plane, float vertical_size) {
+	type = projection_type::ORTHOGRAPHIC;
+	this->near_plane = near_plane;
+	this->far_plane = far_plane;
+	this->top_plane = vertical_size;
+	this->bottom_plane = -vertical_size;
+	this->auto_width = true;
+
+	calculate_projection();
+}
+
+void camera::set_orthographic(float near_plane, float far_plane, float left_plane, float right_plane, float top_plane, float bottom_plane) {
 	type = projection_type::ORTHOGRAPHIC;
 	this->left_plane = left_plane;
 	this->right_plane = right_plane;
@@ -3431,12 +3464,19 @@ void camera::set_orthographic(float left_plane, float right_plane, float top_pla
 	this->bottom_plane = bottom_plane;
 	this->near_plane = near_plane;
 	this->far_plane = far_plane;
+	this->auto_width = false;
 
 	calculate_projection();
 }
 
 void camera::calculate_projection() {
 	if(type == projection_type::ORTHOGRAPHIC) {
+		if(auto_width) {
+			aspect = 1.0F; // TODO: Get aspect from renderer
+			left_plane = -top_plane * aspect;
+			right_plane = top_plane * aspect;
+		}
+
 		projection = mat4::zero();
 		projection.m[0][0] = 2.0F / (right_plane - left_plane);
 		projection.m[1][1] = 2.0F / (top_plane - bottom_plane);
@@ -3448,7 +3488,10 @@ void camera::calculate_projection() {
 
 		projection.m[3][3] = 1.0F;
 	} else if(type == projection_type::PERSPECTIVE) {
-		float aspect = 1.6F;
+		if(auto_width) {
+			aspect = 1.0F; // TODO: Get aspect from renderer
+		}
+
 		float fov_rad = fov * DEG_TO_RAD;
 
 		projection = mat4::zero();
@@ -3458,6 +3501,10 @@ void camera::calculate_projection() {
 		projection.m[2][3] = (2 * far_plane * near_plane) / (far_plane - near_plane);
 		projection.m[3][2] = 1.0F;
 	}
+}
+
+void camera::set_auto_width_adjust(bool auto_width_adjust) {
+	auto_width = auto_width_adjust;
 }
 //********************************************//
 //* Camera class.                            *//
