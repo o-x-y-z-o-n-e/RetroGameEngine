@@ -899,6 +899,10 @@ public:
 class camera final {
 public:
 	typedef std::shared_ptr<camera> ptr;
+	enum projection_type {
+		PERSPECTIVE,
+		ORTHOGRAPHIC
+	};
 
 public:
 	static camera::ptr create();
@@ -913,16 +917,26 @@ public:
 	mat4 get_projection_matrix() const;
 
 	// Sets camera's projection to perspective.
-	void set_perspective(float fov, float aspect, float near_plane, float far_plane);
+	void set_perspective(float fov, float near_plane, float far_plane);
 	
 	// Sets camera's projection to orthographic.
 	void set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane);
+
+	void calculate_projection();
 
 public:
 	transform::ptr transform;
 
 private:
 	mat4 projection;
+	projection_type type;
+	float near_plane;
+	float far_plane;
+	float left_plane;
+	float right_plane;
+	float top_plane;
+	float bottom_plane;
+	float fov;
 };
 //********************************************//
 //* Camera Class                             *//
@@ -1196,6 +1210,7 @@ public:
 	void set_ambience(const color& ambient_color);
 	rge::result set_target(render_target::ptr target);
 	render_target::ptr get_target() const;
+	void prepare_render();
 
 public:
 	virtual rge::result init(platform* platform) = 0;
@@ -3176,6 +3191,7 @@ void engine::loop() {
 	// Tick the rendering routine.
 	render_counter += delta_time;
 	if(render_counter > render_interval) {
+		renderer_impl->prepare_render();
 		on_render();
 		renderer_impl->display();
 		platform_impl->refresh_window();
@@ -3398,28 +3414,50 @@ mat4 camera::get_projection_matrix() const {
 	return projection;
 }
 
-void camera::set_perspective(float fov, float aspect, float near_plane, float far_plane) {
-	fov *= DEG_TO_RAD;
-
-	projection = mat4::zero();
-	projection.m[0][0] = aspect / tanf(fov / 2.0F);
-	projection.m[1][1] = 1.0F / tanf(fov / 2.0F);
-	projection.m[2][2] = -(far_plane + near_plane) / (far_plane - near_plane);
-	projection.m[2][3] = (2 * far_plane * near_plane) / (far_plane - near_plane);
-	projection.m[3][2] = 1.0F;
+void camera::set_perspective(float fov, float near_plane, float far_plane) {
+	type = projection_type::PERSPECTIVE;
+	this->near_plane = near_plane;
+	this->far_plane = far_plane;
+	this->fov = fov;
+	
+	calculate_projection();
 }
 
 void camera::set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane) {
-	projection = mat4::zero();
-	projection.m[0][0] = 2.0F / (right_plane - left_plane);
-	projection.m[1][1] = 2.0F / (top_plane - bottom_plane);
-	projection.m[2][2] = 2.0F / (far_plane - near_plane);
+	type = projection_type::ORTHOGRAPHIC;
+	this->left_plane = left_plane;
+	this->right_plane = right_plane;
+	this->top_plane = top_plane;
+	this->bottom_plane = bottom_plane;
+	this->near_plane = near_plane;
+	this->far_plane = far_plane;
 
-	projection.m[0][3] = -((right_plane + left_plane) / (right_plane - left_plane));
-	projection.m[1][3] = -((top_plane + bottom_plane) / (top_plane - bottom_plane));
-	projection.m[2][3] = -((far_plane + near_plane) / (far_plane - near_plane));
+	calculate_projection();
+}
 
-	projection.m[3][3] = 1.0F;
+void camera::calculate_projection() {
+	if(type == projection_type::ORTHOGRAPHIC) {
+		projection = mat4::zero();
+		projection.m[0][0] = 2.0F / (right_plane - left_plane);
+		projection.m[1][1] = 2.0F / (top_plane - bottom_plane);
+		projection.m[2][2] = 2.0F / (far_plane - near_plane);
+
+		projection.m[0][3] = -((right_plane + left_plane) / (right_plane - left_plane));
+		projection.m[1][3] = -((top_plane + bottom_plane) / (top_plane - bottom_plane));
+		projection.m[2][3] = -((far_plane + near_plane) / (far_plane - near_plane));
+
+		projection.m[3][3] = 1.0F;
+	} else if(type == projection_type::PERSPECTIVE) {
+		float aspect = 1.6F;
+		float fov_rad = fov * DEG_TO_RAD;
+
+		projection = mat4::zero();
+		projection.m[0][0] = aspect / tanf(fov_rad / 2.0F);
+		projection.m[1][1] = 1.0F / tanf(fov_rad / 2.0F);
+		projection.m[2][2] = -(far_plane + near_plane) / (far_plane - near_plane);
+		projection.m[2][3] = (2 * far_plane * near_plane) / (far_plane - near_plane);
+		projection.m[3][2] = 1.0F;
+	}
 }
 //********************************************//
 //* Camera class.                            *//
@@ -3835,6 +3873,10 @@ rge::result renderer::set_target(render_target::ptr target) {
 
 render_target::ptr renderer::get_target() const {
 	return output_render;
+}
+
+void renderer::prepare_render() {
+	// TODO
 }
 //********************************************//
 //* Renderer Class                           *//
