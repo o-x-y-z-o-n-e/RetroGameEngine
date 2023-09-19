@@ -5,14 +5,12 @@
 
 /* TODO:
 	==SPRITES==
-	Explode
-	Enemy 1
 	Enemy 2
 	Enemy 3
 	==CODE==
-	Enemy 1
-	Enemy 2
-	Enemy 3
+	Difficulty progression
+	In-game progress meter
+	Laser heat/cooldown system
 */
 
 int main(int argc, char** argv) {

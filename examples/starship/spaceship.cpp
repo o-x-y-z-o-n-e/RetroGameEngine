@@ -13,7 +13,7 @@ spaceship::spaceship() {
 
 	flame_sprite = rge::sprite::create();
 	flame_sprite->transform->parent = transform;
-	flame_sprite->transform->position = rge::vec3(-0.125F, -1.0F, -SPACESHIP_LAYER);
+	flame_sprite->transform->position = rge::vec3(-0.125F, -1.0F, 0);
 	flame_sprite->pixels_per_unit = 16;
 
 	health_sprite = rge::sprite::create();
@@ -45,7 +45,7 @@ spaceship::~spaceship() {
 }
 
 void spaceship::reset() {
-	transform->position = rge::vec3(0, 0, -SPACESHIP_LAYER);
+	transform->position = rge::vec3(0, 0, LAYER_TO_Z(SPACESHIP_LAYER));
 
 	shoot_side = 1;
 	shoot_cooldown = 0;
@@ -57,24 +57,27 @@ void spaceship::reset() {
 	dmg_t = 0.0F;
 
 	health = MAX_HEALTH;
+
+	velocity = rge::vec2();
+	move_input = rge::vec2();
 }
 
 void spaceship::draw() {
-	transform->position.z = -SPACESHIP_LAYER;
+	transform->position.z = LAYER_TO_Z(SPACESHIP_LAYER);
 	rge::engine::get_renderer()->draw(*flame_sprite);
 	rge::engine::get_renderer()->draw(*sprite);
 
 	for(int i = 0; i < MAX_HEALTH; i++) {
-		health_sprite->transform->position = rge::vec3(-7.5F + (i * 0.25F), -5.5F, -UI_LAYER);
+		health_sprite->transform->position = rge::vec3(-7.5F + (i * 0.25F), -5.5F, LAYER_TO_Z(UI_LAYER));
 		health_sprite->texture = health_textures[i < health];
 		rge::engine::get_renderer()->draw(*health_sprite);
 	}
 }
 
 void spaceship::update(float delta_time) {
-	const float ACCEL = 16.0F;
-	const float MAX_SPEED = 16.0F;
-	const float SHOOT_INTERVAL = 0.2F;
+	const float ACCEL = 20.0F;
+	const float MAX_SPEED = 12.0F;
+	const float SHOOT_INTERVAL = 0.16F;
 	const float DMG_FLASH_SPEED = 10.0F;
 
 	if(rge::input::is_down(rge::input::KEY_A)) {
@@ -108,7 +111,7 @@ void spaceship::update(float delta_time) {
 	if(shoot_cooldown > 0.0F) shoot_cooldown -= delta_time;
 	if(shoot_cooldown <= 0.0F && rge::input::is_down(shoot_action)) {
 		laser* l = laser::create();
-		rge::vec2 p = transform->position + rge::vec2(0.375F * shoot_side, -0.5F);
+		rge::vec2 p = transform->position + rge::vec2(0.25F * shoot_side, -0.5F);
 		if(shoot_side < 0) p.x -= (1.0F / 16.0F);
 		l->set_position(p);
 		shoot_side *= -1;

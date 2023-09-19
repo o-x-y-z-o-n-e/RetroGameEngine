@@ -6,12 +6,18 @@
 #include "asteroid.hpp"
 #include "laser.hpp"
 #include "explode.hpp"
+#include "enemy.hpp"
 
-#define BACKGROUND_LAYER -1.0F
-#define SPACESHIP_LAYER 0.0F
-#define ASTEROID_LAYER 0.5F
-#define LASER_LAYER 0.75F
+#define BACKGROUND_LAYER 0.01F
+#define SPACESHIP_LAYER 0.1F
+#define ASTEROID_LAYER 0.2F
+#define ENEMY_LAYER 0.3F
+#define FX_LAYER 0.4F
 #define UI_LAYER 0.9F
+
+#define LAYER_TO_Z(L) (1 - (L * 2))
+
+#define PPU 16
 
 enum class game_state {
 	MAIN_MENU,
@@ -41,6 +47,7 @@ public:
 private:
 	void scroll_bg(float delta_time);
 	void set_rand_asteroid_wait();
+	void set_rand_enemy_wait();
 
 private:
 	rge::random random;
@@ -53,9 +60,11 @@ private:
 	rge::sprite::ptr bg_sprite_0;
 	rge::sprite::ptr bg_sprite_1;
 	rge::texture::ptr meter;
+	rge::texture::ptr meter_bg;
 	float bg_scroll_0;
 	float bg_scroll_1;
 	float asteroid_countdown;
+	float enemy_countdown;
 	game_state state;
 	rge::camera::ptr camera;
 	spaceship* ship;

@@ -1,7 +1,7 @@
 #include "game.hpp"
 
 const float BG_SCROLL_SPEED = 0.25F;
-const float GAME_DURATION = 60*5;
+const float GAME_DURATION = 60 * 4;
 
 game::game() : rge::engine() {
 	camera = rge::camera::create();
@@ -26,37 +26,37 @@ void game::on_init() {
 	title_sprite->texture = rge::texture::load("res/title.png");
 	title_sprite->pixels_per_unit = 16;
 	title_sprite->centered = true;
-	title_sprite->transform->position = rge::vec3(0, 0, -UI_LAYER);
+	title_sprite->transform->position = rge::vec3(0, 0, LAYER_TO_Z(UI_LAYER));
 
 	win_sprite = rge::sprite::create();
 	win_sprite->texture = rge::texture::load("res/won.png");
 	win_sprite->pixels_per_unit = 16;
 	win_sprite->centered = true;
-	win_sprite->transform->position = rge::vec3(0, 0, -UI_LAYER);
+	win_sprite->transform->position = rge::vec3(0, 0, LAYER_TO_Z(UI_LAYER));
 
 	lose_sprite = rge::sprite::create();
 	lose_sprite->texture = rge::texture::load("res/lost.png");
 	lose_sprite->pixels_per_unit = 16;
 	lose_sprite->centered = true;
-	lose_sprite->transform->position = rge::vec3(0, 0, -UI_LAYER);
+	lose_sprite->transform->position = rge::vec3(0, 0, LAYER_TO_Z(UI_LAYER));
 
 	pause_sprite = rge::sprite::create();
 	pause_sprite->texture = rge::texture::load("res/pause.png");
 	pause_sprite->pixels_per_unit = 16;
 	pause_sprite->centered = true;
-	pause_sprite->transform->position = rge::vec3(0, 0, -UI_LAYER);
+	pause_sprite->transform->position = rge::vec3(0, 0, LAYER_TO_Z(UI_LAYER));
 
 	press_key_sprite_0 = rge::sprite::create();
 	press_key_sprite_0->texture = rge::texture::load("res/press_any_key_to_start.png");
 	press_key_sprite_0->pixels_per_unit = 16;
 	press_key_sprite_0->centered = true;
-	press_key_sprite_0->transform->position = rge::vec3(0, -4, -UI_LAYER);
+	press_key_sprite_0->transform->position = rge::vec3(0, -4, LAYER_TO_Z(UI_LAYER));
 
 	press_key_sprite_1 = rge::sprite::create();
 	press_key_sprite_1->texture = rge::texture::load("res/press_esc_key_to_return.png");
 	press_key_sprite_1->pixels_per_unit = 16;
 	press_key_sprite_1->centered = true;
-	press_key_sprite_1->transform->position = rge::vec3(0, -4, -UI_LAYER);
+	press_key_sprite_1->transform->position = rge::vec3(0, -4, LAYER_TO_Z(UI_LAYER));
 
 	bg_sprite_0 = rge::sprite::create();
 	bg_sprite_0->texture = rge::texture::load("res/background.png");
@@ -69,6 +69,11 @@ void game::on_init() {
 	meter->allocate();
 	meter->get_data()[0] = rge::color(1, 1, 1);
 	get_renderer()->upload_texture(*meter);
+
+	meter_bg = rge::texture::create(1, 1);
+	meter_bg->allocate();
+	meter_bg->get_data()[0] = rge::color(0.5F, 0.5F, 0.5F);
+	get_renderer()->upload_texture(*meter_bg);
 }
 
 void game::on_start() {
@@ -95,11 +100,19 @@ void game::on_update(float delta_time) {
 			asteroid::create();
 		}
 
+		enemy_countdown -= delta_time;
+		if(enemy_countdown <= 0.0F) {
+			set_rand_enemy_wait();
+
+			enemy::create();
+		}
+
 		scroll_bg(delta_time);
 		ship->update(delta_time);
 		asteroid::update_all(delta_time);
 		laser::update_all(delta_time);
 		explode::update_all(delta_time);
+		enemy::update_all(delta_time);
 
 		progress += delta_time / GAME_DURATION;
 		if(progress >= 1.0F) {
@@ -131,6 +144,7 @@ void game::on_render() {
 		asteroid::draw_all();
 		laser::draw_all();
 		explode::draw_all();
+		enemy::draw_all();
 		ship->draw();
 	} else if(state == game_state::PAUSED) {
 		get_renderer()->draw(*pause_sprite);
@@ -141,8 +155,17 @@ void game::on_render() {
 		} else {
 			get_renderer()->draw(*lose_sprite);
 
-			progress = 0.5F;
-			get_renderer()->draw(*meter, rge::vec2(0.01F, 0.01F), rge::vec2(0.04F, rge::math::lerp(0.01F, 0.99F, progress)));
+			get_renderer()->draw(
+				*meter,
+				rge::vec2(0.1F, 0.3F),
+				rge::vec2(rge::math::lerp(0.1F, 0.9F, progress), 0.35F)
+			);
+
+			get_renderer()->draw(
+				*meter_bg,
+				rge::vec2(rge::math::lerp(0.1F, 0.9F, progress), 0.3F),
+				rge::vec2(0.9F, 0.35F)
+			);
 		}
 
 		get_renderer()->draw(*press_key_sprite_1);
@@ -160,8 +183,11 @@ void game::start_game() {
 	explode::destroy_all();
 	laser::destroy_all();
 	asteroid::destroy_all();
+	enemy::destroy_all();
 
 	set_rand_asteroid_wait();
+	set_rand_enemy_wait();
+	enemy::create();
 	ship->reset();
 }
 
@@ -180,10 +206,14 @@ void game::scroll_bg(float delta_time) {
 	if(bg_scroll_0 > 1) bg_scroll_0 -= 1;
 	if(bg_scroll_1 > 1) bg_scroll_1 -= 1;
 
-	bg_sprite_0->transform->position = rge::vec3(-8, rge::math::lerp(6, -18, bg_scroll_0), -BACKGROUND_LAYER);
-	bg_sprite_1->transform->position = rge::vec3(-8, rge::math::lerp(6, -18, bg_scroll_1), -BACKGROUND_LAYER);
+	bg_sprite_0->transform->position = rge::vec3(-8, rge::math::lerp(6, -18, bg_scroll_0), LAYER_TO_Z(BACKGROUND_LAYER));
+	bg_sprite_1->transform->position = rge::vec3(-8, rge::math::lerp(6, -18, bg_scroll_1), LAYER_TO_Z(BACKGROUND_LAYER));
 }
 
 void game::set_rand_asteroid_wait() {
 	asteroid_countdown = random.range(1.0F, 2.0F);
+}
+
+void game::set_rand_enemy_wait() {
+	enemy_countdown = random.range(2.0F, 3.0F);
 }

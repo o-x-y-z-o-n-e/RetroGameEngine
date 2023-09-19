@@ -3,11 +3,15 @@
 
 laser::table laser::pool;
 
+static void apply_damage(enemy& e) {
+	e.take_damage();
+}
+
 laser::laser() {
 	transform = rge::transform::create();
 	sprite = rge::sprite::create();
 	sprite->transform->parent = transform;
-	sprite->pixels_per_unit = 16;
+	sprite->pixels_per_unit = PPU;
 	sprite->texture = rge::texture::load("res/laser.png");
 }
 
@@ -19,14 +23,19 @@ void laser::update(float delta_time) {
 	const float SPEED = 20.0F;
 
 	transform->position += rge::vec2(0, SPEED) * delta_time;
+	rge::vec2 p = transform->position + rge::vec2(0, sprite->texture->get_height() / float(PPU));
 
 	if(transform->position.y > 6) {
+		destroy(this);
+	}
+
+	if(enemy::overlap_all(p, apply_damage)) {
 		destroy(this);
 	}
 }
 
 void laser::draw() {
-	transform->position.z = -LASER_LAYER;
+	transform->position.z = LAYER_TO_Z(FX_LAYER);
 	rge::engine::get_renderer()->draw(*sprite);
 }
 
