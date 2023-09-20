@@ -48,6 +48,7 @@ private:
 	void scroll_bg(float delta_time);
 	void set_rand_asteroid_wait();
 	void set_rand_enemy_wait();
+	void draw_progress();
 
 private:
 	rge::random random;

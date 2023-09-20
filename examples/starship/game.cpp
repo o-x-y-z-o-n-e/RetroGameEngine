@@ -146,6 +146,7 @@ void game::on_render() {
 		explode::draw_all();
 		enemy::draw_all();
 		ship->draw();
+		draw_progress();
 	} else if(state == game_state::PAUSED) {
 		get_renderer()->draw(*pause_sprite);
 		get_renderer()->draw(*press_key_sprite_1);
@@ -215,5 +216,10 @@ void game::set_rand_asteroid_wait() {
 }
 
 void game::set_rand_enemy_wait() {
-	enemy_countdown = random.range(2.0F, 3.0F);
+	enemy_countdown = rge::math::lerp(2.0F, 0.0F, progress) + random.range(1.0F, 2.0F);
+}
+
+void game::draw_progress() {
+	rge::vec2 min = rge::vec2(128.0F / get_renderer()->get_width(), 32.0F / get_renderer()->get_height());
+	rge::vec2 max = min + rge::vec2(128.F / get_renderer()->get_width(), 16.0F / get_renderer()->get_height());
 }
