@@ -107,6 +107,7 @@ enum result {
 struct rect final {
 	float x, y, w, h;
 
+	rect();
 	rect(float x, float y, float w, float h);
 
 	vec2 get_min() const;
@@ -1132,9 +1133,11 @@ public:
 	~sprite();
 
 public:
+	bool sub_sprite;
 	bool centered;
 	bool billboard;
 	int pixels_per_unit;
+	rect section;
 
 	texture::ptr texture;
 	material::ptr material;
@@ -1548,6 +1551,13 @@ namespace rge {
 //********************************************//
 //* Rectangle Struct                         *//
 //********************************************//
+rect::rect() {
+	this->x = 0;
+	this->y = 0;
+	this->w = 0;
+	this->h = 0;
+}
+
 rect::rect(float x, float y, float w, float h) {
 	this->x = x;
 	this->y = y;
@@ -3814,9 +3824,11 @@ sprite::ptr sprite::create(const rge::texture::ptr& texture) {
 
 sprite::sprite() {
 	transform = rge::transform::create();
+	sub_sprite = false;
 	centered = false;
 	billboard = false;
 	pixels_per_unit = 32;
+	section = rect(0, 0, pixels_per_unit, pixels_per_unit);
 }
 
 sprite::sprite(const rge::texture::ptr& texture) : sprite() {
@@ -5207,8 +5219,21 @@ public:
 		mat4 sprite_matrix = sprite.transform->get_global_matrix();
 		mat4 camera_matrix = input_camera->transform->get_global_matrix();
 
-		float w = float(sprite.texture->get_width()) / sprite.pixels_per_unit;
-		float h = float(sprite.texture->get_height()) / sprite.pixels_per_unit;
+		vec2 tex_size = vec2(sprite.texture->get_width(), sprite.texture->get_height());
+
+		float w;
+		float h;
+
+		if(sprite.sub_sprite) {
+			w = sprite.section.w;
+			h = sprite.section.h;
+		} else {
+			w = tex_size.x;
+			h = tex_size.y;
+		}
+
+		w /= sprite.pixels_per_unit;
+		h /= sprite.pixels_per_unit;
 
 		vec3 p = vec2(0, 0);
 		vec3 r = vec2(w, 0);
@@ -5239,6 +5264,23 @@ public:
 			p_tr = sprite_matrix.multiply_point_3x4(p + r + u);
 		}
 
+		vec2 t_bl;
+		vec2 t_br;
+		vec2 t_tl;
+		vec2 t_tr;
+
+		if(sprite.sub_sprite) {
+			t_bl = vec2(sprite.section.x / tex_size.x, sprite.section.y / tex_size.y);
+			t_br = t_bl + vec2(sprite.section.w / tex_size.x, 0);
+			t_tl = t_bl + vec2(0, sprite.section.h / tex_size.y);
+			t_tr = t_bl + t_br + t_tl;
+		} else {
+			t_bl = vec2(0, 0);
+			t_br = t_bl + vec2(1, 0);
+			t_tl = t_bl + vec2(0, 1);
+			t_tr = t_bl + t_br + t_tl;
+		}
+
 		color diffuse = color();
 		if(sprite.material) diffuse = sprite.material->diffuse;
 
@@ -5261,19 +5303,19 @@ public:
 		}
 
 		glBegin(GL_QUADS); {
-			glTexCoord2f(0.0F, 1.0F);
+			glTexCoord2f(t_bl.x, 1.0F - t_bl.y);
 			glVertex3f(p_bl.x, p_bl.y, p_bl.z);
 			glNormal3f(n.x, n.y, n.z);
 
-			glTexCoord2f(1.0F, 1.0F);
+			glTexCoord2f(t_br.x, 1.0F - t_br.y);
 			glVertex3f(p_br.x, p_br.y, p_br.z);
 			glNormal3f(n.x, n.y, n.z);
 
-			glTexCoord2f(1.0F, 0.0F);
+			glTexCoord2f(t_tr.x, 1.0F - t_tr.y);
 			glVertex3f(p_tr.x, p_tr.y, p_tr.z);
 			glNormal3f(n.x, n.y, n.z);
 
-			glTexCoord2f(0.0F, 0.0F);
+			glTexCoord2f(t_tl.x, 1.0F - t_tl.y);
 			glVertex3f(p_tl.x, p_tl.y, p_tl.z);
 			glNormal3f(n.x, n.y, n.z);
 		} glEnd();
