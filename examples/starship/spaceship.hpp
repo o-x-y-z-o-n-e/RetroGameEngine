@@ -17,9 +17,12 @@ public:
 
 	void damage(int amount);
 
+	float get_cooldown() const;
+
 private:
 	rge::input::action shoot_action;
 	int shoot_side;
+	float shoot_counter;
 	float shoot_cooldown;
 	float flame_counter;
 	int flame_index;

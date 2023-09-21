@@ -8,9 +8,6 @@
 	Enemy 2
 	Enemy 3
 	==CODE==
-	Difficulty progression
-	In-game progress meter
-	Laser heat/cooldown system
 */
 
 int main(int argc, char** argv) {
