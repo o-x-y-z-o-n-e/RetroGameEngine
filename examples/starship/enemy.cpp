@@ -12,20 +12,31 @@ enemy::enemy() {
 	sprite->pixels_per_unit = 16;
 	sprite->centered = true;
 	sprite->material = rge::material::create();
-	sprite->texture = rge::texture::load("res/enemy_0.png");
 
 	reset();
 }
 
 void enemy::gen_starting_params() {
 	transform->position = rge::vec3(game::get()->get_random()->range(-7.0F, 7.0F), 8, LAYER_TO_Z(ENEMY_LAYER));
+
+	type = game::get()->get_random()->next_u64() % 3;
+	if(type == 0) {
+		sprite->texture = rge::texture::load("res/enemy_0.png");
+	} else if(type == 1) {
+		sprite->texture = rge::texture::load("res/enemy_1.png");
+	} else if(type == 2) {
+		sprite->texture = rge::texture::load("res/enemy_2.png");
+	}
 }
 
 void enemy::reset() {
 	health = 3;
 	dmg_count = 0;
 	dmg_t = 0.0F;
+	anim_counter = 0;
 	sprite->material->diffuse = rge::color(1, 1, 1, sprite->material->diffuse.a);
+
+	transform->rotation = rge::quaternion();
 
 	gen_starting_params();
 }
@@ -45,6 +56,15 @@ void enemy::update(float delta_time) {
 				sprite->material->diffuse = rge::color(1, 0, 0, sprite->material->diffuse.a);
 			}
 		}
+	}
+
+	anim_counter += delta_time;
+	if(type == 0) {
+		transform->rotation = rge::quaternion::yaw_pitch_roll(0, 0, sinf(anim_counter*10) * 0.25F);
+	} else if(type == 1) {
+
+	} else if(type == 2) {
+		transform->rotation = rge::quaternion::yaw_pitch_roll(0, 0, anim_counter * 3);
 	}
 
 	transform->position += rge::vec2(0, -MOVE_SPEED) * delta_time;

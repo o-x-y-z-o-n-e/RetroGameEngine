@@ -37,6 +37,20 @@ spaceship::spaceship() {
 	shoot_action.add_binding(rge::input::GAMEPAD_LEFT_TRIGGER);
 	shoot_action.add_binding(rge::input::GAMEPAD_RIGHT_TRIGGER);
 
+	horizontal_action.add_binding(rge::input::KEY_A, -1);
+	horizontal_action.add_binding(rge::input::KEY_D);
+	horizontal_action.add_binding(rge::input::KEY_LEFT, -1);
+	horizontal_action.add_binding(rge::input::KEY_RIGHT);
+	horizontal_action.add_binding(rge::input::GAMEPAD_LEFT_STICK_X);
+	horizontal_action.add_binding(rge::input::GAMEPAD_RIGHT_STICK_X);
+	
+	vertical_action.add_binding(rge::input::KEY_S, -1);
+	vertical_action.add_binding(rge::input::KEY_W);
+	vertical_action.add_binding(rge::input::KEY_DOWN, -1);
+	vertical_action.add_binding(rge::input::KEY_UP);
+	vertical_action.add_binding(rge::input::GAMEPAD_LEFT_STICK_Y);
+	vertical_action.add_binding(rge::input::GAMEPAD_RIGHT_STICK_Y);
+
 	reset();
 }
 
@@ -81,18 +95,8 @@ void spaceship::update(float delta_time) {
 	const float SHOOT_HEAT = 0.05F;
 	const float DMG_FLASH_SPEED = 10.0F;
 
-	if(rge::input::is_down(rge::input::KEY_A)) {
-		velocity.x -= ACCEL * delta_time;
-	}
-	if(rge::input::is_down(rge::input::KEY_D)) {
-		velocity.x += ACCEL * delta_time;
-	}
-	if(rge::input::is_down(rge::input::KEY_S)) {
-		velocity.y -= ACCEL * delta_time;
-	}
-	if(rge::input::is_down(rge::input::KEY_W)) {
-		velocity.y += ACCEL * delta_time;
-	}
+	velocity.x += rge::input::get_axis(horizontal_action) * ACCEL * delta_time;
+	velocity.y += rge::input::get_axis(vertical_action) * ACCEL * delta_time;
 
 	float d = velocity.magnitude();
 	if(d > MAX_SPEED) {

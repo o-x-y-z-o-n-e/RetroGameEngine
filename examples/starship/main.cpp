@@ -5,8 +5,6 @@
 
 /* TODO:
 	==SPRITES==
-	Enemy 2
-	Enemy 3
 	==CODE==
 */
 

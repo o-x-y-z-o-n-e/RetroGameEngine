@@ -146,7 +146,7 @@ void game::on_update(float delta_time) {
 }
 
 void game::on_render() {
-	get_renderer()->clear(rge::color(0.2F, 0.2F, 0.2F));
+	get_renderer()->clear(rge::color(0.063F, 0.071F, 0.11F));
 
 	if(state == game_state::MAIN_MENU) {
 		get_renderer()->draw(*title_sprite);
@@ -168,7 +168,7 @@ void game::on_render() {
 
 		progress_meter->transform->position = rge::vec3(-5.0F + (64 * progress) / float(progress_meter->pixels_per_unit), -5.5F, LAYER_TO_Z(UI_LAYER));
 		progress_meter->section = rge::rect(0, 0, 64 * (1.0F - progress), 4);
-		progress_meter->material->diffuse = rge::color(0.4F, 0.4F, 0.4F);
+		progress_meter->material->diffuse = rge::color(0.173F, 0.118F, 0.192F);
 		get_renderer()->draw(*progress_meter);
 
 		float cooldown = ship->get_cooldown();
@@ -180,7 +180,7 @@ void game::on_render() {
 
 		cooldown_meter->transform->position = rge::vec3(-7.5F + (32 * cooldown) / float(cooldown_meter->pixels_per_unit), -5.0F, LAYER_TO_Z(UI_LAYER));
 		cooldown_meter->section = rge::rect(0, 0, 32 * (1.0F - cooldown), 4);
-		cooldown_meter->material->diffuse = rge::color(0.4F, 0.4F, 0.4F);
+		cooldown_meter->material->diffuse = rge::color(0.173F, 0.118F, 0.192F);
 		get_renderer()->draw(*cooldown_meter);
 
 	} else if(state == game_state::PAUSED) {

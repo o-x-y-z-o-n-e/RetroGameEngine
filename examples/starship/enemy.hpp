@@ -27,9 +27,11 @@ public:
 	static bool overlap_all(rge::vec2 point, std::function<void(enemy& e)> on_overlap);
 
 private:
+	int type;
 	int health;
 	int dmg_count;
 	float dmg_t;
+	float anim_counter;
 	rge::transform::ptr transform;
 	rge::sprite::ptr sprite;
 	static table pool;

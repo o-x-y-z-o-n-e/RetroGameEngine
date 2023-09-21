@@ -21,6 +21,8 @@ public:
 
 private:
 	rge::input::action shoot_action;
+	rge::input::action horizontal_action;
+	rge::input::action vertical_action;
 	int shoot_side;
 	float shoot_counter;
 	float shoot_cooldown;
