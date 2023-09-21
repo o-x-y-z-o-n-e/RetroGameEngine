@@ -48,7 +48,7 @@ void spaceship::reset() {
 	transform->position = rge::vec3(0, 0, LAYER_TO_Z(SPACESHIP_LAYER));
 
 	shoot_side = 1;
-	shoot_cooldown = 0;
+	shoot_counter = 0;
 
 	flame_counter = 0;
 	flame_index = 0;
@@ -78,6 +78,7 @@ void spaceship::update(float delta_time) {
 	const float ACCEL = 20.0F;
 	const float MAX_SPEED = 12.0F;
 	const float SHOOT_INTERVAL = 0.16F;
+	const float SHOOT_HEAT = 0.05F;
 	const float DMG_FLASH_SPEED = 10.0F;
 
 	if(rge::input::is_down(rge::input::KEY_A)) {
@@ -108,14 +109,23 @@ void spaceship::update(float delta_time) {
 
 	transform->position += velocity * delta_time;
 
-	if(shoot_cooldown > 0.0F) shoot_cooldown -= delta_time;
-	if(shoot_cooldown <= 0.0F && rge::input::is_down(shoot_action)) {
+	if(shoot_counter > 0.0F) shoot_counter -= delta_time;
+	if(shoot_counter <= 0.0F && shoot_cooldown < 1.0F && rge::input::is_down(shoot_action)) {
 		laser* l = laser::create();
 		rge::vec2 p = transform->position + rge::vec2(0.25F * shoot_side, -0.5F);
 		if(shoot_side < 0) p.x -= (1.0F / 16.0F);
 		l->set_position(p);
 		shoot_side *= -1;
-		shoot_cooldown = SHOOT_INTERVAL;
+		shoot_counter = SHOOT_INTERVAL;
+		shoot_cooldown += SHOOT_HEAT;
+		if(shoot_cooldown > 1.0F)
+			shoot_cooldown = 1.0F;
+	}
+
+	if(shoot_counter <= 0.0F && rge::input::is_up(shoot_action)) {
+		shoot_cooldown -= (SHOOT_HEAT / SHOOT_INTERVAL) * 2 * delta_time;
+		if(shoot_cooldown < 0.0F)
+			shoot_cooldown = 0.0F;
 	}
 
 	flame_counter += delta_time;
@@ -169,4 +179,8 @@ void spaceship::damage(int amount) {
 		game::get()->end(false);
 		return;
 	}
+}
+
+float spaceship::get_cooldown() const {
+	return shoot_cooldown;
 }
