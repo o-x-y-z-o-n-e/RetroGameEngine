@@ -87,6 +87,7 @@ class camera;
 class light;
 class mesh;
 class texture;
+class sound;
 class material;
 class sprite;
 class render_target;
@@ -1088,6 +1089,28 @@ private:
 };
 //********************************************//
 //* Texture Class                            *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::sound */
+//********************************************//
+//* Sound Class                              *//
+//********************************************//
+class sound final {
+public:
+	typedef std::shared_ptr<rge::sound> ptr;
+
+public:
+	static ptr load(const std::string& path);
+
+private:
+	uint32_t sample_rate;
+	uint8_t sample_depth;
+	uint8_t num_channels;
+};
+//********************************************//
+//* Sound Class                              *//
 //********************************************//
 #pragma endregion
 
@@ -2964,7 +2987,7 @@ public:
 
 #pragma region /* rge::event_manager */
 //********************************************//
-//* Event manager class                      *//
+//* Event Manager                            *//
 //********************************************//
 class event_manager {
 public:
@@ -3051,14 +3074,27 @@ public:
 	}
 };
 //********************************************//
-//* Event manager class                      *//
+//* Event Manager                            *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::asset_manager */
+//********************************************//
+//* Asset Manager                            *//
+//********************************************//
+class asset_manager {
+
+};
+//********************************************//
+//* Asset Manager                            *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::engine */
 //********************************************//
-//* Core Engine class.                       *//
+//* Core Engine                              *//
 //********************************************//
 const float RESOURCES_FLUSH_INTERVAL = 20.0F;
 
@@ -3302,14 +3338,14 @@ void engine::wait_for_exit() {
 		thread.join();
 }
 //********************************************//
-//* Core Engine class.                       *//
+//* Core Engine                              *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::transform */
 //********************************************//
-//* Transform class.                         *//
+//* Transform Class                          *//
 //********************************************//
 transform::ptr transform::create() {
 	return std::make_shared<transform>();
@@ -3413,14 +3449,14 @@ void transform::set_global_rotation(const quaternion& rotation) {
 	}
 }
 //********************************************//
-//* Transform class.                         *//
+//* Transform Class                          *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::camera */
 //********************************************//
-//* Camera class.                            *//
+//* Camera Class                             *//
 //********************************************//
 camera::ptr camera::create() {
 	return std::make_shared<camera>();
@@ -3522,14 +3558,14 @@ void camera::set_auto_width_adjust(bool auto_width_adjust) {
 	auto_width = auto_width_adjust;
 }
 //********************************************//
-//* Camera class.                            *//
+//* Camera Class                             *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::light */
 //********************************************//
-//* Light class.                             *//
+//* Light Class                              *//
 //********************************************//
 light::ptr light::create() {
 	return std::make_shared<light>();
@@ -3546,7 +3582,7 @@ light::~light() {
 
 }
 //********************************************//
-//* Light class.                             *//
+//* Light Class                              *//
 //********************************************//
 #pragma endregion
 
@@ -3792,6 +3828,22 @@ texture::ptr texture::load(const std::string& path, bool load_to_gpu) {
 }
 //********************************************//
 //* Texture Class                            *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::sound */
+//********************************************//
+//* Sound Class                              *//
+//********************************************//
+sound::ptr sound::load(const std::string& path) {
+
+	sound::ptr sp = std::make_shared<sound>();
+
+	return sp;
+}
+//********************************************//
+//* Sound Class                              *//
 //********************************************//
 #pragma endregion
 
