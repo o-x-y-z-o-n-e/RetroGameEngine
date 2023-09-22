@@ -832,6 +832,7 @@ private:
 	int frame_counter;
 	int frame_rate;
 	float frame_timer;
+	float resources_flush_counter;
 };
 //********************************************//
 //* Core Engine Class                        *//
@@ -1073,13 +1074,13 @@ private:
 
 	typedef std::unordered_map<std::string, ptr> table;
 	static table registry;
-	void flush_registry();
-
+	
 	#ifdef RGE_IMPL
 public:
 	#else
 private:
 	#endif
+	static void flush_registry();
 	
 	color* data;     // For CPU buffer
 	uint32_t handle; // For GPU ref
@@ -3059,6 +3060,8 @@ public:
 //********************************************//
 //* Core Engine class.                       *//
 //********************************************//
+const float RESOURCES_FLUSH_INTERVAL = 20.0F;
+
 engine* engine::instance = nullptr;
 
 bool engine::can_create_instance() {
@@ -3083,6 +3086,7 @@ engine::engine() {
 	renderer_impl = nullptr;
 	multi_threaded = false;
 	events_impl = new event_manager();
+	resources_flush_counter = 0;
 }
 
 engine::~engine() {
@@ -3197,7 +3201,7 @@ void engine::loop() {
 	if(update_counter > update_interval) {
 		platform_impl->poll_gamepads();
 		on_update(update_counter);
-		update_counter = 0;
+		update_counter -= update_interval;
 		input::flush_presses_and_releases();
 	}
 		
@@ -3205,7 +3209,7 @@ void engine::loop() {
 	physics_counter += delta_time;
 	if(physics_counter > physics_interval) {
 		on_physics(physics_counter);
-		physics_counter = 0;
+		physics_counter -= physics_interval;
 	}
 		
 	// Tick the rendering routine.
@@ -3215,7 +3219,13 @@ void engine::loop() {
 		on_render();
 		renderer_impl->display();
 		platform_impl->refresh_window();
-		render_counter = 0;
+		render_counter -= render_interval;
+	}
+
+	resources_flush_counter += delta_time;
+	if(resources_flush_counter >= RESOURCES_FLUSH_INTERVAL) {
+		texture::flush_registry();
+		resources_flush_counter -= RESOURCES_FLUSH_INTERVAL;
 	}
 		
 	// Calculate fps.
