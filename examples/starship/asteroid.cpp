@@ -62,15 +62,15 @@ void asteroid::update(float delta_time) {
 	dist -= ship->get_radius();
 	if(dist < 0.0F) {
 		ship->damage(1);
-		destroy(this);
 		explode* e = explode::create();
 		e->set(transform->get_global_position());
+		destroy(this);
 		return;
 	}
 }
 
 void asteroid::draw() {
-	transform->position.z = -ASTEROID_LAYER;
+	transform->position.z = LAYER_TO_Z(ASTEROID_LAYER);
 	rge::engine::get_renderer()->draw(*sprite);
 }
 

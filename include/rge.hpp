@@ -87,6 +87,7 @@ class camera;
 class light;
 class mesh;
 class texture;
+class sound;
 class material;
 class vertex_buffer;
 class index_buffer;
@@ -109,6 +110,7 @@ enum result {
 struct rect final {
 	float x, y, w, h;
 
+	rect();
 	rect(float x, float y, float w, float h);
 
 	vec2 get_min() const;
@@ -833,6 +835,7 @@ private:
 	int frame_counter;
 	int frame_rate;
 	float frame_timer;
+	float resources_flush_counter;
 };
 //********************************************//
 //* Core Engine Class                        *//
@@ -1074,13 +1077,13 @@ private:
 
 	typedef std::unordered_map<std::string, ptr> table;
 	static table registry;
-	void flush_registry();
-
+	
 	#ifdef RGE_IMPL
 public:
 	#else
 private:
 	#endif
+	static void flush_registry();
 	
 	color* data;     // For CPU buffer
 	uint32_t handle; // For GPU ref
@@ -1088,6 +1091,28 @@ private:
 };
 //********************************************//
 //* Texture Class                            *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::sound */
+//********************************************//
+//* Sound Class                              *//
+//********************************************//
+class sound final {
+public:
+	typedef std::shared_ptr<rge::sound> ptr;
+
+public:
+	static ptr load(const std::string& path);
+
+private:
+	uint32_t sample_rate;
+	uint8_t sample_depth;
+	uint8_t num_channels;
+};
+//********************************************//
+//* Sound Class                              *//
 //********************************************//
 #pragma endregion
 
@@ -1134,9 +1159,11 @@ public:
 	~sprite();
 
 public:
+	bool sub_sprite;
 	bool centered;
 	bool billboard;
 	int pixels_per_unit;
+	rect section;
 
 	texture::ptr texture;
 	material::ptr material;
@@ -1582,6 +1609,13 @@ namespace rge {
 //********************************************//
 //* Rectangle Struct                         *//
 //********************************************//
+rect::rect() {
+	this->x = 0;
+	this->y = 0;
+	this->w = 0;
+	this->h = 0;
+}
+
 rect::rect(float x, float y, float w, float h) {
 	this->x = x;
 	this->y = y;
@@ -2987,7 +3021,7 @@ public:
 
 #pragma region /* rge::event_manager */
 //********************************************//
-//* Event manager class                      *//
+//* Event Manager                            *//
 //********************************************//
 class event_manager {
 public:
@@ -3074,15 +3108,30 @@ public:
 	}
 };
 //********************************************//
-//* Event manager class                      *//
+//* Event Manager                            *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::asset_manager */
+//********************************************//
+//* Asset Manager                            *//
+//********************************************//
+class asset_manager {
+
+};
+//********************************************//
+//* Asset Manager                            *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::engine */
 //********************************************//
-//* Core Engine class.                       *//
+//* Core Engine                              *//
 //********************************************//
+const float RESOURCES_FLUSH_INTERVAL = 20.0F;
+
 engine* engine::instance = nullptr;
 
 bool engine::can_create_instance() {
@@ -3107,6 +3156,7 @@ engine::engine() {
 	renderer_impl = nullptr;
 	multi_threaded = false;
 	events_impl = new event_manager();
+	resources_flush_counter = 0;
 }
 
 engine::~engine() {
@@ -3221,7 +3271,7 @@ void engine::loop() {
 	if(update_counter > update_interval) {
 		platform_impl->poll_gamepads();
 		on_update(update_counter);
-		update_counter = 0;
+		update_counter -= update_interval;
 		input::flush_presses_and_releases();
 	}
 		
@@ -3229,7 +3279,7 @@ void engine::loop() {
 	physics_counter += delta_time;
 	if(physics_counter > physics_interval) {
 		on_physics(physics_counter);
-		physics_counter = 0;
+		physics_counter -= physics_interval;
 	}
 		
 	// Tick the rendering routine.
@@ -3239,7 +3289,13 @@ void engine::loop() {
 		on_render();
 		renderer_impl->display();
 		platform_impl->refresh_window();
-		render_counter = 0;
+		render_counter -= render_interval;
+	}
+
+	resources_flush_counter += delta_time;
+	if(resources_flush_counter >= RESOURCES_FLUSH_INTERVAL) {
+		texture::flush_registry();
+		resources_flush_counter -= RESOURCES_FLUSH_INTERVAL;
 	}
 		
 	// Calculate fps.
@@ -3316,14 +3372,14 @@ void engine::wait_for_exit() {
 		thread.join();
 }
 //********************************************//
-//* Core Engine class.                       *//
+//* Core Engine                              *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::transform */
 //********************************************//
-//* Transform class.                         *//
+//* Transform Class                          *//
 //********************************************//
 transform::ptr transform::create() {
 	return std::make_shared<transform>();
@@ -3427,14 +3483,14 @@ void transform::set_global_rotation(const quaternion& rotation) {
 	}
 }
 //********************************************//
-//* Transform class.                         *//
+//* Transform Class                          *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::camera */
 //********************************************//
-//* Camera class.                            *//
+//* Camera Class                             *//
 //********************************************//
 camera::ptr camera::create() {
 	return std::make_shared<camera>();
@@ -3536,14 +3592,14 @@ void camera::set_auto_width_adjust(bool auto_width_adjust) {
 	auto_width = auto_width_adjust;
 }
 //********************************************//
-//* Camera class.                            *//
+//* Camera Class                             *//
 //********************************************//
 #pragma endregion
 
 
 #pragma region /* rge::light */
 //********************************************//
-//* Light class.                             *//
+//* Light Class                              *//
 //********************************************//
 light::ptr light::create() {
 	return std::make_shared<light>();
@@ -3560,7 +3616,7 @@ light::~light() {
 
 }
 //********************************************//
-//* Light class.                             *//
+//* Light Class                              *//
 //********************************************//
 #pragma endregion
 
@@ -3810,6 +3866,22 @@ texture::ptr texture::load(const std::string& path, bool load_to_gpu) {
 #pragma endregion
 
 
+#pragma region /* rge::sound */
+//********************************************//
+//* Sound Class                              *//
+//********************************************//
+sound::ptr sound::load(const std::string& path) {
+
+	sound::ptr sp = std::make_shared<sound>();
+
+	return sp;
+}
+//********************************************//
+//* Sound Class                              *//
+//********************************************//
+#pragma endregion
+
+
 #pragma region /* rge::material */
 //********************************************//
 //* Material Class                           *//
@@ -3848,9 +3920,11 @@ sprite::ptr sprite::create(const rge::texture::ptr& texture) {
 
 sprite::sprite() {
 	transform = rge::transform::create();
+	sub_sprite = false;
 	centered = false;
 	billboard = false;
 	pixels_per_unit = 32;
+	section = rect(0, 0, pixels_per_unit, pixels_per_unit);
 }
 
 sprite::sprite(const rge::texture::ptr& texture) : sprite() {
@@ -5241,8 +5315,21 @@ public:
 		mat4 sprite_matrix = sprite.transform->get_global_matrix();
 		mat4 camera_matrix = input_camera->transform->get_global_matrix();
 
-		float w = float(sprite.texture->get_width()) / sprite.pixels_per_unit;
-		float h = float(sprite.texture->get_height()) / sprite.pixels_per_unit;
+		vec2 tex_size = vec2(sprite.texture->get_width(), sprite.texture->get_height());
+
+		float w;
+		float h;
+
+		if(sprite.sub_sprite) {
+			w = sprite.section.w;
+			h = sprite.section.h;
+		} else {
+			w = tex_size.x;
+			h = tex_size.y;
+		}
+
+		w /= sprite.pixels_per_unit;
+		h /= sprite.pixels_per_unit;
 
 		vec3 p = vec2(0, 0);
 		vec3 r = vec2(w, 0);
@@ -5273,6 +5360,23 @@ public:
 			p_tr = sprite_matrix.multiply_point_3x4(p + r + u);
 		}
 
+		vec2 t_bl;
+		vec2 t_br;
+		vec2 t_tl;
+		vec2 t_tr;
+
+		if(sprite.sub_sprite) {
+			t_bl = vec2(sprite.section.x / tex_size.x, sprite.section.y / tex_size.y);
+			t_br = t_bl + vec2(sprite.section.w / tex_size.x, 0);
+			t_tl = t_bl + vec2(0, sprite.section.h / tex_size.y);
+			t_tr = t_bl + t_br + t_tl;
+		} else {
+			t_bl = vec2(0, 0);
+			t_br = t_bl + vec2(1, 0);
+			t_tl = t_bl + vec2(0, 1);
+			t_tr = t_bl + t_br + t_tl;
+		}
+
 		color diffuse = color();
 		if(sprite.material) diffuse = sprite.material->diffuse;
 
@@ -5295,19 +5399,19 @@ public:
 		}
 
 		glBegin(GL_QUADS); {
-			glTexCoord2f(0.0F, 1.0F);
+			glTexCoord2f(t_bl.x, 1.0F - t_bl.y);
 			glVertex3f(p_bl.x, p_bl.y, p_bl.z);
 			glNormal3f(n.x, n.y, n.z);
 
-			glTexCoord2f(1.0F, 1.0F);
+			glTexCoord2f(t_br.x, 1.0F - t_br.y);
 			glVertex3f(p_br.x, p_br.y, p_br.z);
 			glNormal3f(n.x, n.y, n.z);
 
-			glTexCoord2f(1.0F, 0.0F);
+			glTexCoord2f(t_tr.x, 1.0F - t_tr.y);
 			glVertex3f(p_tr.x, p_tr.y, p_tr.z);
 			glNormal3f(n.x, n.y, n.z);
 
-			glTexCoord2f(0.0F, 0.0F);
+			glTexCoord2f(t_tl.x, 1.0F - t_tl.y);
 			glVertex3f(p_tl.x, p_tl.y, p_tl.z);
 			glNormal3f(n.x, n.y, n.z);
 		} glEnd();

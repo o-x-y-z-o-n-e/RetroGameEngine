@@ -46,7 +46,7 @@ void explode::draw() {
 }
 
 void explode::set(rge::vec2 pos) {
-	transform->position = rge::vec3(pos.x, pos.y, -ASTEROID_LAYER);
+	transform->position = rge::vec3(pos.x, pos.y, LAYER_TO_Z(FX_LAYER));
 	transform->rotation = rge::quaternion::yaw_pitch_roll(0, 0, game::get()->get_random()->range(0.0F, 360.0F) * DEG_TO_RAD);
 }
 
