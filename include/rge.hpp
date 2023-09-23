@@ -88,6 +88,8 @@ class light;
 class mesh;
 class texture;
 class material;
+class vertex_buffer;
+class index_buffer;
 class sprite;
 class render_target;
 class renderer;
@@ -1341,6 +1343,38 @@ protected:
 };
 //********************************************//
 //* Base Renderer Class                      *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::vertex_buffer */
+//********************************************//
+//* Base Vertex Buffer Class                 *//
+//********************************************//
+class vertex_buffer {
+public:
+	virtual ~vertex_buffer() {}
+	virtual void bind() const = 0;
+	virtual void unbind() const = 0;
+};
+//********************************************//
+//* Base Vertex Buffer Class                 *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::index_buffer */
+//********************************************//
+//* Base Index Buffer Class                  *//
+//********************************************//
+class index_buffer {
+public:
+	virtual ~index_buffer() {}
+	virtual void bind() const = 0;
+	virtual void unbind() const = 0;
+};
+//********************************************//
+//* Base Index Buffer Class                  *//
 //********************************************//
 #pragma endregion
 
