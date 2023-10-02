@@ -1374,6 +1374,90 @@ protected:
 #pragma endregion
 
 
+enum class shader_data_type {
+	NONE = 0,
+	FLOAT1,
+	FLOAT2,
+	FLOAT3,
+	FLOAT4,
+	MAT3,
+	MAT4,
+	INT1,
+	INT2,
+	INT3,
+	INT4,
+	BOOL
+};
+
+
+struct vertex_attribute {
+	shader_data_type type;
+	std::string name;
+	uint32_t size;
+	uint32_t offset;
+	bool normalized;
+
+	static uint32_t get_size(shader_data_type type) {
+		switch(type) {
+			case shader_data_type::FLOAT1: return 4;
+			case shader_data_type::FLOAT2: return 4 * 2;
+			case shader_data_type::FLOAT3: return 4 * 3;
+			case shader_data_type::FLOAT4: return 4 * 4;
+			case shader_data_type::MAT3: return 4 * 3 * 3;
+			case shader_data_type::MAT4: return 4 * 4 * 4;
+			case shader_data_type::INT1: return 4;
+			case shader_data_type::INT2: return 4 * 2;
+			case shader_data_type::INT3: return 4 * 3;
+			case shader_data_type::INT4: return 4 * 4;
+			case shader_data_type::BOOL: return 1;
+		}
+	}
+
+	vertex_attribute() {
+		type = shader_data_type::FLOAT1;
+		name = "unknown";
+		size = get_size(type);
+		offset = 0;
+		normalized = false;
+	}
+
+	vertex_attribute(shader_data_type type, const std::string& name) {
+		this->type = type;
+		this->name = name;
+		this->size = get_size(type);
+		this->offset = 0;
+		this->normalized = false;
+	}
+};
+
+
+class vertex_layout {
+public:
+	vertex_layout() {
+		stride = 0;
+	}
+
+	vertex_layout(const std::initializer_list<vertex_attribute>& layout) : attributes(layout) {
+		stride = 0;
+		for(auto& attribute : attributes) {
+			attribute.offset = stride;
+			stride += attribute.size;
+		}
+	}
+
+	uint32_t get_stride() { return stride; }
+	const std::vector<vertex_attribute>& get_attributes() const { return attributes; }
+	std::vector<vertex_attribute>::iterator begin() { return attributes.begin(); };
+	std::vector<vertex_attribute>::iterator end() { return attributes.end(); };
+	std::vector<vertex_attribute>::const_iterator begin() const { return attributes.begin(); };
+	std::vector<vertex_attribute>::const_iterator end() const { return attributes.end(); };
+
+private:
+	std::vector<vertex_attribute> attributes;
+	uint32_t stride;
+};
+
+
 #pragma region /* rge::vertex_buffer */
 //********************************************//
 //* Base Vertex Buffer Class                 *//
@@ -1383,6 +1467,9 @@ public:
 	virtual ~vertex_buffer() {}
 	virtual void bind() const = 0;
 	virtual void unbind() const = 0;
+
+	virtual void set_layout(const vertex_layout& layout) = 0;
+	virtual const vertex_layout& get_layout() const = 0;
 };
 //********************************************//
 //* Base Vertex Buffer Class                 *//
@@ -1399,6 +1486,8 @@ public:
 	virtual ~index_buffer() {}
 	virtual void bind() const = 0;
 	virtual void unbind() const = 0;
+
+	virtual uint32_t get_count() const = 0;
 };
 //********************************************//
 //* Base Index Buffer Class                  *//
@@ -5055,6 +5144,58 @@ private:
 //* OpenGL 1.0 Renderer                      *//
 //********************************************//
 #ifdef SYS_OPENGL_1_0
+
+
+
+class opengl_1_0_vertex_buffer : public vertex_buffer {
+
+	void bind() const override {
+
+	}
+
+	void unbind() const override {
+
+	}
+
+	void set_layout(const vertex_layout& layout) override {
+		this->layout = layout;
+	}
+
+	const vertex_layout& get_layout() const override {
+		return layout;
+	}
+
+private:
+	vertex_layout layout;
+};
+
+
+class opengl_1_0_index_buffer : public index_buffer {
+public:
+	uint32_t* data;
+	uint32_t count;
+
+	opengl_1_0_index_buffer(const uint32_t* indices, uint32_t count) {
+		data = new uint32_t[count];
+		for(int i = 0; i < count; i++)
+			data[i] = indices[i];
+
+		this->count = count;
+	}
+
+	~opengl_1_0_index_buffer() {
+		delete[] data;
+	}
+
+	void bind() const override {}
+
+	void unbind() const override {}
+
+	uint32_t get_count() const override {
+		return count;
+	}
+};
+
 class opengl_1_0 : public renderer {
 private:
 	#ifdef SYS_WINDOWS
