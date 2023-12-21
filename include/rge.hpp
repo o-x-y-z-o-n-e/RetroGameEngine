@@ -1326,9 +1326,8 @@ public:
 	) = 0;
 
 public: // Inline macro short args functions.
-
 	// Draw 3D geometry, using model space data.
-	rge::result draw(
+	inline rge::result draw(
 		const mat4& local_to_world,
 		const mesh& mesh,
 		const material& material
@@ -1344,27 +1343,27 @@ public: // Inline macro short args functions.
 	}
 
 	// Draw a 2D texture onto (dest)[0, 1] view space.
-	void draw(const texture& texture, const vec2& dest_min, const vec2& dest_max) {
+	inline void draw(const texture& texture, const vec2& dest_min, const vec2& dest_max) {
 		draw(texture, dest_min, dest_max, vec2(0, 0), vec2(1, 1));
 	}
 
 	// Draw a 2D texture onto (dest)[0, w/h] frame space.
-	void draw(const texture& texture, int dest_min_x, int dest_min_y, int dest_max_x, int dest_max_y) {
+	inline void draw(const texture& texture, int dest_min_x, int dest_min_y, int dest_max_x, int dest_max_y) {
 		draw(texture, dest_min_x, dest_min_y, dest_max_x, dest_max_y, 0, 0, texture.get_width(), texture.get_height());
 	}
 
 	// Draw a render target onto (dest)[0, 1] view space.
-	void draw(const render_target& render, const vec2& dest_min, const vec2& dest_max) {
+	inline void draw(const render_target& render, const vec2& dest_min, const vec2& dest_max) {
 		draw(*render.get_frame_buffer(), dest_min, dest_max, vec2(0, 0), vec2(1, 1));
 	}
 
 	// Draw a render target onto (dest)[0, w/h] frame space.
-	void draw(const render_target& render, int dest_min_x, int dest_min_y, int dest_max_x, int dest_max_y) {
+	inline void draw(const render_target& render, int dest_min_x, int dest_min_y, int dest_max_x, int dest_max_y) {
 		draw(*render.get_frame_buffer(), dest_min_x, dest_min_y, dest_max_x, dest_max_y);
 	}
 
 	// Draw a texture onto (pos)[-i32, +i32] frame space.
-	void draw(const texture& texture, int pos_x, int pos_y) {
+	inline void draw(const texture& texture, int pos_x, int pos_y) {
 		draw(texture, pos_x, pos_y, pos_x + texture.get_width(), pos_y + texture.get_height(), 0, 0, texture.get_width(), texture.get_height());
 	}
 
@@ -3773,12 +3772,15 @@ void texture::allocate() {
 }
 
 void texture::flush_registry() {
+	/* TODO: rework whole reference system & garbage collection.
+	
 	for(auto it = registry.begin(); it != registry.end(); it++) {
 		if(it->second.use_count() <= 1) {
 			// Last ref texture is in table itself, therefore we free the memory.
 			registry.erase(it);
 		}
 	}
+	*/
 }
 
 texture::ptr texture::load(const std::string& path, bool load_to_gpu) {
@@ -5171,7 +5173,6 @@ public:
 		);
 		glClearDepth(2.0F);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
 	}
 
 	static void convert_matrix(GLfloat* gl, const mat4& m) {
@@ -5197,7 +5198,7 @@ public:
 		#endif
 	}
 
-	void apply_material(const rge::material& material) {
+	static void apply_material(const rge::material& material) {
 		if(material.texture != nullptr && material.texture->is_on_gpu()) {
 			glBindTexture(GL_TEXTURE_2D, material.texture->handle);
 		} else {
@@ -5229,7 +5230,6 @@ public:
 		glColorMaterial(GL_FRONT, GL_DIFFUSE);
 		glEnable(GL_COLOR_MATERIAL);
 		//glEnable(GL_LIGHTING);
-		
 	}
 
 	// Draw 3D geometry, using model space data.
@@ -5503,6 +5503,7 @@ public:
 //* OpenGL 3.3 Renderer                      *//
 //********************************************//
 #ifdef SYS_OPENGL_3_3
+/*
 typedef char GLchar;
 typedef ptrdiff_t GLsizeiptr;
 typedef GLuint CALLSTYLE locCreateShader_t(GLenum type);
@@ -5533,9 +5534,11 @@ typedef void CALLSTYLE locDeleteFrameBuffers_t(GLsizei n, const GLuint* fbs);
 typedef void CALLSTYLE locFrameBufferTexture2D_t(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 typedef void CALLSTYLE locDrawBuffers_t(GLsizei n, const GLenum* bufs);
 typedef void CALLSTYLE locBlendFuncSeparate_t(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+*/
 #ifdef SYS_WINDOWS
-typedef void CALLSTYLE locSwapInterval_t(GLsizei n);
+// typedef void CALLSTYLE locSwapInterval_t(GLsizei n);
 #endif /* SYS_WINDOWS */
+
 
 class opengl_3_3 : public rge::renderer {
 private:
@@ -5544,26 +5547,8 @@ private:
 	gl_render_context_t render = 0;
 	#endif
 
-	/*
-	locCreateShader_t* glCreateShader = nullptr;
-	locShaderSource_t* glShaderSource = nullptr;
-	locCompileShader_t* glCompileShader = nullptr;
-	locDeleteShader_t* glDeleteShader = nullptr;
-	locCreateProgram_t* glCreateProgram = nullptr;
-	locDeleteProgram_t* glDeleteProgram = nullptr;
-	locLinkProgram_t* glLinkProgram = nullptr;
-	locAttachShader_t* glAttachShader = nullptr;
-	*/
-	locBindBuffer_t* glBindBuffer = nullptr;
-	locBufferData_t* glBufferData = nullptr;
-	locGenBuffers_t* glGenBuffers = nullptr;
-	locVertexAttribPointer_t* glVertexAttribPointer = nullptr;
-	locEnableVertexAttribArray_t* glEnableVertexAttribArray = nullptr;
-	locUseProgram_t* glUseProgram = nullptr;
-	locBindVertexArray_t* glBindVertexArray = nullptr;
-	locGenVertexArrays_t* glGenVertexArrays = nullptr;
-	locSwapInterval_t* glSwapInterval = nullptr;
-	locGetShaderInfoLog_t* glGetShaderInfoLog = nullptr;
+	int window_width;
+	int window_height;
 
 public:
 	opengl_3_3() {
@@ -5599,13 +5584,14 @@ public:
 		#endif
 		
 		#ifdef SYS_LINUX
-		
+		// TODO
 		#endif
 		
 		#ifdef SYS_MACOSX
-		
+		// TODO
 		#endif
 
+		/*
 		glBindBuffer = OPENGL_LOAD(locBindBuffer_t, glBindBuffer);
 		glBufferData = OPENGL_LOAD(locBufferData_t, glBufferData);
 		glGenBuffers = OPENGL_LOAD(locGenBuffers_t, glGenBuffers);
@@ -5613,25 +5599,70 @@ public:
 		glEnableVertexAttribArray = OPENGL_LOAD(locEnableVertexAttribArray_t, glEnableVertexAttribArray);
 		glUseProgram = OPENGL_LOAD(locUseProgram_t, glUseProgram);
 		glGetShaderInfoLog = OPENGL_LOAD(locGetShaderInfoLog_t, glGetShaderInfoLog);
-
+		*/
+		
 		return rge::OK;
 	}
 
-	texture* create_texture(int width, int height) override {
-		texture* t = new texture(width, height);
+	static void load_default_draw_params() {
+		// glEnable(GL_LIGHTING);
+		// glEnable(GL_LIGHT0);
 
-		// TODO
+		glEnable(GL_TEXTURE_2D);
 
-		return t;
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
+		glDepthRange(-1.0F, 1.0F);
+
+		glEnable(GL_COLOR_MATERIAL);
+		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+		glColor4f(1, 1, 1, 1);
+
+		glEnable(GL_CULL_FACE);
+		glFrontFace(GL_CCW);
+		glCullFace(GL_BACK);
 	}
 
-	void upload_texture(texture* texture) override {
-		// TODO
+	texture::ptr create_texture(int width, int height) override {
+		texture::ptr texture = texture::create(width, height);
+
+		glGenTextures(1, &texture->handle);
+
+		return texture;
 	}
 
-	void free_texture(texture* texture) override {
-		// TODO: Free GPU texture.
-		delete texture;
+	void alloc_texture(texture& texture) override {
+		if(!texture.is_on_gpu())
+			glGenTextures(1, &texture.handle);
+	}
+
+	void upload_texture(texture& texture) override {
+		alloc_texture(texture);
+
+		if(!texture.is_on_cpu()) return;
+		glBindTexture(GL_TEXTURE_2D, texture.handle);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		if(texture.filter == texture_filter::NEAREST) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		} else if(texture.filter == texture_filter::BILINEAR) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		}
+
+		glTexImage2D(GL_TEXTURE_2D, 0, 4, texture.get_width(), texture.get_height(), 0, GL_RGBA, GL_FLOAT, texture.get_data());
+	}
+
+	void free_texture(texture& texture) override {
+		if(texture.is_on_gpu())
+			glDeleteTextures(1, &texture.handle);
 	}
 
 	void clear(color background) override {
@@ -5642,8 +5673,8 @@ public:
 			float(background.a)
 		);
 
-		glClear(GL_COLOR_BUFFER_BIT);
-		glClear(GL_DEPTH_BUFFER_BIT);
+		glClearDepth(2.0F);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
 	static void convert_matrix(GLfloat* gl, const mat4& m) {
@@ -5651,18 +5682,19 @@ public:
 	}
 
 	void display() override {
-		#ifdef SYS_WINDOWS
 		glFlush();
+
+		#ifdef SYS_WINDOWS
 		SwapBuffers(device);
 		// if(bSync) DwmFlush();
 		#endif
 		
 		#ifdef SYS_LINUX
-		
+		// TODO
 		#endif
 		
 		#ifdef SYS_MACOSX
-		
+		// TODO
 		#endif
 	}
 
@@ -5674,31 +5706,214 @@ public:
 		const std::vector<vec2>& uvs,
 		const material& material
 	) override {
-		// TODO
-
+		// NOTE: Not implemented. For future...
 		return rge::OK;
 	}
 
 	void draw(const sprite& sprite) override {
-		// TODO
+		if(input_camera == nullptr) return;
+		if(sprite.texture == nullptr) return;
+
+		// Get geometric & texture data needed for transforming sprite into render space.
+		GLfloat gl_m[16];
+		mat4 sprite_matrix = sprite.transform->get_global_matrix();
+		mat4 camera_matrix = input_camera->transform->get_global_matrix();
+		vec2 tex_size = vec2(sprite.texture->get_width(), sprite.texture->get_height());
+
+		// Calculate object-space dimensions.
+		float w;
+		float h;
+		if(sprite.sub_sprite) {
+			w = sprite.section.w;
+			h = sprite.section.h;
+		} else {
+			w = tex_size.x;
+			h = tex_size.y;
+		}
+		// Scale to fit 'x' amount of pixels (texels) in 1 world unit.
+		w /= sprite.pixels_per_unit;
+		h /= sprite.pixels_per_unit;
+
+		// Calculate object-space vectors.
+		vec3 p = vec2(0, 0);  // Origin point.
+		vec3 r = vec2(w, 0);  // Horizontal vector.
+		vec3 u = vec2(0, h);  // Vertical vector.
+		if(sprite.centered) {
+			// Offset origin to pivot sprite around its center.
+			p.x -= w / 2.0F;
+			p.y -= h / 2.0F;
+		}
+		
+		// Calculate world-space geometry coordinates.
+		vec3 n;      // Normal of quad.
+		vec3 p_bl;   // Bottom left point of quad.
+		vec3 p_br;   // Bottom right point of quad.
+		vec3 p_tl;   // Top left point of quad.
+		vec3 p_tr;   // Top right point of quad.
+		if(sprite.billboard) {
+			n = camera_matrix.multiply_vector(vec3(0, 0, -1));
+			p_bl = sprite_matrix.multiply_point_3x4(p);
+			p_br = p_bl + camera_matrix.multiply_vector(r);
+			p_tl = p_bl + camera_matrix.multiply_vector(u);
+			p_tr = p_bl + camera_matrix.multiply_vector(u + r);
+		} else {
+			n = sprite_matrix.multiply_vector(vec3(0, 0, -1));
+			p_bl = sprite_matrix.multiply_point_3x4(p);
+			p_br = sprite_matrix.multiply_point_3x4(p + r);
+			p_tl = sprite_matrix.multiply_point_3x4(p + u);
+			p_tr = sprite_matrix.multiply_point_3x4(p + r + u);
+		}
+
+		// Calculate texture coordinates.
+		vec2 t_bl;
+		vec2 t_br;
+		vec2 t_tl;
+		vec2 t_tr;
+		if(sprite.sub_sprite) {
+			t_bl = vec2(sprite.section.x / tex_size.x, sprite.section.y / tex_size.y);
+			t_br = t_bl + vec2(sprite.section.w / tex_size.x, 0);
+			t_tl = t_bl + vec2(0, sprite.section.h / tex_size.y);
+			t_tr = t_bl + t_br + t_tl;
+		} else {
+			t_bl = vec2(0, 0);
+			t_br = t_bl + vec2(1, 0);
+			t_tl = t_bl + vec2(0, 1);
+			t_tr = t_bl + t_br + t_tl;
+		}
+
+		// Get diffuse color, defaults to white.
+		color diffuse = color();
+		if(sprite.material) diffuse = sprite.material->diffuse;
+
+		// Set camera view matrix.
+		convert_matrix(gl_m, input_camera->get_view_matrix());
+		glMatrixMode(GL_MODELVIEW);
+		glLoadMatrixf(gl_m);
+
+		// Calculate & set projection matrix.
+		convert_matrix(gl_m, input_camera->calculate_projection_matrix());
+		glMatrixMode(GL_PROJECTION);
+		glLoadMatrixf(gl_m);
+
+		// Set rendering options.
+		load_default_draw_params();
+		glDisable(GL_LIGHTING);
+		glColor4f(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
+
+		// Apply texture if located on gpu.
+		if(sprite.texture->is_on_gpu()) {
+			glBindTexture(GL_TEXTURE_2D, sprite.texture->handle);
+		} else {
+			glDisable(GL_TEXTURE_2D);
+		}
+
+		// Draw quad.
+		glBegin(GL_QUADS); {
+			glTexCoord2f(t_bl.x, 1.0F - t_bl.y);
+			glVertex3f(p_bl.x, p_bl.y, p_bl.z);
+			glNormal3f(n.x, n.y, n.z);
+
+			glTexCoord2f(t_br.x, 1.0F - t_br.y);
+			glVertex3f(p_br.x, p_br.y, p_br.z);
+			glNormal3f(n.x, n.y, n.z);
+
+			glTexCoord2f(t_tr.x, 1.0F - t_tr.y);
+			glVertex3f(p_tr.x, p_tr.y, p_tr.z);
+			glNormal3f(n.x, n.y, n.z);
+
+			glTexCoord2f(t_tl.x, 1.0F - t_tl.y);
+			glVertex3f(p_tl.x, p_tl.y, p_tl.z);
+			glNormal3f(n.x, n.y, n.z);
+		} glEnd();
 	}
 
-	void draw(const texture& texture, const rect& dest, const rect& src) override {
-		// TODO
+	void draw(const texture& texture, vec2 dest_min, vec2 dest_max, vec2 src_min, vec2 src_max) override {
+		// Clear view matrix.
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		
+		// Clear projection matrix.
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+
+		// Transform coordinates to fit viewport.
+		dest_min.x = (dest_min.x * 2.0F) - 1.0F;
+		dest_min.y = (dest_min.y * 2.0F) - 1.0F;
+		dest_max.x = (dest_max.x * 2.0F) - 1.0F;
+		dest_max.y = (dest_max.y * 2.0F) - 1.0F;
+
+		// Check if completely out of bounds.
+		if(dest_min.x > 1.0F) {
+			return;
+		} else if(dest_max.x < -1.0F) {
+			return;
+		} else if(dest_min.y > 1.0F) {
+			return;
+		} else if(dest_max.y < -1.0F) {
+			return;
+		}
+
+		// Set rendering options.
+		load_default_draw_params();
+		glDisable(GL_LIGHTING);
+		glDisable(GL_DEPTH_TEST);
+
+		// Apply texture if located on gpu.
+		if(texture.is_on_gpu()) {
+			glBindTexture(GL_TEXTURE_2D, texture.handle);
+		} else {
+			glDisable(GL_TEXTURE_2D);
+		}
+
+		// Draw quad.
+		glBegin(GL_QUADS); {
+			glTexCoord2f(src_min.x, 1.0F - src_min.y);
+			glVertex3f(dest_min.x, dest_min.y, 0.0F);
+			glNormal3f(0, 0, -1);
+
+			glTexCoord2f(src_max.x, 1.0F - src_min.y);
+			glVertex3f(dest_max.x, dest_min.y, 0.0F);
+			glNormal3f(0, 0, -1);
+
+			glTexCoord2f(src_max.x, 1.0F - src_max.y);
+			glVertex3f(dest_max.x, dest_max.y, 0.0F);
+			glNormal3f(0, 0, -1);
+
+			glTexCoord2f(src_min.x, 1.0F - src_max.y);
+			glVertex3f(dest_min.x, dest_max.y, 0.0F);
+			glNormal3f(0, 0, -1);
+		} glEnd();
 	}
 
 	void draw(
 		const texture& texture,
-		int dest_x,
-		int dest_y,
-		int dest_width,
-		int dest_height,
-		int src_x,
-		int src_y,
-		int src_width,
-		int src_height
+		int dest_min_x,
+		int dest_min_y,
+		int dest_max_x,
+		int dest_max_y,
+		int src_min_x,
+		int src_min_y,
+		int src_max_x,
+		int src_max_y
 	) override {
-		// TODO
+		vec2 dest_min;
+		vec2 dest_max;
+		vec2 src_min;
+		vec2 src_max;
+
+		// Convert destination pixel coordinates to view coordinates.
+		dest_min.x = float(dest_min_x) / window_width;
+		dest_min.y = float(dest_min_y) / window_height;
+		dest_max.x = float(dest_max_x) / window_width;
+		dest_max.y = float(dest_max_y) / window_height;
+
+		// Convert source pixel coordinates to view coordinates.
+		src_min.x = float(src_min_x) / texture.get_width();
+		src_min.y = float(src_min_y) / texture.get_height();
+		src_max.x = float(src_max_x) / texture.get_width();
+		src_max.y = float(src_max_y) / texture.get_height();
+
+		draw(texture, dest_min, dest_max, src_min, src_max);
 	}
 
 	bool on_window_resized(const window_resized_event& e) override {
@@ -5706,6 +5921,22 @@ public:
 		window_height = e.height;
 		glViewport(0, 0, window_width, window_height);
 		return false; // Do not consume event. Let it propagate through higher layers.
+	}
+
+	rge::result set_target(render_target::ptr target) {
+		output_render = target;
+	}
+
+	render_target::ptr get_target() const {
+		return output_render;
+	}
+
+	int get_width() const {
+		return window_width;
+	}
+
+	int get_height() const {
+		return window_height;
 	}
 };
 #endif /* SYS_OPENGL_3_3 */

@@ -157,8 +157,8 @@ project "starship"
     location "examples/starship"
 
     -- defines "SYS_SOFTWARE_GL"
-    defines "SYS_OPENGL_1_0"
-    -- defines "SYS_OPENGL_3_3"
+    -- defines "SYS_OPENGL_1_0"
+    defines "SYS_OPENGL_3_3"
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("tmp/" .. outputdir .. "/%{prj.name}")
