@@ -854,6 +854,8 @@ public:
 	static transform::ptr create(transform::ptr parent);
 	static transform::ptr create(vec3 position, quaternion rotation, vec3 scale);
 	static transform::ptr create(vec3 position, quaternion rotation, vec3 scale, transform::ptr parent);
+
+	// Only use if needed. Prefer create() instead.
 	transform();
 	transform(transform::ptr parent);
 	transform(vec3 position, quaternion rotation, vec3 scale);
@@ -909,6 +911,8 @@ public:
 
 public:
 	static camera::ptr create();
+
+	// Only use if needed. Prefer create() instead.
 	camera();
 	~camera();
 
@@ -972,6 +976,8 @@ public:
 
 public:
 	static light::ptr create();
+
+	// Only use if needed. Prefer create() instead
 	light();
 	~light();
 
@@ -998,6 +1004,8 @@ public:
 
 public:
 	static mesh::ptr create();
+
+	// Only use if needed. Prefer create() instead.
 	mesh();
 	~mesh();
 
@@ -1031,7 +1039,7 @@ public:
 	static ptr load(const std::string& path, bool load_to_gpu = true);
 	static ptr copy(const ptr& original);
 
-	// Only use if needed. Prefer create() instead
+	// Only use if needed. Prefer create() instead.
 	texture(int width, int height);
 	~texture();
 
@@ -1125,6 +1133,8 @@ public:
 
 public:
 	static material::ptr create();
+
+	// Only use if needed. Prefer create() instead.
 	material();
 	~material();
 
@@ -1152,6 +1162,8 @@ public:
 public:
 	static sprite::ptr create();
 	static sprite::ptr create(const rge::texture::ptr& texture);
+
+	// Only use if needed. Prefer create() instead.
 	sprite();
 	sprite(const rge::texture::ptr& texture);
 	~sprite();
@@ -1183,6 +1195,8 @@ public:
 
 public:
 	static render_target::ptr create(renderer* renderer, int width, int height);
+
+	// Only use if needed. Prefer create() instead.
 	render_target(renderer* renderer, int width, int height);
 	~render_target();
 
@@ -1310,7 +1324,9 @@ public:
 		int src_max_x,
 		int src_max_y
 	) = 0;
+
 public: // Inline macro short args functions.
+
 	// Draw 3D geometry, using model space data.
 	rge::result draw(
 		const mat4& local_to_world,
