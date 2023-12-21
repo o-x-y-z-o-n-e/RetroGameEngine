@@ -67,16 +67,23 @@ void enemy::update(float delta_time) {
 		transform->rotation = rge::quaternion::yaw_pitch_roll(0, 0, anim_counter * 3);
 	}
 
+	spaceship* ship = game::get()->get_ship();
 	transform->position += rge::vec2(0, -MOVE_SPEED) * delta_time;
+	float dist_to_ship = rge::vec2::distance(ship->get_position(), transform->get_global_position());
+	dist_to_ship -= RADIUS;
+	dist_to_ship -= ship->get_radius();
+
+	// If past bottom of screen.
 	if(transform->position.y < -8) {
+		ship->damage(1);
+		explode* e = explode::create();
+		e->set(transform->get_global_position());
 		destroy(this);
+		return;
 	}
 
-	spaceship* ship = game::get()->get_ship();
-	float dist = rge::vec2::distance(ship->get_position(), transform->get_global_position());
-	dist -= RADIUS;
-	dist -= ship->get_radius();
-	if(dist < 0.0F) {
+	// If collide with ship.
+	if(dist_to_ship < 0.0F) {
 		ship->damage(1);
 		explode* e = explode::create();
 		e->set(transform->get_global_position());
