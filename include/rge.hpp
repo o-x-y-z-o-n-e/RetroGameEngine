@@ -1244,6 +1244,9 @@ public:
 
 protected:
 	platform() {}
+
+public:
+	bool skip_next_frame;
 };
 //********************************************//
 //* Base Platform Class                      *//
@@ -3246,6 +3249,11 @@ void engine::loop() {
 	std::chrono::duration<float> elapsed_time = time_stamp_2 - time_stamp_1;
 	time_stamp_1 = time_stamp_2;
 	float delta_time = elapsed_time.count();
+
+	if(get_platform()->skip_next_frame) {
+		get_platform()->skip_next_frame = false;
+		return;
+	}
 		
 	// Tick the update routine.
 	update_counter += delta_time;
@@ -4237,6 +4245,7 @@ public:
 			case WM_CLOSE: {
 				window_close_requested_event e;
 				engine::get_instance()->post_event(e);
+				get_instance()->skip_next_frame = true;
 				break;
 			}
 
@@ -4284,6 +4293,7 @@ public:
 				rge::log::info("New window dimensions [%u, %u]", e.width, e.height);
 				get_instance()->create_frame(e.width, e.height);
 				engine::get_instance()->post_event(e);
+				get_instance()->skip_next_frame = true;
 				break;
 			}
 
@@ -4292,6 +4302,7 @@ public:
 				e.x = (int)(short)LOWORD(lParam); // Horizontal position.
 				e.y = (int)(short)HIWORD(lParam); // Vertical position.
 				engine::get_instance()->post_event(e);
+				get_instance()->skip_next_frame = true;
 				break;
 			}
 
@@ -5631,13 +5642,18 @@ public:
 		texture::ptr texture = texture::create(width, height);
 
 		glGenTextures(1, &texture->handle);
+		glBindTexture(GL_TEXTURE_2D, texture->handle);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
 		return texture;
 	}
 
 	void alloc_texture(texture& texture) override {
-		if(!texture.is_on_gpu())
+		if(!texture.is_on_gpu()) {
 			glGenTextures(1, &texture.handle);
+			glBindTexture(GL_TEXTURE_2D, texture.handle);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.get_width(), texture.get_height(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		}
 	}
 
 	void upload_texture(texture& texture) override {
