@@ -74,6 +74,8 @@ void spaceship::reset() {
 
 	velocity = rge::vec2();
 	move_input = rge::vec2();
+
+	sprite->material->diffuse = rge::color(1, 1, 1, sprite->material->diffuse.a);
 }
 
 void spaceship::draw() {
