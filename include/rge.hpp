@@ -1215,6 +1215,14 @@ private:
 	renderer* renderer_instance;
 	texture::ptr frame_buffer;
 	texture::ptr depth_buffer;
+
+#ifdef RGE_IMPL
+public:
+#else
+private:
+#endif
+	uint32_t handle; // For GPU ref
+
 };
 //********************************************//
 //* Render Target                            *//
@@ -11541,6 +11549,8 @@ public:
 		glGenTextures(1, &texture->handle);
 		glBindTexture(GL_TEXTURE_2D, texture->handle);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 		return texture;
 	}
@@ -11582,31 +11592,24 @@ public:
 		render_target::ptr render_target = render_target::create(this, width, height);
 
 		// The frame buffer (container).
-		GLuint frame_buffer_id = 0;
-		glGenFramebuffers(1, &frame_buffer_id);
-		glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id);
+		glGenFramebuffers(1, &render_target->handle);
+		glBindFramebuffer(GL_FRAMEBUFFER, render_target->handle);
+
+		// The texture buffer.
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, render_target->get_frame_buffer()->get_handle(), 0);
 
 		// The depth buffer.
+		/*
 		GLuint depth_buffer_id = 0;
 		glGenRenderbuffers(1, &depth_buffer_id);
 		glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer_id);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer_id);
-		
-		// The texture buffer.
-		GLuint texture_buffer_id = 0;
-		glGenTextures(1, &texture_buffer_id);
-		glBindTexture(GL_TEXTURE_2D, texture_buffer_id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_buffer_id, 0);
+		*/
 
 		// Set the list of draw buffers.
 		GLenum DrawBuffers[2] = { GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT };
 		glDrawBuffers(2, DrawBuffers);
-
-		// TODO: Set data to render_target...
 
 		return render_target;
 	}
@@ -11865,12 +11868,20 @@ public:
 	bool on_window_resized(const window_resized_event& e) override {
 		window_width = e.width;
 		window_height = e.height;
-		glViewport(0, 0, window_width, window_height);
+		if(!output_render) glViewport(0, 0, window_width, window_height);
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
 	rge::result set_target(render_target::ptr target) {
-		output_render = target;
+		if(target) {
+			output_render = target;
+			glBindFramebuffer(GL_FRAMEBUFFER, target->handle);
+			glViewport(0, 0, target->get_width(), target->get_height());
+		} else {
+			output_render = nullptr;
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glViewport(0, 0, window_width, window_height);
+		}
 	}
 
 	render_target::ptr get_target() const {
