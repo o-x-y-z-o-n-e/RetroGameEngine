@@ -7,3 +7,7 @@ level::level() {
 level::~level() {
 
 }
+
+area* level::get_area() {
+	return area_objs[current_area];
+}

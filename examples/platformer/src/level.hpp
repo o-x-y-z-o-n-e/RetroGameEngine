@@ -3,12 +3,14 @@
 
 #include "game.hpp"
 
+class area;
+
 class level {
 public:
 	level();
 	~level();
 
-	inline area* get_area() { return area_objs[current_area]; }
+	area* get_area();
 
 private:
 	std::vector<area*> area_objs;

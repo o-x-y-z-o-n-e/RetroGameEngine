@@ -9,6 +9,10 @@ public:
 	~player();
 
 	void draw() override;
+
+private:
+	rge::transform::ptr transform;
+	rge::sprite::ptr sprite;
 };
 
 #endif /* _PLAYER_HPP_ */

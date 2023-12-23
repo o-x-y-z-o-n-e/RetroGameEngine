@@ -3,6 +3,9 @@
 
 #include "game.hpp"
 
+class tile_map;
+class entity;
+
 class area {
 public:
 	area();

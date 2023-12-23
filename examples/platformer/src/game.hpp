@@ -4,6 +4,11 @@
 // Libraries.
 #include "rge.hpp"
 
+// Entities.
+#include "entity.hpp"
+#include "pawn.hpp"
+#include "player.hpp"
+
 // Structure.
 #include "world.hpp"
 #include "level.hpp"
@@ -11,10 +16,7 @@
 #include "tile_set.hpp"
 #include "tile_map.hpp"
 
-// Entities.
-#include "entity.hpp"
-#include "pawn.hpp"
-#include "player.hpp"
+
 
 // Render settings.
 #define PPU 1

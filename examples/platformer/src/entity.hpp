@@ -6,6 +6,9 @@
 class entity {
 	
 public:
+	entity();
+	~entity();
+
     virtual void draw();
 
 };

@@ -8,3 +8,11 @@ world::world() {
 world::~world() {
 
 }
+
+player* world::get_player() {
+	return player_obj;
+}
+
+level* world::get_level() {
+	return level_objs[current_level];
+}

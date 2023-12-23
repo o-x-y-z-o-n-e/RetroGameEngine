@@ -15,7 +15,7 @@ void game::get_default_window_params(std::string& title, int& width, int& height
 
 void game::on_init() {
 	camera = rge::camera::create();
-	camera->set_orthographic(0, 100, FRAME_HEIGHT);
+	camera->set_orthographic(0.0F, 100.0F, -FRAME_WIDTH / 2, FRAME_WIDTH / 2, FRAME_HEIGHT / 2, -FRAME_HEIGHT / 2);
 	get_renderer()->set_camera(camera);
 	
 	render = get_renderer()->create_render_target(FRAME_WIDTH, FRAME_HEIGHT);

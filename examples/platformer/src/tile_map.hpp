@@ -3,6 +3,8 @@
 
 #include "game.hpp"
 
+class tile_set;
+
 class tile_map {
 public:
     tile_map(int width, int height);

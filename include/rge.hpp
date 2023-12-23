@@ -930,7 +930,7 @@ public:
 	void set_orthographic(float near_plane, float far_plane, float vertical_size);
 
 	// Sets camera's projection to orthographic.
-	void set_orthographic(float left_plane, float right_plane, float top_plane, float bottom_plane, float near_plane, float far_plane);
+	void set_orthographic(float near_plane, float far_plane, float left_plane, float right_plane, float top_plane, float bottom_plane);
 
 	// Set's whether the width of the view frustum is automatically calculated from the view size in the renderer.
 	void set_auto_width_adjust(bool auto_width_adjust);
