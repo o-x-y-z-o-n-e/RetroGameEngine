@@ -8,7 +8,10 @@ public:
 	area();
 	~area();
 
+	void draw();
+
 private:
+	std::vector<tile_map*> tile_map_objs;
 	std::vector<entity*> entity_objs;
 };
 

@@ -7,6 +7,8 @@ class player : public pawn {
 public:
 	player();
 	~player();
+
+	void draw() override;
 };
 
 #endif /* _PLAYER_HPP_ */

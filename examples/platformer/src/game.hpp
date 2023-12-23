@@ -8,6 +8,8 @@
 #include "world.hpp"
 #include "level.hpp"
 #include "area.hpp"
+#include "tile_set.hpp"
+#include "tile_map.hpp"
 
 // Entities.
 #include "entity.hpp"
@@ -15,7 +17,10 @@
 #include "player.hpp"
 
 // Render settings.
-#define PPU 16
+#define PPU 1
+#define FRAME_WIDTH 320
+#define FRAME_HEIGHT 180
+#define BACKGROUND rge::color(0.063F, 0.071F, 0.11F)
 
 // Game declaration.
 class game : public rge::engine {
@@ -33,6 +38,8 @@ public:
 
 private:
 	world* world_obj;
+	rge::camera::ptr camera;
+	rge::render_target::ptr render;
 };
 
 #define WORLD_EXISTS (game::get_world() != nullptr)

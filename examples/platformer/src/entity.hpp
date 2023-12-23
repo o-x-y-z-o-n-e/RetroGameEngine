@@ -5,6 +5,9 @@
 
 class entity {
 	
+public:
+    virtual void draw();
+
 };
 
 #endif /* _ENTITY_HPP_ */

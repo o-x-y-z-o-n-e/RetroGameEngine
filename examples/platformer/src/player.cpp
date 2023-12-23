@@ -7,3 +7,7 @@ player::player() : pawn() {
 player::~player() {
 
 }
+
+void player::draw() {
+    
+}

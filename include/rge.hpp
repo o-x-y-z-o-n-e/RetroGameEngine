@@ -1313,6 +1313,18 @@ public:
 		const material& material
 	) = 0;
 
+	virtual void draw_tile(
+		const texture& texture,
+		int tile_x,
+		int tile_y,
+		int layer,
+		int scale,
+		int tex_min_x,
+		int tex_min_y,
+		int tex_max_x,
+		int tex_max_y
+	);
+
 	// Draw a 2D sprite onto camera space.
 	virtual void draw(const sprite& sprite) = 0;
 
@@ -1373,6 +1385,11 @@ public: // Inline macro short args functions.
 	// Draw a render target onto (dest)[0, w/h] frame space.
 	inline void draw(const render_target& render, int dest_min_x, int dest_min_y, int dest_max_x, int dest_max_y) {
 		draw(*render.get_frame_buffer(), dest_min_x, dest_min_y, dest_max_x, dest_max_y);
+	}
+
+	// Draw a render target onto entire frame.
+	inline void draw(const render_target& render) {
+		draw(*render.get_frame_buffer(), vec2(0, 0), vec2(1, 1));
 	}
 
 	// Draw a texture onto (pos)[-i32, +i32] frame space.
@@ -11657,6 +11674,26 @@ public:
 	) override {
 		// NOTE: Not implemented. For future...
 		return rge::OK;
+	}
+
+	void draw_tile(
+		const texture& texture,
+		int tile_x,
+		int tile_y,
+		int layer,
+		int scale,
+		int tex_min_x,
+		int tex_min_y,
+		int tex_max_x,
+		int tex_max_y
+	) override {
+		mat4 world_matrix = rge::mat4::trs(
+			rge::vec2(tile_x * scale, tile_y * scale),
+			rge::quaternion::identity(),
+			rge::vec3(scale, scale, 1);
+		);
+		mat4 camera_matrix = input_camera->transform->get_global_matrix();
+		vec2 tex_size = vec2(sprite.texture->get_width(), sprite.texture->get_height());
 	}
 
 	void draw(const sprite& sprite) override {
