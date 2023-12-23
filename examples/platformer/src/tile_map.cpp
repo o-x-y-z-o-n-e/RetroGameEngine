@@ -1,4 +1,5 @@
 #include "tile_map.hpp"
+#include "game.hpp"
 
 tile_map::tile_map(int width, int height) {
     this->width = width;

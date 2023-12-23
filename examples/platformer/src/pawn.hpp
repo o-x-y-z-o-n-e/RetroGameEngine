@@ -1,7 +1,7 @@
 #ifndef _PAWN_HPP_
 #define _PAWN_HPP_
 
-#include "game.hpp"
+#include "entity.hpp"
 
 class pawn : public entity {
 public:

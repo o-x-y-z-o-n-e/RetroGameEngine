@@ -2,12 +2,9 @@
 
 level::level() {
     current_area = 0;
+	area_objs.push_back(new area());
 }
 
 level::~level() {
 
-}
-
-area* level::get_area() {
-	return area_objs[current_area];
 }

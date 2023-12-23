@@ -1,4 +1,5 @@
 #include "player.hpp"
+#include "game.hpp"
 
 player::player() : pawn() {
 	transform = rge::transform::create();

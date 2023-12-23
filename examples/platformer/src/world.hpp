@@ -1,17 +1,17 @@
 #ifndef _WORLD_HPP_
 #define _WORLD_HPP_
 
-#include "game.hpp"
-
-class player;
-class level;
+#include "rge.hpp"
+#include "player.hpp"
+#include "level.hpp"
 
 class world {
 public:
 	world();
 	~world();
-	player* get_player();
-	level* get_level();
+
+	inline player* get_player() { return player_obj; }
+	inline level* get_level() { return level_objs[current_level]; }
 
 private:
 	player* player_obj;

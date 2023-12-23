@@ -1323,7 +1323,7 @@ public:
 		int tex_min_y,
 		int tex_max_x,
 		int tex_max_y
-	);
+	) = 0;
 
 	// Draw a 2D sprite onto camera space.
 	virtual void draw(const sprite& sprite) = 0;
@@ -11690,10 +11690,10 @@ public:
 		mat4 world_matrix = rge::mat4::trs(
 			rge::vec2(tile_x * scale, tile_y * scale),
 			rge::quaternion::identity(),
-			rge::vec3(scale, scale, 1);
+			rge::vec3(scale, scale, 1)
 		);
 		mat4 camera_matrix = input_camera->transform->get_global_matrix();
-		vec2 tex_size = vec2(sprite.texture->get_width(), sprite.texture->get_height());
+		vec2 tex_size = vec2(texture.get_width(), texture.get_height());
 	}
 
 	void draw(const sprite& sprite) override {

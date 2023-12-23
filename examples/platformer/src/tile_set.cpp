@@ -1,5 +1,13 @@
 #include "tile_set.hpp"
 
+tile::tile() {
+	texture = nullptr;
+	x = 0;
+	y = 0;
+	width = 1;
+	height = 1;
+}
+
 tile::tile(rge::texture::ptr texture) {
     this->texture = texture;
     x = 0;

@@ -1,7 +1,7 @@
 #ifndef _TILE_SET_HPP_
 #define _TILE_SET_HPP_
 
-#include "game.hpp"
+#include "rge.hpp"
 
 struct tile {
     rge::texture::ptr texture;
@@ -10,6 +10,7 @@ struct tile {
     int width;
     int height;
 
+	tile();
     tile(rge::texture::ptr texture);
     tile(rge::texture::ptr texture, int x, int y, int w, int h);
 };

@@ -1,9 +1,7 @@
 #ifndef _TILE_MAP_HPP_
 #define _TILE_MAP_HPP_
 
-#include "game.hpp"
-
-class tile_set;
+#include "tile_set.hpp"
 
 class tile_map {
 public:

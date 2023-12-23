@@ -3,16 +3,9 @@
 world::world() {
 	player_obj = new player();
 	current_level = 0;
+	level_objs.push_back(new level());
 }
 
 world::~world() {
 
-}
-
-player* world::get_player() {
-	return player_obj;
-}
-
-level* world::get_level() {
-	return level_objs[current_level];
 }

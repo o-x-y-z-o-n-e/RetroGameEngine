@@ -1,7 +1,8 @@
 #ifndef _PLAYER_HPP_
 #define _PLAYER_HPP_
 
-#include "game.hpp"
+#include "rge.hpp"
+#include "pawn.hpp"
 
 class player : public pawn {
 public:

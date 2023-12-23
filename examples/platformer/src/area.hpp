@@ -1,10 +1,9 @@
 #ifndef _AREA_HPP_
 #define _AREA_HPP_
 
-#include "game.hpp"
-
-class tile_map;
-class entity;
+#include "rge.hpp"
+#include "tile_map.hpp"
+#include "entity.hpp"
 
 class area {
 public:

@@ -1,16 +1,15 @@
 #ifndef _LEVEL_HPP_
 #define _LEVEL_HPP_
 
-#include "game.hpp"
-
-class area;
+#include "rge.hpp"
+#include "area.hpp"
 
 class level {
 public:
 	level();
 	~level();
 
-	area* get_area();
+	inline area* get_area() { return area_objs[current_area]; }
 
 private:
 	std::vector<area*> area_objs;
