@@ -1,6 +1,5 @@
 #define RGE_IMPL
 #define RGE_USE_STB_IMAGE
-#include "rge.hpp"
 #include "game.hpp"
 
 int main(int argc, char** argv) {

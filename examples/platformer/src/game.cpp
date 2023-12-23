@@ -1,7 +1,7 @@
 #include "game.hpp"
 
 game::game() : rge::engine() {
-	
+	world_obj = nullptr;
 }
 
 void game::get_default_window_params(std::string& title, int& width, int& height, bool& fullscreen) {
@@ -16,7 +16,7 @@ void game::on_init() {
 }
 
 void game::on_start() {
-	
+	world_obj = new world();
 }
 
 void game::on_update(float delta_time) {
