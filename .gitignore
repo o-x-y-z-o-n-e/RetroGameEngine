@@ -14,5 +14,8 @@
 **/Makefile
 *.make
 
-# macOS nonsense.
+# macOS nonsense
 *.DS_Store
+
+# Tiled
+*.tiled-session
