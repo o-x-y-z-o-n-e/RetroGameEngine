@@ -1350,6 +1350,8 @@ public:
 		int src_max_y
 	) = 0;
 
+
+
 public: // Inline macro short args functions.
 	// Draw 3D geometry, using model space data.
 	inline rge::result draw(
@@ -1399,6 +1401,9 @@ public: // Inline macro short args functions.
 
 public: // Events handlers.
 	virtual bool on_window_resized(const window_resized_event& e) { return false; }
+
+protected: // Internal events.
+	virtual void on_render_target_set(const render_target::ptr target) {}
 
 public:
 	virtual ~renderer() {}
@@ -9958,6 +9963,7 @@ void renderer::set_ambience(const color& ambient_color) {
 
 rge::result renderer::set_target(render_target::ptr target) {
 	output_render = target;
+	on_render_target_set(target);
 	return rge::OK;
 }
 
@@ -11628,6 +11634,8 @@ public:
 		GLenum DrawBuffers[2] = { GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT };
 		glDrawBuffers(2, DrawBuffers);
 
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 		return render_target;
 	}
 
@@ -11909,20 +11917,14 @@ public:
 		return false; // Do not consume event. Let it propagate through higher layers.
 	}
 
-	rge::result set_target(render_target::ptr target) {
+	void on_render_target_set(const render_target::ptr target) override {
 		if(target) {
-			output_render = target;
 			glBindFramebuffer(GL_FRAMEBUFFER, target->handle);
 			glViewport(0, 0, target->get_width(), target->get_height());
 		} else {
-			output_render = nullptr;
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glViewport(0, 0, window_width, window_height);
 		}
-	}
-
-	render_target::ptr get_target() const {
-		return output_render;
 	}
 
 	int get_width() const {
