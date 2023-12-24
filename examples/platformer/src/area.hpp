@@ -13,7 +13,7 @@ public:
 	void draw();
 
 private:
-	std::vector<tile_map*> tile_map_objs;
+	tile_map* tile_map_obj;
 	std::vector<entity*> entity_objs;
 };
 
