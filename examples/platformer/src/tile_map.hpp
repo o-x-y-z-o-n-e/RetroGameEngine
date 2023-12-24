@@ -1,12 +1,15 @@
 #ifndef _TILE_MAP_HPP_
 #define _TILE_MAP_HPP_
 
+#include "rge.hpp"
 #include "tile_set.hpp"
 
 class tile_map {
 public:
     tile_map(int width, int height);
     ~tile_map();
+
+	static tile_map* load(const std::string& file_name);
     
     void draw();
     void set_tile_registry(tile_set* set);

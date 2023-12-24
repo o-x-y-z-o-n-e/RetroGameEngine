@@ -7503,15 +7503,21 @@ class opengl_3_3;
 //********************************************//
 //* Extra Feature Dependancies               *//
 //********************************************//
-#ifdef RGE_USE_STB_IMAGE_WRITE
+#ifdef RGE_STB_IMAGE_WRITE_ENABLED
+#ifndef RGE_STB_IMAGE_WRITE_PATH
+#define RGE_STB_IMAGE_WRITE_PATH <stb_image_write.h>
+#endif /* RGE_STB_IMAGE_WRITE_PATH */
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
-#endif /* RGE_USE_STB_IMAGE_WRITE */
+#include RGE_STB_IMAGE_WRITE_PATH
+#endif /* RGE_STB_IMAGE_WRITE_ENABLED */
 
-#ifdef RGE_USE_STB_IMAGE
+#ifdef RGE_STB_IMAGE_ENABLED
+#ifndef RGE_STB_IMAGE_PATH
+#define RGE_STB_IMAGE_PATH <stb_image.h>
+#endif /* RGE_STB_IMAGE_PATH */
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-#endif /* RGE_USE_STB_IMAGE */
+#include RGE_STB_IMAGE_PATH
+#endif /* RGE_STB_IMAGE_ENABLED */
 //********************************************//
 //* Extra Feature Dependancies               *//
 //********************************************//
@@ -9708,7 +9714,7 @@ void texture::dump_to_raw_buffer(uint8_t* buffer) const {
 rge::result texture::write_to_disk(const std::string& path) const {
 	if(!is_on_cpu()) return rge::FAIL;
 
-	#ifdef RGE_USE_STB_IMAGE_WRITE
+	#ifdef RGE_STB_IMAGE_WRITE_ENABLED
 	uint8_t* buffer = (uint8_t*)malloc(4 * width * height);
 	dump_to_raw_buffer(buffer);
 	
@@ -9751,7 +9757,7 @@ texture::ptr texture::load(const std::string& path, bool load_to_gpu) {
 		return t;
 	}
 
-	#ifdef RGE_USE_STB_IMAGE
+	#ifdef RGE_STB_IMAGE_ENABLED
 
 	int i, w, h, ch;
 	uint8_t* input_buffer = stbi_load(path.c_str(), &w, &h, &ch, 4);

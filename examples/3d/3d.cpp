@@ -1,6 +1,6 @@
 #define RGE_IMPL
-#define RGE_USE_STB_IMAGE
-#define RGE_USE_STB_IMAGE_WRITE
+#define RGE_STB_IMAGE_ENABLED
+#define RGE_STB_IMAGE_WRITE_ENABLED
 #include "rge.hpp"
 
 #include <iostream>

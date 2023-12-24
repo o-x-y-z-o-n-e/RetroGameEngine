@@ -1,5 +1,5 @@
 #define RGE_IMPL
-#define RGE_USE_STB_IMAGE
+#define RGE_STB_IMAGE_ENABLED
 #include "game.hpp"
 
 /*
