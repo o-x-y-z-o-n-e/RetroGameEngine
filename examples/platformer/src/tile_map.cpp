@@ -15,8 +15,34 @@ static bool read_data(xml_node<>* node, tile_layer* layer) {
 		}
 	}
 
-	// TODO
-	rge::log::info("csv: %s", node->value());
+	std::string str = node->value();
+
+	int t = 0;
+	int offset = 0;
+	int i = 0;
+	char ch;
+	std::string num;
+	while(ch = str[i]) {
+		if(ch == ',') {
+			num = str.substr(offset, i - offset);
+			try {
+				layer->grid[t] = std::stoi(num);
+			} catch(std::exception e) {
+				layer->grid[t] = 0;
+			}
+			t++;
+			offset = i;
+		}
+
+		i++;
+	}
+
+	num = str.substr(offset, i - offset);
+	try {
+		layer->grid[t] = std::stoi(num);
+	} catch(std::exception e) {
+		layer->grid[t] = 0;
+	}
 
 	return true;
 }
@@ -192,7 +218,6 @@ static tile_map* read(char* text) {
 tile_map* tile_map::load(const std::string& file_name) {
 	FILE* file = nullptr;
 	tile_map* map = nullptr;
-	xml_document<> doc;
 	size_t size = 0;
 	char* text = nullptr;
 
