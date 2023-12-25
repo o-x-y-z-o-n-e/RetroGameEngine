@@ -1,83 +1,6 @@
 #include "tile_map.hpp"
+#include "tile_loader.hpp"
 #include "game.hpp"
-#include "rapidxml/rapidxml.hpp"
-
-using namespace rapidxml;
-
-#define STR_EQUAL(A, B) (strcmp(A, B) == 0)
-
-static bool read_attribute_int(xml_node<>* node, const char* name, int* value) {
-	if(node == nullptr)
-		return false;
-
-	xml_attribute<>* attribute = node->first_attribute(name);
-	if(attribute == nullptr)
-		return false;
-
-	try {
-		*value = std::stoi(attribute->value());
-		return true;
-	} catch(std::exception e) {
-		return false;
-	}
-}
-
-static bool read_attribute_float(xml_node<>* node, const char* name, float* value) {
-	if(node == nullptr)
-		return false;
-
-	xml_attribute<>* attribute = node->first_attribute(name);
-	if(attribute == nullptr)
-		return false;
-
-	try {
-		*value = std::stof(attribute->value());
-		return true;
-	} catch(std::exception e) {
-		return false;
-	}
-}
-
-static bool read_attribute_str(xml_node<>* node, const char* name, char** str) {
-	if(node == nullptr)
-		return false;
-
-	xml_attribute<>* attribute = node->first_attribute(name);
-	if(attribute == nullptr)
-		return false;
-
-	*str = attribute->value();
-	return true;
-}
-
-static bool read_attribute_bool(xml_node<>* node, const char* name, bool* value) {
-	if(node == nullptr)
-		return false;
-
-	xml_attribute<>* attribute = node->first_attribute(name);
-	if(attribute == nullptr)
-		return false;
-
-	if(
-		STR_EQUAL(attribute->value(), "true") ||
-		STR_EQUAL(attribute->value(), "TRUE") ||
-		STR_EQUAL(attribute->value(), "True") ||
-		STR_EQUAL(attribute->value(), "1")
-	) {
-		*value = true;
-		return true;
-	} else if(
-		STR_EQUAL(attribute->value(), "false") ||
-		STR_EQUAL(attribute->value(), "FALSE") ||
-		STR_EQUAL(attribute->value(), "False") ||
-		STR_EQUAL(attribute->value(), "0")
-	) {
-		*value = false;
-		return true;
-	} else {
-		return false;
-	}
-}
 
 static bool read_data(xml_node<>* node, tile_layer* layer) {
 	char* encoding = nullptr;
@@ -87,7 +10,7 @@ static bool read_data(xml_node<>* node, tile_layer* layer) {
 
 	if(read_attribute_str(node, "encoding", &encoding)) {
 		if(!STR_EQUAL(encoding, "csv")) {
-			rge::log::error("tile_map doesn't support grid layouts other than orthogonal!");
+			rge::log::error("Only csv supported for tile_map layer data");
 			return false;
 		}
 	}
@@ -120,12 +43,12 @@ static bool read_layer(xml_node<>* node, tile_layer* layer, bool use_local_dimen
 	*/
 
 	if(!read_attribute_int(node, "width", &width)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
+		rge::log::error("Failed to read width attribute");
 		return false;
 	}
 
 	if(!read_attribute_int(node, "height", &height)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
+		rge::log::error("Failed to read height attribute");
 		return false;
 	}
 
@@ -139,7 +62,7 @@ static bool read_layer(xml_node<>* node, tile_layer* layer, bool use_local_dimen
 
 	xml_node<>* data_node = node->first_node("data");
 	if(!read_data(data_node, layer)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
+		rge::log::error("Failed to to read <data> node");
 		return false;
 	}
 
@@ -153,12 +76,13 @@ static bool read_tile_set(xml_node<>* node, tile_set** set) {
 		return false;
 
 	if(!read_attribute_str(node, "source", &path)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
+		rge::log::error("Failed to read source attribute");
 		return false;
 	}
 
 	// TODO
 	*set = nullptr;
+
 	return true;
 }
 
@@ -182,40 +106,40 @@ static bool read_map(xml_node<>* node, tile_map** map) {
 	}
 
 	if(!read_attribute_int(node, "width", &width)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
+		rge::log::error("Failed to read width attribute");
 		return false;
 	}
 
 	if(!read_attribute_int(node, "height", &height)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
+		rge::log::error("Failed to read height attribute");
 		return false;
 	}
 
 	if(read_attribute_bool(node, "infinite", &infinite)) {
 		if(infinite) {
-			rge::log::error("TODO: Error! tile_map.cpp");
+			rge::log::error("infinite tile_map not supported");
 			return false;
 		}
 	}
 
 	if(!read_attribute_int(node, "tilewidth", &tile_width)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
+		rge::log::error("failed to read tilewidth attribute");
 		return false;
 	}
 
 	if(!read_attribute_int(node, "tileheight", &tile_height)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
+		rge::log::error("Failed to read tileheight attribute");
 		return false;
 	}
 
 	if(tile_width != tile_height || tile_width < 0 || tile_height < 0) {
-		rge::log::error("TODO: Error! tile_map.cpp");
+		rge::log::error("tilewidth & tileheight attributes must must value & not be negative");
 		return false;
 	}
 
 	xml_node<>* tile_set_node = node->first_node("tileset");
 	if(!read_tile_set(tile_set_node, &set)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
+		rge::log::error("<tileset> node not found");
 		return false;
 	}
 
@@ -228,7 +152,7 @@ static bool read_map(xml_node<>* node, tile_map** map) {
 		layer.width = width;
 		layer.height = height;
 		if(!read_layer(layer_node, &layer, infinite)) {
-			rge::log::error("TODO: Error! tile_map.cpp");
+			rge::log::error("Failed to read <layer> node");
 			return false;
 		}
 
@@ -247,17 +171,18 @@ static tile_map* read(char* text) {
 	try {
 		doc.parse<parse_non_destructive>(text);
 	} catch(const parse_error& e) {
-		rge::log::error("TODO: Failed to parse xml: %s", e.what());
+		rge::log::error("Failed to parse xml: %s", e.what());
 		return nullptr;
 	}
 
 	xml_node<>* map_node = doc.first_node("map");
 	if(map_node == nullptr) {
-		rge::log::error("TODO: .tmx does not contain <map> node");
+		rge::log::error("<map> node not found");
 		return nullptr;
 	}
 
 	if(!read_map(map_node, &map)) {
+		rge::log::error("Failed to read <map> node");
 		return nullptr;
 	}
 
@@ -332,7 +257,7 @@ void tile_map::draw_layer(int i) {
 				tile* t = registry->get_tile(j);
 
 				game::get_renderer()->draw_tile(
-					*t->texture,
+					*registry->get_sheet(),
 					x + h,
 					y + v,
 					i - (layers.size() - 1),
