@@ -8,15 +8,15 @@ game::game() : rge::engine() {
 
 void game::get_default_window_params(std::string& title, int& width, int& height, bool& fullscreen) {
 	title = "Platformer";
-	width = 800;
-	height = 600;
+	width = 1920;
+	height = 1080;
 	fullscreen = false;
 }
 
 void game::on_init() {
 	camera = rge::camera::create();
-	camera->transform->position = rge::vec3(0, 0, -1);
 	camera->set_orthographic(0.0F, 100.0F, -FRAME_WIDTH / 2, FRAME_WIDTH / 2, FRAME_HEIGHT / 2, -FRAME_HEIGHT / 2);
+	camera->transform->position = rge::vec3(15*8, 10*8, -1);
 	get_renderer()->set_camera(camera);
 	
 	render = get_renderer()->create_render_target(FRAME_WIDTH, FRAME_HEIGHT);

@@ -8,11 +8,21 @@ struct tile_layer {
 	int* grid;
 	int width;
 	int height;
+	int offset_x;
+	int offset_y;
+
+	inline tile_layer() {
+		grid = nullptr;
+		width = 0;
+		height = 0;
+		offset_x = 0;
+		offset_y = 0;
+	}
 };
 
 class tile_map {
 public:
-    tile_map(int width, int height);
+    tile_map(int map_width, int map_height, int tile_width, int tile_height);
     ~tile_map();
 
 	static tile_map* load(const std::string& file_name);
@@ -22,22 +32,21 @@ public:
 	void add_tile_layer(tile_layer& layer);
 
 public:
-    inline int get_width() { return width; }
-    inline int get_height() { return height; }
+    inline int get_width() { return map_width; }
+    inline int get_height() { return map_height; }
 
 private:
 	void draw_layer(int i);
 
 public:
-    int x;
-    int y;
-    int tile_size;
+    int tile_width;
+	int tile_height;
 
 private:
     tile_set* registry;
 	std::vector<tile_layer> layers;
-    int width;
-    int height;
+    int map_width;
+    int map_height;
 };
 
 /* Tiled 1.8 spec support list
@@ -53,16 +62,16 @@ Legend:
 "[*, *, *]" list
 
 <map>
-[*]---> version = `1.8`
+[ ]---> version = `1.8`
 [ ]---> tiledversion = [`0.0.0`, ..., `*.*.*`]
-[ ]---> orientation = (orthogonal) & !(isometric | staggered | hexagonal)
+[+]---> orientation = (orthogonal) & !(isometric | staggered | hexagonal)
 [ ]---> class = *
 [ ]---> renderorder = [right-down, right-up, left-down, left-up]
 [ ]---> compressionlevel = -1
-[*]---> width = * > 0
-[*]---> height = * > 0
-[*]---> tilewidth = * > 0 & (tilewidth == tileheight)
-[*]---> tileheight = * > 0 & (tileheight == tilewidth)
+[+]---> width = * > 0
+[+]---> height = * > 0
+[+]---> tilewidth = * > 0 & (tilewidth == tileheight)
+[+]---> tileheight = * > 0 & (tileheight == tilewidth)
 [ ]---> staggeraxis = *
 [ ]---> staggerindex = *
 [ ]---> parallaxoriginx = 0
@@ -74,22 +83,22 @@ Legend:
 
 <tileset>
 [ ]---> firstgid = *
-[ ]---> source = *
-[*]---> name = *
+[+]---> source = *
+[ ]---> name = *
 [ ]---> class = *
 TODO
 
 <layer>
-[*]---> id = *
-[*]---> name = *
+[ ]---> id = *
+[ ]---> name = *
 [ ]---> class = *
-[ ]---> width = * > 0
-[ ]---> height = * > 0
+[*]---> width = * > 0
+[*]---> height = * > 0
 [ ]---> opacity = [0.0, ..., 1.0]
 [ ]---> visible = [0, 1]
 [ ]---> tintcolor = [#000000, ..., #FFFFFF]
-[ ]---> offsetx = *
-[ ]---> offsety = *
+[*]---> offsetx = *
+[*]---> offsety = *
 [ ]---> parallaxx = 1
 [ ]---> parallaxy = 1
 

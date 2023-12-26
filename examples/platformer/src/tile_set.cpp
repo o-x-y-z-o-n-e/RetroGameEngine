@@ -5,6 +5,24 @@ tile_set::tile_set(rge::texture::ptr texture) {
     sheet = texture;
 }
 
+tile_set::tile_set(rge::texture::ptr texture, int tile_width, int tile_height) {
+	sheet = texture;
+
+	int w = texture->get_width() / tile_width;
+	int h = texture->get_height() / tile_height;
+
+	for(int y = 0; y < h; y++) {
+		for(int x = 0; x < w; x++) {
+			tile t;
+			t.x = x * tile_width;
+			t.y = y * tile_height;
+			t.width = tile_width;
+			t.height = tile_height;
+			add_tile(t);
+		}
+	}
+}
+
 tile* tile_set::get_tile(int i) {
     if(i < 0 || i >= tiles.size())
         return nullptr;
@@ -12,8 +30,8 @@ tile* tile_set::get_tile(int i) {
         return &tiles[i];
 }
 
-void tile_set::add_tile(const tile& t) {
-    tiles.push_back(t);
+void tile_set::add_tile(const tile& tile) {
+    tiles.push_back(tile);
 }
 
 static bool read_image(xml_node<>* node, rge::texture::ptr* texture) {
@@ -37,15 +55,15 @@ static bool read_image(xml_node<>* node, rge::texture::ptr* texture) {
 }
 
 static bool read_tile_set(xml_node<>* node, tile_set** set) {
-	char* path = nullptr;
+	char* name = nullptr;
     int tile_width = 0;
     int tile_height = 0;
 
 	if(node == nullptr)
 		return false;
 
-	if(!read_attribute_str(node, "source", &path)) {
-		rge::log::error("Failed to read source attribute");
+	if(!read_attribute_str(node, "name", &name)) {
+		rge::log::error("Failed to read name attribute");
 		return false;
 	}
 
@@ -66,19 +84,9 @@ static bool read_tile_set(xml_node<>* node, tile_set** set) {
 		return false;
     }
 
-    *set = new tile_set(image);
+    *set = new tile_set(image, tile_width, tile_height);
 
-	int w = image->get_width() / tile_width;
-	int h = image->get_height() / tile_height;
-
-	for(int i = 0; i < w * h; i++) {
-		tile t;
-		t.x = i % w;
-		t.y = i / w;
-		t.width = tile_width;
-		t.height = tile_height;
-		(*set)->add_tile(t);
-	}
+	// TODO: Set name.
 
 	return true;
 }
@@ -88,7 +96,7 @@ static tile_set* read(char* text) {
 	xml_document<> doc;
 
 	try {
-		doc.parse<parse_non_destructive>(text);
+		doc.parse<0>(text);
 	} catch(const parse_error& e) {
 		rge::log::error("Failed to parse xml: %s", e.what());
 		return nullptr;

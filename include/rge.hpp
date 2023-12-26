@@ -1315,14 +1315,16 @@ public:
 
 	virtual void draw_tile(
 		const texture& texture,
+		int layer,
+		vec2 offset,
+		int grid_width,
+		int grid_height,
 		int tile_x,
 		int tile_y,
-		int layer,
-		int scale,
-		int tex_min_x,
-		int tex_min_y,
-		int tex_max_x,
-		int tex_max_y
+		int tex_x,
+		int tex_y,
+		int tex_width,
+		int tex_height
 	) = 0;
 
 	// Draw a 2D sprite onto camera space.
@@ -11692,22 +11694,81 @@ public:
 
 	void draw_tile(
 		const texture& texture,
+		int layer,
+		vec2 offset,
+		int grid_width,
+		int grid_height,
 		int tile_x,
 		int tile_y,
-		int layer,
-		int scale,
-		int tex_min_x,
-		int tex_min_y,
-		int tex_max_x,
-		int tex_max_y
+		int tex_x,
+		int tex_y,
+		int tex_width,
+		int tex_height
 	) override {
-		mat4 world_matrix = rge::mat4::trs(
-			rge::vec2(tile_x * scale, tile_y * scale),
-			rge::quaternion::identity(),
-			rge::vec3(scale, scale, 1)
-		);
-		mat4 camera_matrix = input_camera->transform->get_global_matrix();
+		if(input_camera == nullptr) return;
+
+		GLfloat gl_m[16];
 		vec2 tex_size = vec2(texture.get_width(), texture.get_height());
+		mat4 world_matrix = rge::mat4::trs(
+			rge::vec3(tile_x * grid_width, tile_y * grid_height, layer) + offset,
+			rge::quaternion::identity(),
+			rge::vec3(grid_width, grid_height, 1)
+		);
+		
+		// Calculate world-space geometry coordinates.
+		vec3 n    = world_matrix.multiply_vector(vec3(0, 0, -1)); // Normal of quad.
+		vec3 p_bl = world_matrix.multiply_point_3x4(vec2(0, 0));  // Bottom left point of quad.
+		vec3 p_br = world_matrix.multiply_point_3x4(vec2(1, 0));  // Bottom right point of quad.
+		vec3 p_tl = world_matrix.multiply_point_3x4(vec2(0, 1));  // Top left point of quad.
+		vec3 p_tr = world_matrix.multiply_point_3x4(vec2(1, 1));  // Top right point of quad.
+
+		// Calculate texture coordinates.
+		vec2 t_bl = vec2(tex_x / tex_size.x, 1 - (tex_y / tex_size.y));
+		vec2 t_br = t_bl + vec2(tex_width / tex_size.x, 0);
+		vec2 t_tl = t_bl + vec2(0, -(tex_height / tex_size.y));
+		vec2 t_tr = t_bl + vec2(tex_width / tex_size.x, -(tex_height / tex_size.y));
+
+		// Set camera view matrix.
+		convert_matrix(gl_m, input_camera->get_view_matrix());
+		glMatrixMode(GL_MODELVIEW);
+		glLoadMatrixf(gl_m);
+
+		// Calculate & set projection matrix.
+		convert_matrix(gl_m, input_camera->calculate_projection_matrix());
+		glMatrixMode(GL_PROJECTION);
+		glLoadMatrixf(gl_m);
+
+		// Set rendering options.
+		load_default_draw_params();
+		glDisable(GL_LIGHTING);
+		// glColor4f(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
+
+		// Apply texture if located on gpu.
+		if(texture.is_on_gpu()) {
+			glBindTexture(GL_TEXTURE_2D, texture.handle);
+		} else {
+			glDisable(GL_TEXTURE_2D);
+		}
+
+		// Draw quad.
+		glBegin(GL_QUADS);
+		{
+			glTexCoord2f(t_bl.x, 1.0F - t_bl.y);
+			glVertex3f(p_bl.x, p_bl.y, p_bl.z);
+			glNormal3f(n.x, n.y, n.z);
+
+			glTexCoord2f(t_br.x, 1.0F - t_br.y);
+			glVertex3f(p_br.x, p_br.y, p_br.z);
+			glNormal3f(n.x, n.y, n.z);
+
+			glTexCoord2f(t_tr.x, 1.0F - t_tr.y);
+			glVertex3f(p_tr.x, p_tr.y, p_tr.z);
+			glNormal3f(n.x, n.y, n.z);
+
+			glTexCoord2f(t_tl.x, 1.0F - t_tl.y);
+			glVertex3f(p_tl.x, p_tl.y, p_tl.z);
+			glNormal3f(n.x, n.y, n.z);
+		} glEnd();
 	}
 
 	void draw(const sprite& sprite) override {
@@ -11770,9 +11831,9 @@ public:
 		vec2 t_tl;
 		vec2 t_tr;
 		if(sprite.sub_sprite) {
-			t_bl = vec2(sprite.section.x / tex_size.x, sprite.section.y / tex_size.y);
+			t_bl = vec2(sprite.section.x / tex_size.x, 1 - (sprite.section.y / tex_size.y));
 			t_br = t_bl + vec2(sprite.section.w / tex_size.x, 0);
-			t_tl = t_bl + vec2(0, sprite.section.h / tex_size.y);
+			t_tl = t_bl + vec2(0, -(sprite.section.h / tex_size.y));
 			t_tr = t_bl + t_br + t_tl;
 		} else {
 			t_bl = vec2(0, 0);

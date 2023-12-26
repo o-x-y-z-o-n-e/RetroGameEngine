@@ -8,10 +8,10 @@
 wall.png
 
 ==CODE==
-setup example tile_map
-collide & slide entity with tile_map
-player physics
-
+player idle
+player basic move
+fix camera y position
+tile collision
 */
 
 int main(int argc, char** argv) {

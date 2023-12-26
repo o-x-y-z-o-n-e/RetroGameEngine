@@ -1,8 +1,11 @@
 #include "tile_map.hpp"
 #include "tile_loader.hpp"
 #include "game.hpp"
+#include <sstream>
 
 static bool read_data(xml_node<>* node, tile_layer* layer) {
+	const char DELIM = ',';
+
 	char* encoding = nullptr;
 
 	if(node == nullptr)
@@ -16,57 +19,33 @@ static bool read_data(xml_node<>* node, tile_layer* layer) {
 	}
 
 	std::string str = node->value();
+	std::stringstream ss = std::stringstream(str);
 
+	int tmp_i = 0;
+	std::string tmp_s;
 	int t = 0;
-	int offset = 0;
-	int i = 0;
-	char ch;
-	std::string num;
-	while(ch = str[i]) {
-		if(ch == ',') {
-			num = str.substr(offset, i - offset);
-			try {
-				layer->grid[t] = std::stoi(num);
-			} catch(std::exception e) {
-				layer->grid[t] = 0;
-			}
-			t++;
-			offset = i;
-		}
-
-		i++;
-	}
-
-	num = str.substr(offset, i - offset);
 	try {
-		layer->grid[t] = std::stoi(num);
+		while(ss >> tmp_i) {
+			layer->grid[t] = tmp_i - 1;
+			getline(ss, tmp_s, DELIM);
+			t++;
+		}
 	} catch(std::exception e) {
-		layer->grid[t] = 0;
+		rge::log::error("Failed to parse csv tilemap data");
+		return false;
 	}
 
 	return true;
 }
 
 static bool read_layer(xml_node<>* node, tile_layer* layer, bool use_local_dimensions) {
-	char* name = nullptr;
-	int id = 0;
 	int width = 0;
 	int height = 0;
+	int offset_x = 0;
+	int offset_y = 0;
 
 	if(node == nullptr)
 		return false;
-
-	/*
-	if(!read_attribute_str(node, "name", &name)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
-		return false;
-	}
-
-	if(!read_attribute_int(node, "id", &id)) {
-		rge::log::error("TODO: Error! tile_map.cpp");
-		return false;
-	}
-	*/
 
 	if(!read_attribute_int(node, "width", &width)) {
 		rge::log::error("Failed to read width attribute");
@@ -78,12 +57,16 @@ static bool read_layer(xml_node<>* node, tile_layer* layer, bool use_local_dimen
 		return false;
 	}
 
-	*layer = tile_layer();
+	read_attribute_int(node, "offsetx", &offset_x);
+	read_attribute_int(node, "offsety", &offset_y);
+
 	if(use_local_dimensions) {
 		layer->width = width;
 		layer->height = height;
 	}
 
+	layer->offset_x = offset_x;
+	layer->offset_y = -offset_y; // NOTE: Tiled has flipped y dimension.
 	layer->grid = new int[layer->width * layer->height];
 
 	xml_node<>* data_node = node->first_node("data");
@@ -114,8 +97,8 @@ static bool read_tile_set(xml_node<>* node, tile_set** set) {
 
 static bool read_map(xml_node<>* node, tile_map** map) {
 	char* orientation = nullptr;
-	int width = 1;
-	int height = 1;
+	int map_width = 1;
+	int map_height = 1;
 	bool infinite = false;
 	int tile_width = 1;
 	int tile_height = 1;
@@ -131,12 +114,12 @@ static bool read_map(xml_node<>* node, tile_map** map) {
 		}
 	}
 
-	if(!read_attribute_int(node, "width", &width)) {
+	if(!read_attribute_int(node, "width", &map_width)) {
 		rge::log::error("Failed to read width attribute");
 		return false;
 	}
 
-	if(!read_attribute_int(node, "height", &height)) {
+	if(!read_attribute_int(node, "height", &map_height)) {
 		rge::log::error("Failed to read height attribute");
 		return false;
 	}
@@ -158,8 +141,8 @@ static bool read_map(xml_node<>* node, tile_map** map) {
 		return false;
 	}
 
-	if(tile_width != tile_height || tile_width < 0 || tile_height < 0) {
-		rge::log::error("tilewidth & tileheight attributes must must value & not be negative");
+	if(tile_width < 1 || tile_height < 1) {
+		rge::log::error("tilewidth & tileheight attributes must not be less than 1");
 		return false;
 	}
 
@@ -169,14 +152,15 @@ static bool read_map(xml_node<>* node, tile_map** map) {
 		return false;
 	}
 
-	*map = new tile_map(width, height);
+	*map = new tile_map(map_width, map_height, tile_width, tile_height);
 	(*map)->set_tile_registry(set);
 
+	
 	xml_node<>* layer_node = node->first_node("layer");
 	while(layer_node) {
 		tile_layer layer;
-		layer.width = width;
-		layer.height = height;
+		layer.width = map_width;
+		layer.height = map_height;
 		if(!read_layer(layer_node, &layer, infinite)) {
 			rge::log::error("Failed to read <layer> node");
 			return false;
@@ -192,79 +176,51 @@ static bool read_map(xml_node<>* node, tile_map** map) {
 
 static tile_map* read(char* text) {
 	tile_map* map = nullptr;
-	xml_document<> doc;
+	xml_document<>* doc = new xml_document<>();
 
 	try {
-		doc.parse<parse_non_destructive>(text);
+		doc->parse<parse_no_utf8>(text);
 	} catch(const parse_error& e) {
 		rge::log::error("Failed to parse xml: %s", e.what());
-		return nullptr;
+		goto error;
 	}
 
-	xml_node<>* map_node = doc.first_node("map");
+	xml_node<>* map_node = doc->first_node("map");
 	if(map_node == nullptr) {
 		rge::log::error("<map> node not found");
-		return nullptr;
+		goto error;
 	}
 
 	if(!read_map(map_node, &map)) {
 		rge::log::error("Failed to read <map> node");
-		return nullptr;
+		goto error;
 	}
 
+	delete doc;
 	return map;
+
+error:
+	delete doc;
+	return nullptr;
 }
 
 tile_map* tile_map::load(const std::string& file_name) {
-	FILE* file = nullptr;
-	tile_map* map = nullptr;
-	size_t size = 0;
-	char* text = nullptr;
-
-	if(!(file = fopen(file_name.c_str(), "r"))) {
-		rge::log::error("Failed to open tile map file: %s", file_name.c_str());
-		return nullptr;
-	}
-
 	try {
-		fseek(file, 0, SEEK_END);
-		size = ftell(file);
-		fseek(file, 0, SEEK_SET);
-	} catch(const std::exception& e) {
-		rge::log::error("TODO: Failed to read file size: %s", file_name.c_str());
-		if(file) fclose(file);
+		file<> file(file_name.c_str());
+		return read(file.data());
+	} catch(std::exception e) {
+		rge::log::error("Failed to load tile map: %s", file_name.c_str());
 		return nullptr;
 	}
-
-	try {
-		text = new char[size + 1];
-		fread(text, 1, size, file);
-		text[size] = 0;
-	} catch(const std::exception& e) {
-		rge::log::error("TODO: Failed to read file text: %s", file_name.c_str());
-		if(file) fclose(file);
-		if(text) delete[] text;
-		return nullptr;
-	}
-
-	map = read(text);
-
-	fclose(file);
-	delete[] text;
-	return map;
 }
 
-tile_map::tile_map(int width, int height) {
-    this->width = width;
-    this->height = height;
-
-    x = 0;
-    y = 0;
-    tile_size = 1;
-
+tile_map::tile_map(int map_width, int map_height, int tile_width, int tile_height) {
+    this->map_width =  map_width;
+    this->map_height = map_height;
+	this->tile_width = tile_width;
+	this->tile_height = tile_height;
+    
     registry = nullptr;
-
-	layers.clear();
 }
 
 tile_map::~tile_map() {
@@ -274,19 +230,24 @@ tile_map::~tile_map() {
 }
 
 void tile_map::draw_layer(int i) {
+	if(!registry) return;
+	if(!registry->get_sheet()) return;
+
 	int j = -1;
-	for(int h = 0; h < width; h++) {
-		for(int v = 0; v < height; v++) {
-			j = layers[i].grid[v * width + h];
+	for(int h = 0; h < map_width; h++) {
+		for(int v = 0; v < map_height; v++) {
+			j = layers[i].grid[v * map_width + h];
 			if(j >= 0) {
 				tile* t = registry->get_tile(j);
 
 				game::get_renderer()->draw_tile(
 					*registry->get_sheet(),
-					x + h,
-					y + v,
-					i - (layers.size() - 1),
-					tile_size,
+					(layers.size() - 1) - i,
+					rge::vec2(layers[i].offset_x, layers[i].offset_y),
+					tile_width,
+					tile_height,
+					h,
+					v,
 					t->x,
 					t->y,
 					t->width,
@@ -298,6 +259,25 @@ void tile_map::draw_layer(int i) {
 }
 
 void tile_map::draw() {
+	// TODO: Delete.
+	for(int h = 0; h < map_width; h++) {
+		for(int v = 0; v < map_height; v++) {
+			game::get_renderer()->draw_tile(
+				*registry->get_sheet(),
+				0,
+				rge::vec2(0, 0),
+				16,
+				16,
+				h,
+				v,
+				16,
+				640,
+				16,
+				16
+			);
+		}
+	}
+
 	for(int i = 0; i < layers.size(); i++) {
 		draw_layer(i);
 	}

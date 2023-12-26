@@ -14,6 +14,7 @@ class tile_set {
 
 public:
     tile_set(rge::texture::ptr texture);
+	tile_set(rge::texture::ptr texture, int tile_width, int tile_height);
 
     static tile_set* load(const std::string& file_name);
 
