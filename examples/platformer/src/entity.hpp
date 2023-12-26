@@ -8,6 +8,7 @@ public:
 	~entity();
 
     virtual void draw();
+	virtual void update(float delta_time);
 
 };
 

@@ -3,14 +3,9 @@
 #include "game.hpp"
 
 /*
-
-==SPRITES==
-wall.png
-
 ==CODE==
 player idle
 player basic move
-fix camera y position
 tile collision
 */
 

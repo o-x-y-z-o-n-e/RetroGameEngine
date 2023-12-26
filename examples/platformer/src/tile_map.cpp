@@ -242,12 +242,12 @@ void tile_map::draw_layer(int i) {
 
 				game::get_renderer()->draw_tile(
 					*registry->get_sheet(),
-					(layers.size() - 1) - i,
+					(layers.size() - 1) - i + 1,
 					rge::vec2(layers[i].offset_x, layers[i].offset_y),
 					tile_width,
 					tile_height,
 					h,
-					v,
+					map_height - v,
 					t->x,
 					t->y,
 					t->width,
@@ -259,25 +259,6 @@ void tile_map::draw_layer(int i) {
 }
 
 void tile_map::draw() {
-	// TODO: Delete.
-	for(int h = 0; h < map_width; h++) {
-		for(int v = 0; v < map_height; v++) {
-			game::get_renderer()->draw_tile(
-				*registry->get_sheet(),
-				0,
-				rge::vec2(0, 0),
-				16,
-				16,
-				h,
-				v,
-				16,
-				640,
-				16,
-				16
-			);
-		}
-	}
-
 	for(int i = 0; i < layers.size(); i++) {
 		draw_layer(i);
 	}

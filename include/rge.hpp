@@ -11723,10 +11723,10 @@ public:
 		vec3 p_tr = world_matrix.multiply_point_3x4(vec2(1, 1));  // Top right point of quad.
 
 		// Calculate texture coordinates.
-		vec2 t_bl = vec2(tex_x / tex_size.x, 1 - (tex_y / tex_size.y));
+		vec2 t_bl = vec2(tex_x / tex_size.x, 1 - ((tex_y + tex_height) / tex_size.y));
 		vec2 t_br = t_bl + vec2(tex_width / tex_size.x, 0);
-		vec2 t_tl = t_bl + vec2(0, -(tex_height / tex_size.y));
-		vec2 t_tr = t_bl + vec2(tex_width / tex_size.x, -(tex_height / tex_size.y));
+		vec2 t_tl = t_bl + vec2(0, tex_height / tex_size.y);
+		vec2 t_tr = t_bl + vec2(tex_width / tex_size.x, tex_height / tex_size.y);
 
 		// Set camera view matrix.
 		convert_matrix(gl_m, input_camera->get_view_matrix());
@@ -11831,15 +11831,15 @@ public:
 		vec2 t_tl;
 		vec2 t_tr;
 		if(sprite.sub_sprite) {
-			t_bl = vec2(sprite.section.x / tex_size.x, 1 - (sprite.section.y / tex_size.y));
+			t_bl = vec2(sprite.section.x / tex_size.x, 1 - ((sprite.section.y + sprite.section.h) / tex_size.y));
 			t_br = t_bl + vec2(sprite.section.w / tex_size.x, 0);
-			t_tl = t_bl + vec2(0, -(sprite.section.h / tex_size.y));
-			t_tr = t_bl + t_br + t_tl;
+			t_tl = t_bl + vec2(0, sprite.section.h / tex_size.y);
+			t_tr = t_bl + vec2(sprite.section.w / tex_size.x, sprite.section.h / tex_size.y);
 		} else {
 			t_bl = vec2(0, 0);
-			t_br = t_bl + vec2(1, 0);
-			t_tl = t_bl + vec2(0, 1);
-			t_tr = t_bl + t_br + t_tl;
+			t_br = vec2(1, 0);
+			t_tl = vec2(0, 1);
+			t_tr = vec2(1, 1);
 		}
 
 		// Get diffuse color, defaults to white.
@@ -11973,6 +11973,9 @@ public:
 		src_min.y = float(src_min_y) / texture.get_height();
 		src_max.x = float(src_max_x) / texture.get_width();
 		src_max.y = float(src_max_y) / texture.get_height();
+
+		src_min.y = 1.0F - src_min.y;
+		src_max.y = 1.0F - src_max.y;
 
 		draw(texture, dest_min, dest_max, src_min, src_max);
 	}
