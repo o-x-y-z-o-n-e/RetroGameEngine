@@ -30,6 +30,8 @@ void player::draw() {
 void player::update(float delta_time) {
 	pawn::update(delta_time);
 
+	poll_input();
+
 	anim_counter += delta_time;
 
 	if(anim_counter > 0.5F) {
@@ -44,5 +46,19 @@ void player::update(float delta_time) {
 			sprite->section.x = 16;
 			sprite->section.y = 56;
 		}
+	}
+}
+
+void player::poll_input() {
+	if(rge::input::was_pressed(rge::input::KEY_SPACE)) {
+		cmd_jump = true;
+	}
+
+	if(rge::input::is_down(rge::input::KEY_A)) {
+		cmd_left = true;
+	}
+
+	if(rge::input::is_down(rge::input::KEY_D)) {
+		cmd_right = true;
 	}
 }
