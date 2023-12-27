@@ -32,8 +32,8 @@ public:
 	void add_tile_layer(tile_layer& layer);
 
 public:
-    inline int get_width() { return map_width; }
-    inline int get_height() { return map_height; }
+    inline int get_width() const { return map_width; }
+    inline int get_height() const { return map_height; }
 
 private:
 	void draw_layer(int i);

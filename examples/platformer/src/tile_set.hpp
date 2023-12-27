@@ -8,6 +8,7 @@ struct tile {
     int y;
     int width;
     int height;
+	std::vector<rge::rect> collision;
 };
 
 class tile_set {
@@ -21,8 +22,8 @@ public:
     tile* get_tile(int i);
     void add_tile(const tile& t);
     
-    inline int get_tile_count() { return tiles.size(); }
-    inline rge::texture::ptr get_sheet() { return sheet; }
+    inline int get_tile_count() const { return tiles.size(); }
+    inline rge::texture::ptr get_sheet() const { return sheet; }
 
 private:
     std::vector<tile> tiles;

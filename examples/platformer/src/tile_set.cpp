@@ -54,6 +54,68 @@ static bool read_image(xml_node<>* node, rge::texture::ptr* texture) {
     return true;
 }
 
+static bool read_tile(xml_node<>* node, tile_set* set) {
+	int id = -1;
+
+	if(!node)
+		return false;
+
+	if(!read_attribute_int(node, "id", &id)) {
+		return false;
+	}
+
+	xml_node<>* object_group = node->first_node("objectgroup");
+	if(!object_group) return false;
+
+	tile* tile = set->get_tile(id);
+
+	xml_node<>* child_node = object_group->first_node("object");
+	char* type = nullptr;
+	rge::rect bounds;
+	while(child_node) {
+		if(!read_attribute_str(child_node, "type", &type)) {
+			rge::log::error("TODO: tile_set.cpp");
+			return false;
+		}
+
+		if(!STR_EQUAL("collide", type)) {
+			rge::log::error("TODO: tile_set.cpp");
+			return false;
+		}
+
+		if(child_node->first_attribute("rotation")) {
+			rge::log::error("TODO: tile_set.cpp");
+			return false;
+		}
+
+		if(!read_attribute_float(child_node, "x", &bounds.x)) {
+			rge::log::error("TODO: tile_set.cpp");
+			return false;
+		}
+
+		if(!read_attribute_float(child_node, "y", &bounds.y)) {
+			rge::log::error("TODO: tile_set.cpp");
+			return false;
+		}
+
+		if(!read_attribute_float(child_node, "width", &bounds.w)) {
+			rge::log::error("TODO: tile_set.cpp");
+			return false;
+		}
+
+		if(!read_attribute_float(child_node, "height", &bounds.h)) {
+			rge::log::error("TODO: tile_set.cpp");
+			return false;
+		}
+
+		tile->collision.push_back(bounds);
+
+		child_node = child_node->next_sibling("object");
+	}
+
+	return true;
+}
+
 static bool read_tile_set(xml_node<>* node, tile_set** set) {
 	char* name = nullptr;
     int tile_width = 0;
@@ -85,6 +147,11 @@ static bool read_tile_set(xml_node<>* node, tile_set** set) {
     }
 
     *set = new tile_set(image, tile_width, tile_height);
+
+	xml_node<>* tile_node = node->first_node("tile");
+	while(read_tile(tile_node, *set)) {
+		tile_node = tile_node->next_sibling("tile");
+	}
 
 	// TODO: Set name.
 
