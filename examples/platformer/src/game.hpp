@@ -3,6 +3,7 @@
 
 // Libraries.
 #include "rge.hpp"
+#include "physics.hpp"
 
 // Structure.
 #include "world.hpp"
@@ -21,6 +22,8 @@
 #define FRAME_WIDTH 320
 #define FRAME_HEIGHT 180
 #define BACKGROUND rge::color(0.063F, 0.071F, 0.11F)
+
+//using namespace rge;
 
 class world;
 class game;

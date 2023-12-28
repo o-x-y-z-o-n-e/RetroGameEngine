@@ -376,6 +376,12 @@ namespace math {
 
 	// Steps current towards target at most max_delta distance.
 	float move_towards(float current, float target, float max_delta);
+
+	// Gets absolute value of x.
+	inline float abs(float x) { return x > 0 ? x : -x; }
+
+	// Gets sign (- or + or 0) of value x.
+	inline int sign(float x) { return (x > 0 ? 1 : (x < 0 ? -1 : 0)); }
 }
 //********************************************//
 //* Math Module                              *//
@@ -885,6 +891,9 @@ public:
 	void set_global_position(const vec3& position);
 	void set_global_rotation(const quaternion& rotation);
 
+	vec3 transform_point(vec3 local_point) const;
+	vec3 transform_vector(vec3 local_vector) const;
+
 public:
 	transform::ptr parent;
 	vec3 position;
@@ -1172,6 +1181,8 @@ public:
 	bool sub_sprite;
 	bool centered;
 	bool billboard;
+	bool flip_x;
+	bool flip_y;
 	int pixels_per_unit;
 	rect section;
 
@@ -9385,6 +9396,14 @@ quaternion transform::get_global_rotation() const {
 	return get_global_matrix().extract_rotation();
 }
 
+vec3 transform::transform_point(vec3 local_point) const {
+	return get_global_matrix().multiply_point_3x4(local_point);
+}
+
+vec3 transform::transform_vector(vec3 local_vector) const {
+	return get_global_matrix().multiply_vector(local_vector);
+}
+
 void transform::set_global_position(const vec3& position) {
 	if(parent != nullptr){
 		this->position = mat4::inverse(parent->get_global_matrix()).multiply_point_3x4(position);
@@ -9845,6 +9864,8 @@ sprite::sprite() {
 	sub_sprite = false;
 	centered = false;
 	billboard = false;
+	flip_x = false;
+	flip_y = false;
 	pixels_per_unit = 32;
 	section = rect(0, 0, pixels_per_unit, pixels_per_unit);
 }
@@ -11346,6 +11367,24 @@ public:
 			t_br = vec2(1, 0);
 			t_tl = vec2(0, 1);
 			t_tr = vec2(1, 1);
+		}
+		if(sprite.flip_x) {
+			float bl_x = t_bl.x;
+			float tl_x = t_tl.x;
+
+			t_bl.x = t_br.x;
+			t_br.x = bl_x;
+			t_tl.x = t_tr.x;
+			t_tr.x = tl_x;
+		}
+		if(sprite.flip_y) {
+			float bl_y = t_bl.y;
+			float tl_y = t_tl.y;
+
+			t_bl.y = t_br.y;
+			t_br.y = bl_y;
+			t_tl.y = t_tr.y;
+			t_tr.y = tl_y;
 		}
 
 		// Get diffuse color, defaults to white.
