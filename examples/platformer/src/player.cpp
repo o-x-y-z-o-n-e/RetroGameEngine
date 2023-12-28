@@ -11,7 +11,7 @@ const float GRAVITY = 192;
 
 player::player() : pawn() {
 	transform = transform::create();
-	transform->position = vec3(16, 48, 0);
+	transform->position = vec3(16, 60, 0);
 	sprite = sprite::create();
 	sprite->texture = texture::load("res/entities/player.png");
 	sprite->sub_sprite = true;
@@ -47,28 +47,6 @@ void player::update(float delta_time) {
 	poll_input();
 
 	anim_counter += delta_time;
-
-	physics::cast_hit hit;
-	physics::ray ray = physics::ray(
-		transform->transform_point(center - vec2(0, -radius)) + vec2(0, 0.01F),
-		vec2(0, -1),
-		0.02F
-	);
-	bool touching_ground = transform->get_global_position().y <= 48; // physics::cast_ray(&hit, ray);
-	if(touching_ground != is_grounded) {
-		is_grounded = touching_ground;
-
-		if(is_grounded) {
-			if(velocity.y < 0)
-				velocity.y = 0;
-
-			anim_index = 0;
-			anim_counter = 0;
-			set_sprite(0, 56);
-		} else {
-
-		}
-	}
 
 	float vel_x = velocity.x;
 	move(delta_time);
@@ -140,24 +118,28 @@ vec2 player::collide_and_slide(vec2 delta, vec2 pos, int depth) {
 		return rge::vec2();
 	}
 
-	float dist = delta.magnitude() + SKIN_WIDTH;
+	/*
+	rge::rect ground = rge::rect(0, 0, 100, 48);
+	rge::rect wall = rge::rect(8 * 8, 48, 8, 16);
+	std::vector<rect*> colliders;
+	colliders.push_back(&ground);
+	colliders.push_back(&wall);
+	*/
 
-	physics::cast_hit hit;
-	physics::circle circle = physics::circle(transform->transform_point(center), radius);
-	if(physics::sweep(&hit, circle, delta)) {
-		vec2 surface_snap = rge::vec2::normalize(delta) * (hit.distance - SKIN_WIDTH);
-		vec2 left_over = delta - surface_snap;
+	const std::vector<collider*>* colliders = game::get_world()->get_colliders();
+	rge::log::info("%i", colliders->size());
+	physics::sweep_result result = physics::sweep(rect(pos.x, pos.y, 8, 8), delta, *colliders);
 
-		float m = left_over.magnitude();
-		vec2 v = vec2(hit.normal.y, -hit.normal.x);
+	if(result.travel_percent >= 1.0F)
+		return delta;
 
-		left_over = vec2::normalize(v * vec2::dot(v, left_over));
-		left_over *= m;
+	float remaining_percent = 1.0F - result.travel_percent;
+	float dot_product = (delta.x * result.normal.y + delta.y * result.normal.x) * remaining_percent;
+	
+	vec2 new_delta = vec2(result.normal.y, result.normal.x) * dot_product;
 
-		return surface_snap + collide_and_slide(left_over, pos + surface_snap, depth + 1);
-	}
-
-	return delta;
+	delta *= result.travel_percent;
+	return delta + collide_and_slide(new_delta, pos + delta, depth + 1);
 }
 
 void player::move(float delta_time) {
@@ -182,33 +164,43 @@ void player::move(float delta_time) {
 
 	velocity.x = math::move_towards(velocity.x, vel_x_target, acceration * delta_time);
 	
-	if(transform->get_global_position().y > 48) {
-		velocity.y -= GRAVITY * delta_time;
-
-		if(cmd_jump_hold && velocity.y > 0) {
-			cmd_jump_hold = false;
-			velocity.y += JUMP_HOLD * delta_time;
-		}
-	} else {
-		velocity.y = 0;
+	if(is_grounded) {
+		if(velocity.y <= 0)
+			velocity.y = -1;
 
 		if(cmd_jump_press) {
 			cmd_jump_press = false;
 
 			velocity.y = JUMP_VELOCITY;
 		}
+	} else {
+		velocity.y -= GRAVITY * delta_time;
+
+		if(cmd_jump_hold && velocity.y > 0) {
+			cmd_jump_hold = false;
+			velocity.y += JUMP_HOLD * delta_time;
+		}
 	}
 
 	vec2 pos = transform->get_global_position();
-	vec2 delta = collide_and_slide(velocity * delta_time, pos);
+	vec2 target_delta = velocity * delta_time;
+	vec2 real_delta = collide_and_slide(target_delta, pos);
 
-	pos += delta;
-	velocity = delta / delta_time;
+	bool touching_ground = target_delta.y < 0 && real_delta.y > target_delta.y;
+	if(touching_ground != is_grounded) {
+		is_grounded = touching_ground;
 
-	if(pos.y < 48) {
-		pos.y = 48;
-		velocity.y = 0;
+		if(is_grounded) {
+			anim_index = 0;
+			anim_counter = 0;
+			set_sprite(0, 56);
+		} else {
+
+		}
 	}
+
+	pos += real_delta;
+	velocity = real_delta / delta_time;
 
 	transform->set_global_position(pos);
 }

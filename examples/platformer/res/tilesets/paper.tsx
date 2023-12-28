@@ -6,4 +6,14 @@
    <object id="1" type="collide" x="0" y="0" width="8" height="2"/>
   </objectgroup>
  </tile>
+ <tile id="128">
+  <objectgroup draworder="index" id="2">
+   <object id="1" type="collide" x="0" y="0" width="8" height="8"/>
+  </objectgroup>
+ </tile>
+ <tile id="146">
+  <objectgroup draworder="index" id="2">
+   <object id="1" type="collide" x="0" y="0" width="3" height="8"/>
+  </objectgroup>
+ </tile>
 </tileset>

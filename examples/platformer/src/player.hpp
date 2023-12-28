@@ -27,8 +27,6 @@ private:
 private:
 	transform::ptr transform;
 	sprite::ptr sprite;
-	vec2 center;
-	float radius;
 
 	float anim_counter;
 	int anim_index;

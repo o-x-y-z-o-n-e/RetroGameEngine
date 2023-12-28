@@ -2,8 +2,9 @@
 #define _AREA_HPP_
 
 #include "rge.hpp"
-#include "tile_map.hpp"
-#include "entity.hpp"
+
+class tile_map;
+class entity;
 
 class area {
 public:
@@ -11,6 +12,8 @@ public:
 	~area();
 
 	void draw();
+
+	inline tile_map* get_map() { return tile_map_obj; }
 
 private:
 	tile_map* tile_map_obj;

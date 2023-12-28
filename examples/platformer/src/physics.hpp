@@ -2,6 +2,7 @@
 #define _PHYSICS_HPP_
 
 #include "rge.hpp"
+#include "collider.hpp"
 
 namespace rge {
 
@@ -61,6 +62,21 @@ namespace physics {
 		float distance;
     };
 
+	struct sweep_result {
+		vec2 normal;
+		float travel_percent;
+
+		sweep_result() {
+			this->normal = vec2();
+			this->travel_percent = 0;
+		}
+
+		sweep_result(vec2 normal, float travel_percent) {
+			this->normal = normal;
+			this->travel_percent = travel_percent;
+		}
+	};
+
 	// Casting
 	bool cast_ray(cast_hit* out_hit, const ray& ray);
 
@@ -88,14 +104,14 @@ namespace physics {
 	bool overlap(cast_hit* out_hit, const rect& rect, const line& line);
 
 	// Sweeping
-	bool sweep(cast_hit* out_hit, const circle& circle_origin, const vec2& circle_delta);
-	bool sweep(cast_hit* out_hit, const rect& rect_origin, const vec2& rect_delta);
+	sweep_result sweep(const circle& circle_origin, const vec2& circle_delta);
+	sweep_result sweep(const rect& rect1, const vec2& delta, const std::vector<collider*>& colliders);
 
-	bool sweep(cast_hit* out_hit, const circle& circle_origin, const vec2& circle_delta, const rect& rect);
-	bool sweep(cast_hit* out_hit, const circle& circle_origin, const vec2& circle_delta, const line& line);
+	sweep_result sweep(const circle& circle_origin, const vec2& circle_delta, const rect& rect);
+	sweep_result sweep(const circle& circle_origin, const vec2& circle_delta, const line& line);
 
-	bool sweep(cast_hit* out_hit, const rect& rect1_origin, const vec2& rect1_delta, const rect& rect2);
-	bool sweep(cast_hit* out_hit, const rect& rect_origin, const vec2& rect_delta, const line&line);
+	sweep_result sweep(const rect& rect1_origin, const vec2& rect1_delta, const rect& rect2);
+	sweep_result sweep(const rect& rect_origin, const vec2& rect_delta, const line&line);
 
 }
 

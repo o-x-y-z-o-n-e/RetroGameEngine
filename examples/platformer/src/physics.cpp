@@ -1,4 +1,6 @@
 #include "physics.hpp"
+#include "collider.hpp"
+#include <limits>
 using namespace rge::physics;
 
 bool rge::physics::cast_ray(cast_hit* out_hit, const ray& ray, const rect& rect) {
@@ -92,24 +94,85 @@ bool rge::physics::overlap(cast_hit* out_hit, const rect& rect, const line& line
 	return false;
 }
 
-bool rge::physics::sweep(cast_hit* out_hit, const circle& circle_origin, const vec2& circle_delta, const rect& rect) {
+sweep_result rge::physics::sweep(const circle& circle, const vec2& delta, const rect& rect) {
 	// TODO
-	return false;
+	return sweep_result(vec2(0, 0), 1.0F);
 }
 
-bool rge::physics::sweep(cast_hit* out_hit, const circle& circle_origin, const vec2& circle_delta, const line& line) {
+sweep_result rge::physics::sweep(const circle& circle, const vec2& delta, const line& line) {
 	// TODO
-	return false;
+	return sweep_result(vec2(0, 0), 1.0F);
 }
 
-bool rge::physics::sweep(cast_hit* out_hit, const rect& rect1_origin, const vec2& rect1_delta, const rect& rect2) {
-	// TODO
-	return false;
+sweep_result rge::physics::sweep(const rect& rect1, const vec2& delta, const rect& rect2) {
+	sweep_result result;
+
+	float x_inv_entry;
+	float x_inv_exit;
+	float y_inv_entry;
+	float y_inv_exit;
+
+	float x_entry;
+	float x_exit;
+	float y_entry;
+	float y_exit;
+
+	float t_entry;
+	float t_exit;
+
+	if(delta.x > 0) {
+		x_inv_entry = rect2.x - (rect1.x + rect1.w);
+		x_inv_exit = (rect2.x + rect2.w) - rect1.x;
+	} else {
+		x_inv_entry = (rect2.x + rect2.w) - rect1.x;
+		x_inv_exit = rect2.x - (rect1.x + rect1.w);
+	}
+
+	if(delta.y > 0) {
+		y_inv_entry = rect2.y - (rect1.y + rect1.h);
+		y_inv_exit = (rect2.y + rect2.h) - rect1.y;
+	} else {
+		y_inv_entry = (rect2.y + rect2.h) - rect1.y;
+		y_inv_exit = rect2.y - (rect1.y + rect1.h);
+	}
+
+	if(delta.x == 0.0F) {
+		x_entry = -std::numeric_limits<float>::infinity();
+		x_exit = std::numeric_limits<float>::infinity();
+	} else {
+		x_entry = x_inv_entry / delta.x;
+		x_exit = x_inv_exit / delta.x;
+	}
+
+	if(delta.y == 0.0F) {
+		y_entry = -std::numeric_limits<float>::infinity();
+		y_exit = std::numeric_limits<float>::infinity();
+	} else {
+		y_entry = y_inv_entry / delta.y;
+		y_exit = y_inv_exit / delta.y;
+	}
+
+	t_entry = std::max(x_entry, y_entry);
+	t_exit = std::min(x_exit, y_exit);
+
+	if(t_entry > t_exit || x_entry < 0.0F && y_entry < 0.0F || x_entry > 1.0F || y_entry > 1.0F) {
+		result.normal = vec2(0, 0);
+		result.travel_percent = 1.0F;
+	} else {
+		if(x_entry > y_entry) {
+			result.normal = x_inv_entry < 0.0F ? vec2(1, 0) : vec2(-1, 0);
+		} else {
+			result.normal = y_inv_entry < 0.0F ? vec2(0, 1) : vec2(0, -1);
+		}
+		result.travel_percent = t_entry;
+	}
+
+	return result;
 }
 
-bool rge::physics::sweep(cast_hit* out_hit, const rect& rect_origin, const vec2& rect_delta, const line& line) {
+sweep_result rge::physics::sweep(const rect& rect, const vec2& delta, const line& line) {
 	// TODO
-	return false;
+	return sweep_result(vec2(0, 0), 1.0F);
 }
 
 //--------------------------
@@ -134,12 +197,23 @@ bool rge::physics::overlap(cast_hit* out_hit, const rect& rect) {
 	return false;
 }
 
-bool rge::physics::sweep(cast_hit* out_hit, const circle& circle_origin, const vec2& circle_delta) {
+sweep_result rge::physics::sweep(const circle& circle, const vec2& delta) {
 	// TODO
-	return false;
+	return sweep_result(vec2(0, 0), 1.0F);
 }
 
-bool rge::physics::sweep(cast_hit* out_hit, const rect& rect_origin, const vec2& rect_delta) {
-	// TODO
-	return false;
+sweep_result rge::physics::sweep(const rect& rect1, const vec2& delta, const std::vector<collider*>& colliders) {
+	sweep_result closet = sweep_result(vec2(0, 0), 1.0F);
+	sweep_result current;
+
+	if(colliders.size() > 0) {
+		for(int i = 0; i < colliders.size(); i++) {
+			current = sweep(rect1, delta, colliders[i]->get_bounds());
+			if(current.travel_percent < closet.travel_percent) {
+				closet = current;
+			}
+		}
+	}
+
+	return closet;
 }

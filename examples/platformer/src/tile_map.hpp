@@ -2,7 +2,10 @@
 #define _TILE_MAP_HPP_
 
 #include "rge.hpp"
-#include "tile_set.hpp"
+// #include "tile_set.hpp"
+
+class tile_set;
+class tile_collider;
 
 struct tile_layer {
 	int* grid;
@@ -30,10 +33,14 @@ public:
     void draw();
     void set_tile_registry(tile_set* set);
 	void add_tile_layer(tile_layer& layer);
+	void create_colliders();
 
 public:
     inline int get_width() const { return map_width; }
     inline int get_height() const { return map_height; }
+	inline tile_set* get_tile_registry() const { return registry; }
+	inline tile_layer* get_tile_layer(int i) { return &(layers[i]); }
+	inline std::vector<tile_collider*>* get_colliders() { return &colliders; }
 
 private:
 	void draw_layer(int i);
@@ -47,6 +54,7 @@ private:
 	std::vector<tile_layer> layers;
     int map_width;
     int map_height;
+	std::vector<tile_collider*> colliders;
 };
 
 /* Tiled 1.8 spec support list
