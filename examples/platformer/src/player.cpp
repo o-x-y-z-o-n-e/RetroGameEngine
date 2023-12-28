@@ -62,3 +62,17 @@ void player::poll_input() {
 		cmd_right = true;
 	}
 }
+
+rge::vec2 cas(rge::vec2 delta, float radius, rge::vec2 pos, int depth = 0) {
+	const int MAX_BOUNCES = 5;
+
+	if(depth >= MAX_BOUNCES) {
+		return rge::vec2();
+	}
+
+	return delta;
+}
+
+void player::move(rge::vec2 delta) {
+
+}

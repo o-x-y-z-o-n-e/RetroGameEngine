@@ -15,6 +15,7 @@ public:
 
 private:
 	void poll_input();
+	void move(rge::vec2 delta);
 
 private:
 	rge::transform::ptr transform;
