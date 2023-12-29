@@ -2,7 +2,6 @@
 #define _TILE_MAP_HPP_
 
 #include "rge.hpp"
-// #include "tile_set.hpp"
 
 class tile_set;
 class tile_collider;

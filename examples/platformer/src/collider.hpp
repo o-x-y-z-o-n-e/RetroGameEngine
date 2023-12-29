@@ -7,23 +7,20 @@ class tile_map;
 class tile_layer;
 
 class collider {
-
 public:
 	virtual rge::rect get_bounds() const;
-
 };
 
 class rect_collider : public collider {
 public:
-	rge::rect get_bounds() const override {
-		rge::vec2 position = parent->get_global_position();
-		return rge::rect(position.x + shape.x, position.y + shape.y, shape.w, shape.h);
-	};
+	rect_collider(rge::rect shape);
+	rect_collider(rge::rect shape, rge::transform::ptr parent);
+
+	rge::rect get_bounds() const override;
 
 private:
 	rge::transform::ptr parent;
 	rge::rect shape;
-
 };
 
 class tile_collider : public collider {

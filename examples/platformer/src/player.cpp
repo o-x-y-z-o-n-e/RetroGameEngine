@@ -8,7 +8,6 @@ const float JUMP_VELOCITY = 56;
 const float JUMP_HOLD = 96;
 const float GRAVITY = 192;
 
-
 player::player() : pawn() {
 	transform = transform::create();
 	transform->position = vec3(16, 60, 0);
@@ -110,6 +109,8 @@ void player::poll_input() {
 	}
 }
 
+
+
 vec2 player::collide_and_slide(vec2 delta, vec2 pos, int depth) {
 	const int MAX_PASSES = 5;
 	const float SKIN_WIDTH = 0.01F;
@@ -117,17 +118,8 @@ vec2 player::collide_and_slide(vec2 delta, vec2 pos, int depth) {
 	if(depth >= MAX_PASSES) {
 		return rge::vec2();
 	}
-
-	/*
-	rge::rect ground = rge::rect(0, 0, 100, 48);
-	rge::rect wall = rge::rect(8 * 8, 48, 8, 16);
-	std::vector<rect*> colliders;
-	colliders.push_back(&ground);
-	colliders.push_back(&wall);
-	*/
-
+	
 	const std::vector<collider*>* colliders = game::get_world()->get_colliders();
-	rge::log::info("%i", colliders->size());
 	physics::sweep_result result = physics::sweep(rect(pos.x, pos.y, 8, 8), delta, *colliders);
 
 	if(result.travel_percent >= 1.0F)

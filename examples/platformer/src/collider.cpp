@@ -6,11 +6,28 @@ rge::rect collider::get_bounds() const {
 	return rge::rect();
 }
 
+rect_collider::rect_collider(rge::rect shape) {
+	this->shape = shape;
+	this->parent = nullptr;
+}
+
+rect_collider::rect_collider(rge::rect shape, rge::transform::ptr parent) {
+	this->shape = shape;
+	this->parent = parent;
+}
+
+rge::rect rect_collider::get_bounds() const {
+	rge::vec2 position;
+	if(parent)
+		position = parent->get_global_position();
+	return rge::rect(position.x + shape.x, position.y + shape.y, shape.w, shape.h);
+}
+
 tile_collider::tile_collider(tile_map* map, int layer_id, int index) {
 	this->map = map;
 	this->layer_id = layer_id;
 	this->index = index;
-};
+}
 
 rge::rect tile_collider::get_bounds() const {
 	tile_layer* layer = map->get_tile_layer(layer_id);
@@ -29,4 +46,4 @@ rge::rect tile_collider::get_bounds() const {
 
 	float j = (map->tile_height - tex_bounds.y) - tex_bounds.h;
 	return rge::rect(offset.x + tex_bounds.x, offset.y + j, tex_bounds.w, tex_bounds.h);
-};
+}
