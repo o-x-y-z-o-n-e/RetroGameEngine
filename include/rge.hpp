@@ -26,14 +26,12 @@ SOFTWARE.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+#ifndef RGE_API
+#define RGE_API
 
 #define RGE_VERSION_MAJOR 0
 #define RGE_VERSION_MINOR 1
 #define RGE_VERSION_PATCH 0
-
-#ifndef RGE_API
-#define RGE_API
-
 
 #include <cstdint>
 #include <cstdarg>
@@ -51,12 +49,9 @@ SOFTWARE.
 #include <memory>
 #include <type_traits>
 
-
 #define RGE_BIND_EVENT_HANDLER(fn, T) [this](const T& e) -> bool { return this->fn(e); }
 
-
 namespace rge {
-
 
 struct rect;
 struct vec2;
@@ -94,12 +89,10 @@ class render_target;
 class renderer;
 class platform;
 
-
 enum result {
 	FAIL = 0,
 	OK = 1
 };
-
 
 #pragma region /* rge::rect */
 //********************************************//
@@ -111,8 +104,16 @@ struct rect final {
 	rect();
 	rect(float x, float y, float w, float h);
 
+	/*!
+	Returns bottom-left point of rectangle.
+	*/
 	vec2 get_min() const;
+	/*! Returns top-right point of rentangle. */
 	vec2 get_max() const;
+	/*! Returns center point of rectangle. */
+	vec2 get_center() const;
+	/*! Returns extension vector from center point of rectangle. */
+	vec2 get_extents() const;
 };
 //********************************************//
 //* Rectangle Struct                         *//
@@ -130,15 +131,26 @@ struct vec2 final {
 	vec2();
 	vec2(float x, float y);
 
+	/*! Returns magnitude/length of vector. */
 	float magnitude() const;
 
+	/*! Returns distance between two vectors. */
 	static float distance(const vec2& a, const vec2& b);
+
+	/*! Returns dot product of two vectors. */
 	static float dot(const vec2& a, const vec2& b);
+
+	/*! Returns cross product of two vectors. */
 	static float cross(const vec2& a, const vec2& b);
+
+	/*! Returns clamped/scaled vector with magntiude of 1. */
 	static vec2 normalize(const vec2& v);
 
-	// Steps current towards target at most max_delta distance.
-	static vec2 move_towards(vec2 current, vec2 target, float max_delta);
+	/*! Steps current towards target at most max_delta distance. */
+	static vec2 move_towards(const vec2& current, const vec2& target, float max_delta);
+
+	/*! Clamp current vector between min & max vectors. */
+	static vec2 clamp(const vec2& current, const vec2& min, const vec2& max);
 
 	vec2 operator + (const vec2& rhs) const;
 	vec2 operator - (const vec2& rhs) const;
@@ -179,15 +191,26 @@ struct vec3 final {
 	vec3();
 	vec3(float x, float y, float z);
 
+	/*! Returns magnitude/length of vector. */
 	float magnitude() const;
 
+	/*! Returns distance between two vectors. */
 	static float distance(const vec3& a, const vec3& b);
+
+	/*! Returns dot product of two vectors. */
 	static float dot(const vec3& v1, const vec3& v2);
+
+	/*! Returns cross product of two vectors. */
 	static vec3 cross(const vec3& v1, const vec3& v2);
+
+	/*! Returns clamped/scaled vector with magntiude of 1. */
 	static vec3 normalize(const vec3& v);
 
-	// Steps current towards target at most max_delta distance.
-	static vec3 move_towards(vec3 current, vec3 target, float max_delta);
+	/*! Steps current towards target at most max_delta distance. */
+	static vec3 move_towards(const vec3& current, const vec3& target, float max_delta);
+
+	/*! Clamp current vector between min & max vectors. */
+	vec3 clamp(const vec3& value, const vec3& min, const vec3& max);
 
 	vec3 operator + (const vec3& rhs) const;
 	vec3 operator - (const vec3& rhs) const;
@@ -332,7 +355,12 @@ struct color final {
 	color(float r, float g, float b);
 	color(float r, float g, float b, float a);
 
-	// Linearly interpolate between colors a & b.
+	/** Linearly interpolate between colors a & b.
+	@param a Color at blend 0%
+	@param b Color at blend 100%
+	@param t Blend value [0, 1]
+	@return Blended color between a & b.
+	*/
 	static color lerp(const color& a, const color& b, float t);
 
 	color operator + (const color& rhs) const;
@@ -358,14 +386,28 @@ struct color final {
 //* Math Module                              *//
 //********************************************//
 namespace math {
+	/** @addtogroup math
+	@{
+	*/
+
 	#define DEG_TO_RAD 0.0174532924F
 	#define RAD_TO_DEG 57.29578F
 	#define PI 3.14159265F
 
-	// Linearly interpolate between numbers a & b.
+	/** Linearly interpolate between a & b.
+	@param a Value at blend 0%
+	@param b Vlaue at blend 100%
+	@param t Blend value [0, 1]
+	@return Blended value between a & b
+	*/
 	float lerp(float a, float b, float t);
 
-	// Gets the linear percent between points a & b.
+	/** Gets the linear percent between points a & b.
+	@param a Color at blend 0%
+	@param b Color at blend 100%
+	@param t Blend value [a, b]
+	@return Percent of v between a & b
+	*/
 	float inverse_lerp(float a, float b, float v);
 
 	// Returns smallest integer.
@@ -377,11 +419,18 @@ namespace math {
 	// Steps current towards target at most max_delta distance.
 	float move_towards(float current, float target, float max_delta);
 
+	// Steps current towards target at most max_delta distance.
+	inline float clamp(float current, float min, float max) {
+		return current > max ? max : (current < min ? min : current);
+	}
+
 	// Gets absolute value of x.
 	inline float abs(float x) { return x > 0 ? x : -x; }
 
 	// Gets sign (- or + or 0) of value x.
 	inline int sign(float x) { return (x > 0 ? 1 : (x < 0 ? -1 : 0)); }
+
+	/** @} */
 }
 //********************************************//
 //* Math Module                              *//
@@ -7555,6 +7604,14 @@ vec2 rect::get_min() const {
 vec2 rect::get_max() const {
 	return vec2(x+w, y+h);
 }
+
+vec2 rect::get_center() const {
+	return vec2(x + (w / 2.0F), y + (h / 2.0F));
+}
+
+vec2 rect::get_extents() const {
+	return vec2(w / 2.0F, h / 2.0F);
+}
 //********************************************//
 //* Rectangle Struct                         *//
 //********************************************//
@@ -7595,10 +7652,20 @@ vec2 vec2::normalize(const vec2& v) {
 	return v / v.magnitude();
 }
 
-vec2 vec2::move_towards(vec2 current, vec2 target, float max_delta) {
-	current.x = math::move_towards(current.x, target.x, max_delta);
-	current.y = math::move_towards(current.y, target.y, max_delta);
-	return current;
+vec2 vec2::move_towards(const vec2& current, const vec2& target, float max_delta) {
+	vec2 updated;
+	updated.x = math::move_towards(current.x, target.x, max_delta);
+	updated.y = math::move_towards(current.y, target.y, max_delta);
+	return updated;
+}
+
+vec2 vec2::clamp(const vec2& value, const vec2& min, const vec2& max) {
+	vec2 updated = value;
+	if(updated.x < min.x) updated.x = min.x;
+	if(updated.x > max.x) updated.x = max.x;
+	if(updated.y < min.y) updated.y = min.y;
+	if(updated.y > max.y) updated.y = max.y;
+	return updated;
 }
 
 vec2 vec2::operator + (const vec2& rhs) const {
@@ -7718,11 +7785,23 @@ vec3 vec3::normalize(const vec3& v) {
 	return v / v.magnitude();
 }
 
-vec3 vec3::move_towards(vec3 current, vec3 target, float max_delta) {
-	current.x = math::move_towards(current.x, target.x, max_delta);
-	current.y = math::move_towards(current.y, target.y, max_delta);
-	current.z = math::move_towards(current.z, target.z, max_delta);
-	return current;
+vec3 vec3::move_towards(const vec3& current, const vec3& target, float max_delta) {
+	vec3 updated;
+	updated.x = math::move_towards(current.x, target.x, max_delta);
+	updated.y = math::move_towards(current.y, target.y, max_delta);
+	updated.z = math::move_towards(current.z, target.z, max_delta);
+	return updated;
+}
+
+vec3 vec3::clamp(const vec3& value, const vec3& min, const vec3& max) {
+	vec3 updated = value;
+	if(updated.x < min.x) updated.x = min.x;
+	if(updated.x > max.x) updated.x = max.x;
+	if(updated.y < min.y) updated.y = min.y;
+	if(updated.y > max.y) updated.y = max.y;
+	if(updated.z < min.z) updated.z = min.z;
+	if(updated.z > max.z) updated.z = max.z;
+	return updated;
 }
 
 vec3 vec3::operator + (const vec3& rhs) const {
