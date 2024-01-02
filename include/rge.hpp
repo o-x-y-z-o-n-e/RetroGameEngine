@@ -53,10 +53,10 @@ SOFTWARE.
 
 namespace rge {
 
-struct rect;
 struct vec2;
 struct vec3;
 struct vec4;
+struct rect;
 struct quaternion;
 struct mat4;
 struct color;
@@ -93,32 +93,6 @@ enum result {
 	FAIL = 0,
 	OK = 1
 };
-
-#pragma region /* rge::rect */
-//********************************************//
-//* Rectangle Struct                         *//
-//********************************************//
-struct rect final {
-	float x, y, w, h;
-
-	rect();
-	rect(float x, float y, float w, float h);
-
-	/*!
-	Returns bottom-left point of rectangle.
-	*/
-	vec2 get_min() const;
-	/*! Returns top-right point of rentangle. */
-	vec2 get_max() const;
-	/*! Returns center point of rectangle. */
-	vec2 get_center() const;
-	/*! Returns extension vector from center point of rectangle. */
-	vec2 get_extents() const;
-};
-//********************************************//
-//* Rectangle Struct                         *//
-//********************************************//
-#pragma endregion
 
 
 #pragma region /* rge::vec2 */
@@ -277,6 +251,67 @@ struct vec4 final {
 };
 //********************************************//
 //* Vector4 Struct                           *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::rect */
+//********************************************//
+//* Rectangle Struct                         *//
+//********************************************//
+struct rect final {
+	float x, y, w, h;
+
+	rect();
+	rect(float x, float y, float w, float h);
+
+	/*!
+	Returns bottom-left point of rectangle.
+	*/
+	vec2 get_min() const;
+	/*! Returns top-right point of rentangle. */
+	vec2 get_max() const;
+	/*! Returns center point of rectangle. */
+	vec2 get_center() const;
+	/*! Returns extension vector from center point of rectangle. */
+	vec2 get_extents() const;
+};
+//********************************************//
+//* Rectangle Struct                         *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::circle */
+//********************************************//
+//* Circle Struct                            *//
+//********************************************//
+struct circle final {
+	vec2 center;
+	float radius;
+
+	circle();
+	circle(vec2 center, float radius);
+};
+//********************************************//
+//* Circle Struct                            *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::line */
+//********************************************//
+//* Line Struct                              *//
+//********************************************//
+struct line final {
+	vec2 start;
+	vec2 end;
+
+	line();
+	line(vec2 start, vec2 end);
+};
+//********************************************//
+//* Line Struct                              *//
 //********************************************//
 #pragma endregion
 
@@ -7579,45 +7614,6 @@ Actual implementation is contained in 'macosx.mm'.
 namespace rge {
 
 
-#pragma region /* rge::rect */
-//********************************************//
-//* Rectangle Struct                         *//
-//********************************************//
-rect::rect() {
-	this->x = 0;
-	this->y = 0;
-	this->w = 0;
-	this->h = 0;
-}
-
-rect::rect(float x, float y, float w, float h) {
-	this->x = x;
-	this->y = y;
-	this->w = w;
-	this->h = h;
-}
-
-vec2 rect::get_min() const {
-	return vec2(x, y);
-}
-
-vec2 rect::get_max() const {
-	return vec2(x+w, y+h);
-}
-
-vec2 rect::get_center() const {
-	return vec2(x + (w / 2.0F), y + (h / 2.0F));
-}
-
-vec2 rect::get_extents() const {
-	return vec2(w / 2.0F, h / 2.0F);
-}
-//********************************************//
-//* Rectangle Struct                         *//
-//********************************************//
-#pragma endregion
-
-
 #pragma region /* rge::vec2 */
 //********************************************//
 //* Vector2 Struct                           *//
@@ -7972,6 +7968,83 @@ vec4::operator vec2() const {
 }
 //********************************************//
 //* Vector4 Struct                           *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::rect */
+//********************************************//
+//* Rectangle Struct                         *//
+//********************************************//
+rect::rect() {
+	this->x = 0;
+	this->y = 0;
+	this->w = 0;
+	this->h = 0;
+}
+
+rect::rect(float x, float y, float w, float h) {
+	this->x = x;
+	this->y = y;
+	this->w = w;
+	this->h = h;
+}
+
+vec2 rect::get_min() const {
+	return vec2(x, y);
+}
+
+vec2 rect::get_max() const {
+	return vec2(x + w, y + h);
+}
+
+vec2 rect::get_center() const {
+	return vec2(x + (w / 2.0F), y + (h / 2.0F));
+}
+
+vec2 rect::get_extents() const {
+	return vec2(w / 2.0F, h / 2.0F);
+}
+//********************************************//
+//* Rectangle Struct                         *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::circle */
+//********************************************//
+//* Circle Struct                            *//
+//********************************************//
+circle::circle() {
+	this->center = vec2();
+	this->radius = 0;
+}
+
+circle::circle(vec2 center, float radius) {
+	this->center = center;
+	this->radius = radius;
+}
+//********************************************//
+//* Circle Struct                            *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::line */
+//********************************************//
+//* Line Struct                              *//
+//********************************************//
+line::line() {
+	this->start = vec2();
+	this->end = vec2();
+}
+
+line::line(vec2 start, vec2 end) {
+	this->start = start;
+	this->end = end;
+}
+//********************************************//
+//* Line Struct                              *//
 //********************************************//
 #pragma endregion
 
