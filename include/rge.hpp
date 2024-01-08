@@ -94,6 +94,12 @@ enum result {
 	OK = 1
 };
 
+enum class shape {
+	NONE,
+	RECTANGLE,
+	CIRCLE,
+	LINE
+};
 
 #pragma region /* rge::vec2 */
 //********************************************//
@@ -1087,6 +1093,89 @@ public:
 #pragma endregion
 
 
+#pragma region /* rge::collider */
+//********************************************//
+//* Collider Base Class                      *//
+//********************************************//
+class collider {
+public:
+	virtual rect get_rect() const { return rect(); }
+	virtual circle get_circle() const { return circle(); }
+	virtual line get_line() const { return line(); }
+	virtual shape get_shape_type() const { return shape::NONE; }
+};
+//********************************************//
+//* Collider Base Class                      *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::rect_collider */
+//********************************************//
+//* Rect Collider Class                      *//
+//********************************************//
+class rect_collider : public collider {
+public:
+	rect_collider(rect shape);
+	rect_collider(rect shape, transform::ptr parent);
+
+	inline shape get_shape_type() const override { return shape::RECTANGLE; };
+	rect get_rect() const override;
+
+	transform::ptr parent;
+	rect shape;
+};
+//********************************************//
+//* Rect Collider Class                      *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::circle_collider */
+//********************************************//
+//* Circle Collider Class                    *//
+//********************************************//
+class circle_collider : public collider {
+public:
+	circle_collider();
+	circle_collider(vec2 offset, float radius);
+	circle_collider(vec2 offset, float radius, transform::ptr parent);
+
+	inline shape get_shape_type() const override { return shape::CIRCLE; };
+	circle get_circle() const override;
+
+	transform::ptr parent;
+	vec2 offset;
+	float radius;
+};
+//********************************************//
+//* Circle Collider Class                    *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::line_collider */
+//********************************************//
+//* Line Collider Class                      *//
+//********************************************//
+class line_collider : public collider {
+public:
+	line_collider(vec2 start, vec2 end);
+	line_collider(vec2 start, vec2 end, transform::ptr parent);
+
+	inline shape get_shape_type() const override { return shape::LINE; };
+	line get_line() const override;
+
+	transform::ptr parent;
+	vec2 start;
+	vec2 end;
+};
+//********************************************//
+//* Line Collider Class                      *//
+//********************************************//
+#pragma endregion
+
+
 #pragma region /* rge::mesh */
 //********************************************//
 //* Mesh Class                               *//
@@ -1331,6 +1420,8 @@ private:
 //********************************************//
 class platform {
 public:
+	typedef platform* platform::ptr;
+
 	virtual rge::result init(rge::engine* engine) = 0;
 	virtual rge::result create_window(const std::string& title, int width, int height, bool fullscreen) = 0;
 	virtual void set_window_title(const std::string& title) = 0;
@@ -1363,6 +1454,8 @@ public:
 //********************************************//
 class renderer {
 public:
+	typedef renderer* renderer::ptr;
+
 	void set_camera(camera::ptr camera);
 	void set_ambience(const color& ambient_color);
 	rge::result set_target(render_target::ptr target);
@@ -1422,6 +1515,8 @@ public:
 		int tex_height
 	) = 0;
 
+	
+
 	// Draw a 2D sprite onto camera space.
 	virtual void draw(const sprite& sprite) = 0;
 
@@ -1447,7 +1542,12 @@ public:
 		int src_max_y
 	) = 0;
 
-
+	// Draws render target on window.
+	virtual void draw(
+		const render_target& frame,
+		bool preserve_aspect = false,
+		bool pixel_perfect = false
+	) = 0;
 
 public: // Inline macro short args functions.
 	// Draw 3D geometry, using model space data.
@@ -1484,11 +1584,6 @@ public: // Inline macro short args functions.
 	// Draw a render target onto (dest)[0, w/h] frame space.
 	inline void draw(const render_target& render, int dest_min_x, int dest_min_y, int dest_max_x, int dest_max_y) {
 		draw(*render.get_frame_buffer(), dest_min_x, dest_min_y, dest_max_x, dest_max_y);
-	}
-
-	// Draw a render target onto entire frame.
-	inline void draw(const render_target& render) {
-		draw(*render.get_frame_buffer(), vec2(0, 0), vec2(1, 1));
 	}
 
 	// Draw a texture onto (pos)[-i32, +i32] frame space.
@@ -9711,6 +9806,90 @@ light::~light() {
 #pragma endregion
 
 
+#pragma region /* rge::rect_collider */
+//********************************************//
+//* Rect Collider Class                      *//
+//********************************************//
+rect_collider::rect_collider(rect box) {
+	this->shape = box;
+	this->parent = nullptr;
+}
+
+rect_collider::rect_collider(rect box, transform::ptr parent) {
+	this->shape = box;
+	this->parent = parent;
+}
+
+rect rect_collider::get_rect() const {
+	vec2 position;
+	if(parent)
+		position = parent->get_global_position();
+	return rect(position.x + shape.x, position.y + shape.y, shape.w, shape.h);
+}
+//********************************************//
+//* Rect Collider Class                      *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::circle_collider */
+//********************************************//
+//* Circle Collider Class                    *//
+//********************************************//
+circle_collider::circle_collider() {
+	this->radius = 1.0F;
+	this->offset = vec2(0, 0);
+	this->parent = nullptr;
+}
+
+circle_collider::circle_collider(vec2 offset, float radius) {
+	this->radius = radius;
+	this->offset = offset;
+	this->parent = nullptr;
+}
+
+circle_collider::circle_collider(vec2 offset, float radius, transform::ptr parent) {
+	this->radius = radius;
+	this->offset = offset;
+	this->parent = parent;
+}
+
+circle circle_collider::get_circle() const {
+	circle c = circle(offset, radius);
+	if(parent) c.center += parent->get_global_position();
+	return c;
+}
+//********************************************//
+//* Circle Collider Class                    *//
+//********************************************//
+#pragma endregion
+
+
+#pragma region /* rge::line_collider */
+//********************************************//
+//* Line Collider Class                      *//
+//********************************************//
+line_collider::line_collider(vec2 start, vec2 end) {
+	this->start = start;
+	this->end = end;
+	this->parent = nullptr;
+}
+
+line_collider::line_collider(vec2 start, vec2 end, transform::ptr parent) {
+	this->start = start;
+	this->end = end;
+	this->parent = parent;
+}
+
+line line_collider::get_line() const {
+	return line(start, end);
+}
+//********************************************//
+//* Line Collider Class                      *//
+//********************************************//
+#pragma endregion
+
+
 #pragma region /* rge::mesh */
 //********************************************//
 //* Mesh Class                               *//
@@ -11162,12 +11341,12 @@ private:
 	gl_render_context_t render = 0;
 	#endif
 
-	int window_width;
-	int window_height;
+	int window_width = 0;
+	int window_height = 0;
 
 public:
 	opengl_3_3() {
-
+		
 	}
 
 	rge::result init(platform* platform) override {
@@ -11675,6 +11854,48 @@ public:
 		src_max.y = 1.0F - src_max.y;
 
 		draw(texture, dest_min, dest_max, src_min, src_max);
+	}
+
+	void draw(const render_target& frame, bool preserve_aspect, bool pixel_perfect) override {
+		int bottom = 0;
+		int top = window_height;
+		int left = 0;
+		int right = window_width;
+		int v_reduction = 0;
+		int h_reduction = 0;
+
+		float h_ratio = float(window_width) / float(frame.get_width());
+		float v_ratio = float(window_height) / float(frame.get_height());
+		int h_scale = window_width / frame.get_width();
+		int v_scale = window_height / frame.get_height();
+		int min_scale = h_scale < v_scale ? h_scale : v_scale;
+
+		int new_width = window_width;
+		int new_height = window_height;
+
+		if(pixel_perfect) {
+			new_width = frame.get_width() * min_scale;
+			new_height = frame.get_height() * min_scale;
+
+			v_reduction = window_height - new_height;
+			h_reduction = window_width - new_width;
+		} else if(preserve_aspect) {
+			new_height = int(frame.get_height() * h_ratio);
+			new_width = int(frame.get_width() * v_ratio);
+
+			if(h_ratio < v_ratio) {
+				v_reduction = window_height - new_height;
+			} else {
+				h_reduction = window_width - new_width;
+			}
+		}
+
+		bottom = v_reduction / 2;
+		top = window_height - (v_reduction - bottom);
+		left = h_reduction / 2;
+		right = window_width - (h_reduction - left);
+
+		draw(*frame.get_frame_buffer(), left, bottom, right, top, 0, 0, frame.get_width(), frame.get_height());
 	}
 
 	bool on_window_resized(const window_resized_event& e) override {
