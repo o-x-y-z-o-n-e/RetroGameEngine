@@ -1,7 +1,7 @@
 #include "tile_map.hpp"
 #include "tile_set.hpp"
 #include "tile_loader.hpp"
-#include "collider.hpp"
+#include "tile_collider.hpp"
 #include "game.hpp"
 #include <sstream>
 
@@ -253,7 +253,7 @@ void tile_map::draw_layer(int i) {
 					tile_width,
 					tile_height,
 					h,
-					map_height - v,
+					map_height - v - 1,
 					t->x,
 					t->y,
 					t->width,
@@ -279,20 +279,24 @@ void tile_map::add_tile_layer(tile_layer& layer) {
 }
 
 void tile_map::create_colliders() {
+	int l;
 	int n;
+	int i;
+	int t;
 	tile* tile;
 	tile_collider* collider;
 
 	if(!registry)
 		return;
 
-	for(int i = 0; i < layers.size(); i++) {
-		n = layers[i].width * layers[i].height;
-		for(int t = 0; t < n; t++) {
-			tile = registry->get_tile(layers[i].grid[t]);
+	for(l = 0; l < layers.size(); l++) {
+		n = layers[l].width * layers[l].height;
+		for(i = 0; i < n; i++) {
+			t = layers[l].grid[i];
+			tile = registry->get_tile(t);
 			
 			if(tile && tile->collision.size() > 0) {
-				collider = new tile_collider(this, i, t);
+				collider = new tile_collider(this, l, i);
 				colliders.push_back(collider);
 			}
 		}

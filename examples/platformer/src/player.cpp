@@ -6,11 +6,11 @@ const float MOVE_ACCERATE = 96;
 const float MOVE_DECERATE = 32;
 const float JUMP_VELOCITY = 56;
 const float JUMP_HOLD = 96;
-const float GRAVITY = 192;
+const float GRAVITY = 30;// 192;
 
 player::player() : pawn() {
 	transform = transform::create();
-	transform->position = vec3(16, 60, 0);
+	transform->position = vec3(16, 64, 0);
 	sprite = sprite::create();
 	sprite->texture = texture::load("res/entities/player.png");
 	sprite->sub_sprite = true;
@@ -119,8 +119,8 @@ vec2 player::collide_and_slide(vec2 delta, vec2 pos, int depth) {
 		return rge::vec2();
 	}
 	
-	const std::vector<collider*>* colliders = game::get_world()->get_colliders();
-	physics::sweep_result result = physics::sweep(rect(pos.x, pos.y, 8, 8), delta, *colliders);
+	const std::vector<rge::collider*>* colliders = game::get_world()->get_colliders();
+	rge::physics::sweep_result result = rge::physics::sweep(rect(pos.x, pos.y, 8, 8), delta, *colliders);
 
 	if(result.travel_percent >= 1.0F)
 		return delta;

@@ -14,13 +14,13 @@ public:
 
 	inline player* get_player() { return player_obj; }
 	inline level* get_level() { return level_objs[current_level]; }
-	std::vector<collider*>* get_colliders();
+	std::vector<rge::collider*>* get_colliders();
 
 private:
 	player* player_obj;
 	std::vector<level*> level_objs;
 	int current_level;
-	std::vector<collider*> collider_buffer;
+	std::vector<rge::collider*> collider_buffer;
 };
 
 #endif /* _WORLD_HPP_ */
