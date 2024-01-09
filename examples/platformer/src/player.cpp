@@ -120,7 +120,7 @@ vec2 player::collide_and_slide(vec2 delta, vec2 pos, int depth) {
 	}
 	
 	const std::vector<rge::collider*>* colliders = game::get_world()->get_colliders();
-	rge::physics::sweep_result result = rge::physics::sweep(rect(pos.x, pos.y, 8, 8), delta, *colliders);
+	rge::sweep_result result = rge::physics::sweep(rect(pos.x, pos.y, 8, 8), delta, *colliders);
 
 	if(result.travel_percent >= 1.0F)
 		return delta;

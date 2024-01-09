@@ -3,7 +3,6 @@
 
 // Libraries.
 #include "rge.hpp"
-#include "physics.hpp"
 
 // Structure.
 #include "world.hpp"
